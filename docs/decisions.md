@@ -53,3 +53,8 @@ R2 requires `front` and `label` for apparel. The brief's RET scene only captures
 
 ## 2026-11-07 Hosting region
 Supabase in eu-north-1 (Stockholm) and Vercel functions pinned to `arn1` (Stockholm) to keep latency between them low and data in the EU.
+
+## 2026-11-07 AI provider keys: GEMINI_API_KEY and ELEVENLABS_API_KEY
+These replace the addendum's `VISION_API_KEY`. Both live in `.env.local` and in Vercel (production and preview, sensitive).
+- `GEMINI_API_KEY` is the name the `@google/genai` SDK reads by default. Key "sjekkpunkt" from Google AI Studio, in its own Google Cloud project "sjekkpunkt" (`gen-lang-client-0548357036`). **Free tier, no billing.** Google's free-tier terms let it use prompts and responses to improve its products, so free tier is fine for the demo with fixtures but not for real customer photos; enable billing (paid tier) before pilot data. New AI Studio keys use a newer format than classic Google API keys, so do not validate them by prefix.
+- `ELEVENLABS_API_KEY`: key "sjekkpunkt", restricted. Access: Text to Speech, Speech to Text, Sound Effects, ElevenAgents (write), Voices (read), Models. Everything else, including User and Workspace, has no access. Credit limit 20,000 per refresh period, never expires, auto-disable if leaked on.
