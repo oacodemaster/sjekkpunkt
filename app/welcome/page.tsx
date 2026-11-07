@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui';
+import { SignedOutShell } from '@/components/ui/signed-out-shell';
 import { requireRole } from '@/lib/auth/dal';
 import { PRIVACY } from '@/lib/i18n/privacy-strings';
 import { LANG_NAMES } from '@/lib/i18n/strings';
@@ -11,18 +13,21 @@ export default async function WelcomePage() {
   const text = PRIVACY[user.lang];
 
   return (
-    <main className="flex flex-1 items-center justify-center bg-frame p-4">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl">
-        <h1 className="text-2xl font-bold">{text.pickLanguage}</h1>
-        <p className="mt-1 text-muted">{text.pickLanguageHelp}</p>
-        <form action={chooseLanguage} className="mt-6 flex flex-col gap-3" data-testid="language-picker">
-          {languages.map((l) => (
-            <button key={l} name="lang" value={l} lang={l} className={l === user.lang ? 'btn-primary' : 'btn-secondary'}>
-              {LANG_NAMES[l]}
-            </button>
-          ))}
-        </form>
+    <SignedOutShell lang={user.lang}>
+      <div className="flex flex-col gap-2">
+        <h1 className="type-title m-0">{text.pickLanguage}</h1>
+        <p className="type-body m-0 text-ink-2">{text.pickLanguageHelp}</p>
       </div>
-    </main>
+      <form action={chooseLanguage} className="flex flex-col gap-3" data-testid="language-picker">
+        {languages.map((l) => (
+          <Button key={l} type="submit" name="lang" value={l} lang={l} block variant={l === user.lang ? 'primary' : 'secondary'} aria-current={l === user.lang ? 'true' : undefined}>
+            <span className="sp-mono w-8 text-left text-[16px]" aria-hidden>
+              {l.toUpperCase()}
+            </span>
+            <span className="flex-1 text-left">{LANG_NAMES[l]}</span>
+          </Button>
+        ))}
+      </form>
+    </SignedOutShell>
   );
 }

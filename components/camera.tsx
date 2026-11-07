@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { fileToJpeg, frameToJpeg } from '@/lib/camera/image';
 import type { Lang } from '@/lib/engine/types';
 import { t } from '@/lib/i18n/strings';
+import { Button } from '@/components/ui';
 
 export type CamState = 'starting' | 'live' | 'denied' | 'unavailable';
 
@@ -89,40 +90,42 @@ export function Camera({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-lg font-semibold">{hint}</p>
-      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-black">
-        <video ref={video} playsInline muted className={`h-full w-full object-cover ${state === 'live' ? '' : 'hidden'}`} />
-        {state === 'live' && countdown != null && countdown > 0 && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 text-8xl font-black text-white" aria-live="assertive">
-            {countdown}
-          </div>
-        )}
-        {state !== 'live' && (
-          <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-white">
-            {state === 'starting' && <span className="animate-pulse">…</span>}
-            {state === 'denied' && <span role="alert">{t('cameraDenied', lang)}</span>}
-            {state === 'unavailable' && <span role="alert">{t('cameraUnavailable', lang)}</span>}
-          </div>
-        )}
+      <p className="type-body m-0 font-semibold">{hint}</p>
+      <div className="sp-stage">
+        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[4px] bg-stage">
+          <video ref={video} playsInline muted className={`h-full w-full object-cover ${state === 'live' ? '' : 'hidden'}`} />
+          {state === 'live' && countdown != null && countdown > 0 && (
+            <div className="sp-mono absolute inset-0 flex items-center justify-center text-[96px] font-bold text-ink-on-dark" aria-live="assertive">
+              {countdown}
+            </div>
+          )}
+          {state !== 'live' && (
+            <div className="type-body absolute inset-0 flex items-center justify-center p-6 text-center text-ink-on-dark">
+              {state === 'starting' && <span className="sp-busy border-line-on-dark bg-transparent text-ink-on-dark">…</span>}
+              {state === 'denied' && <span role="alert">{t('cameraDenied', lang)}</span>}
+              {state === 'unavailable' && <span role="alert">{t('cameraUnavailable', lang)}</span>}
+            </div>
+          )}
+        </div>
       </div>
-      <div className="grid grid-cols-[1fr_auto] gap-3">
+      <div className="flex flex-wrap gap-3">
         {state === 'live' ? (
-          <button className="btn-primary text-xl" onClick={shoot} aria-label={t('takePhoto', lang)}>
+          <Button className="flex-[1_1_auto]" icon="camera" onClick={shoot} aria-label={t('takePhoto', lang)}>
             {t('takePhoto', lang)}
-          </button>
+          </Button>
         ) : (
-          <button className="btn-primary" onClick={() => file.current?.click()}>
+          <Button className="flex-[1_1_auto]" onClick={() => file.current?.click()}>
             {t('chooseFile', lang)}
-          </button>
+          </Button>
         )}
-        <button className="btn-secondary" onClick={onCancel}>
+        <Button variant="quiet" className="flex-[0_1_auto]" onClick={onCancel}>
           {t('cancel', lang)}
-        </button>
+        </Button>
       </div>
       {state === 'live' && (
-        <button className="text-base text-muted underline" onClick={() => file.current?.click()}>
+        <Button variant="quiet" onClick={() => file.current?.click()}>
           {t('chooseFile', lang)}
-        </button>
+        </Button>
       )}
       <input ref={file} type="file" accept="image/*" capture="environment" className="hidden" onChange={picked} data-testid="photo-file" />
     </div>

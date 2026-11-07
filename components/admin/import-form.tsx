@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { checkImport, IMPORT_TEMPLATES, ISSUE_NB, type ImportIssue } from '@/lib/admin/csv';
 import { IMPORT_COLUMNS, type ImportKind } from '@/lib/admin/schemas';
+import { Icon } from '@/components/ui';
 import { ADMIN_ERROR_NB, send } from './api';
 
 const KIND_NB: Record<ImportKind, string> = { products: 'Varer', orders: 'Ordrer', returns: 'Returer' };
@@ -56,7 +57,7 @@ export function ImportForm() {
               setKind(e.target.value as ImportKind);
               setResult(null);
             }}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-base"
+            className="sp-input sp-input--desk"
             name="kind"
           >
             {(Object.keys(KIND_NB) as ImportKind[]).map((k) => (
@@ -72,7 +73,7 @@ export function ImportForm() {
             type="file"
             accept=".csv,text/csv"
             data-testid="import-file"
-            className="text-base"
+            className="text-[15px]"
             onChange={async (e) => {
               const f = e.target.files?.[0];
               setResult(null);
@@ -83,28 +84,28 @@ export function ImportForm() {
         <a
           href={`data:text/csv;charset=utf-8,${encodeURIComponent(IMPORT_TEMPLATES[kind])}`}
           download={`sjekkpunkt-${kind}-mal.csv`}
-          className="pb-2 text-accent underline"
+          className="sp-link pb-3"
         >
           Last ned mal
         </a>
       </div>
-      <p className="text-sm text-muted">
-        Kolonner: <span className="font-mono">{IMPORT_COLUMNS[kind].join(', ')}</span>. Komma eller semikolon. Én rad per {kind === 'products' ? 'vare' : kind === 'orders' ? 'ordrelinje' : 'returvare'}; rader med samme {kind === 'orders' ? 'ordre' : 'retur'} blir én {kind === 'orders' ? 'ordre' : 'retur'}.
+      <p className="text-[15px] text-ink-2">
+        Kolonner: <span className="sp-mono">{IMPORT_COLUMNS[kind].join(', ')}</span>. Komma eller semikolon. Én rad per {kind === 'products' ? 'vare' : kind === 'orders' ? 'ordrelinje' : 'returvare'}; rader med samme {kind === 'orders' ? 'ordre' : 'retur'} blir én {kind === 'orders' ? 'ordre' : 'retur'}.
         {kind === 'products' ? ' Finnes SKU-en, oppdateres varen.' : ' Nye ordrer og returer må ha nye numre.'}
       </p>
       <div className="flex gap-3">
-        <button className="btn-secondary" disabled={!file || busy} onClick={() => void call(true)}>
+        <button className="sp-btn sp-btn--secondary sp-btn--desk" disabled={!file || busy} onClick={() => void call(true)}>
           Sjekk filen
         </button>
-        <button className="btn-primary" disabled={!file || busy || result?.kind !== 'ready'} onClick={() => void call(false)}>
+        <button className="sp-btn sp-btn--primary sp-btn--desk" disabled={!file || busy || result?.kind !== 'ready'} onClick={() => void call(false)}>
           {busy ? 'Jobber…' : 'Importer'}
         </button>
       </div>
 
       {result?.kind === 'issues' && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4" data-testid="import-issues">
-          <p className="font-semibold text-bad">Filen har {result.issues.length} feil. Ingenting er importert.</p>
-          <ul className="mt-2 max-h-72 overflow-y-auto text-base">
+        <div className="sp-banner sp-banner--error flex-col" data-testid="import-issues">
+          <p className="font-semibold text-stop">Filen har {result.issues.length} feil. Ingenting er importert.</p>
+          <ul className="mt-2 max-h-72 overflow-y-auto text-[15px]">
             {result.issues.slice(0, 100).map((i, k) => (
               <li key={k}>
                 Linje {i.line}
@@ -115,18 +116,21 @@ export function ImportForm() {
         </div>
       )}
       {result?.kind === 'ready' && (
-        <p role="status" className="text-ok" data-testid="import-ready">
+        <p role="status" className="m-0 flex items-center gap-2 font-semibold text-ok" data-testid="import-ready">
+          <Icon name="ok" />
           Filen er i orden: {result.entities} {UNIT_NB[kind][0]}
           {kind !== 'products' ? ` med ${result.lines} ${UNIT_NB[kind][1]}` : ''}. Trykk Importer for å lagre.
         </p>
       )}
       {result?.kind === 'done' && (
-        <p role="status" className="font-semibold text-ok" data-testid="import-done">
+        <p role="status" className="m-0 flex items-center gap-2 font-semibold text-ok" data-testid="import-done">
+          <Icon name="ok" />
           {result.text}
         </p>
       )}
       {result?.kind === 'error' && (
-        <p role="status" className="text-bad">
+        <p role="status" className="m-0 flex items-center gap-2 font-semibold text-stop">
+          <Icon name="stop" />
           {result.text}
         </p>
       )}

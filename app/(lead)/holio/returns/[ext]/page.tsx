@@ -1,6 +1,5 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Card } from '@/components/desk-shell';
+import { HolioBar, HolioCard, HolioPayload } from '@/components/holio';
 import { requireRole } from '@/lib/auth/dal';
 import { productMap } from '@/lib/engine/catalog';
 import { loadReturnView } from '@/lib/returns/server';
@@ -70,73 +69,68 @@ export default async function HolioReturnRecord({ params }: PageProps<'/holio/re
 
   return (
     <>
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-3xl font-bold">Holio WMS (mock) · Retur {view.ret.id}</h1>
-        <Link href="/holio" className="underline">
-          Alle returer
-        </Link>
-      </div>
+      <HolioBar title={`Holio WMS (mock) · Retur ${view.ret.id}`} link={{ href: '/holio', label: 'Alle returer' }} />
 
-      <Card title="Retur">
-        <dl className="grid grid-cols-[10rem_1fr] gap-x-6 gap-y-2 text-base">
-          <dt className="text-muted">Retur</dt>
-          <dd className="font-mono">{view.ret.id}</dd>
-          <dt className="text-muted">Ordre</dt>
-          <dd className="font-mono">{view.order.id}</dd>
-          <dt className="text-muted">Returårsak</dt>
+      <HolioCard title="Retur">
+        <dl className="holio-kv">
+          <dt>Retur</dt>
+          <dd className="holio-mono">{view.ret.id}</dd>
+          <dt>Ordre</dt>
+          <dd className="holio-mono">{view.order.id}</dd>
+          <dt>Returårsak</dt>
           <dd>{view.ret.customerReasonNb}</dd>
-          <dt className="text-muted">Bekreft retur</dt>
-          <dd className={view.status === 'confirmed' ? 'font-semibold text-ok' : ''}>{STATUS_NB[view.status] ?? view.status}</dd>
-          <dt className="text-muted">Pakkebevis</dt>
+          <dt>Bekreft retur</dt>
+          <dd className={view.status === 'confirmed' ? 'holio-ok' : ''}>{STATUS_NB[view.status] ?? view.status}</dd>
+          <dt>Pakkebevis</dt>
           <dd className="flex items-center gap-3">
             {view.packEvidence?.photoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={view.packEvidence.photoUrl} alt="Pakkebevis" className="h-16 w-16 rounded object-cover" />
+              <img src={view.packEvidence.photoUrl} alt="Pakkebevis" className="h-16 w-16 rounded-[2px] object-cover" />
             )}
             {evidenceText}
           </dd>
         </dl>
-      </Card>
+      </HolioCard>
 
       {view.items.map((it) => {
         const d = it.committed;
         const e = itemEvent(it.orderedSku);
         const received = d?.receivedSku ?? it.orderedSku;
         return (
-          <Card key={it.id} title={`Vare ${it.index + 1}: ${pm.get(it.orderedSku)?.nameNb ?? it.orderedSku}`}>
-            <dl className="grid grid-cols-[10rem_1fr] gap-x-6 gap-y-2 text-base">
-              <dt className="text-muted">Varenummer</dt>
-              <dd className="font-mono">
+          <HolioCard key={it.id} title={`Vare ${it.index + 1}: ${pm.get(it.orderedSku)?.nameNb ?? it.orderedSku}`}>
+            <dl className="holio-kv">
+              <dt>Varenummer</dt>
+              <dd className="holio-mono">
                 {it.orderedSku}
-                {d?.receivedSku && d.receivedSku !== it.orderedSku && <span className="text-bad"> → mottatt {d.receivedSku}</span>}
+                {d?.receivedSku && d.receivedSku !== it.orderedSku && <span className="holio-bad"> → mottatt {d.receivedSku}</span>}
               </dd>
-              <dt className="text-muted">Lokasjon</dt>
-              <dd className="font-mono text-xl font-bold">{d?.locationCode ?? '—'}</dd>
-              <dt className="text-muted">Grad</dt>
-              <dd className="text-xl font-bold">{d?.grade ?? '—'}</dd>
-              <dt className="text-muted">Tilstand</dt>
+              <dt>Lokasjon</dt>
+              <dd className="holio-mono text-[20px] font-bold">{d?.locationCode ?? '—'}</dd>
+              <dt>Grad</dt>
+              <dd className="text-[20px] font-bold">{d?.grade ?? '—'}</dd>
+              <dt>Tilstand</dt>
               <dd>{tilstandText(e?.tilstand)}</dd>
-              <dt className="text-muted">Refusjon</dt>
+              <dt>Refusjon</dt>
               <dd>{d ? (d.refundNok === null ? 'Teamleder avgjør' : `${d.refundNok} kr`) : '—'}</dd>
-              <dt className="text-muted">Sannsynlig årsak</dt>
+              <dt>Sannsynlig årsak</dt>
               <dd>{d?.cause ? CAUSE_NB[d.cause] : '—'}</dd>
-              <dt className="text-muted">Flagg</dt>
+              <dt>Flagg</dt>
               <dd className="flex flex-wrap gap-2">
                 {(d?.flags ?? []).length === 0
                   ? '—'
                   : d!.flags.map((f) => (
-                      <span key={f} className={`rounded-full px-3 py-0.5 text-sm font-semibold ${f === 'suspicious_note' ? 'bg-red-50 text-bad' : 'bg-amber-50 text-warn'}`}>
+                      <span key={f} className={`holio-tag ${f === 'suspicious_note' ? 'holio-bad' : 'holio-warn'}`}>
                         {FLAG_NB[f] ?? f}
                       </span>
                     ))}
               </dd>
-              <dt className="text-muted">Merknad</dt>
+              <dt>Merknad</dt>
               <dd>{e?.merknad ?? '—'}</dd>
-              <dt className="text-muted">Kundelapp</dt>
+              <dt>Kundelapp</dt>
               <dd className="italic">{e?.kundelapp ? `«${e.kundelapp}» (lest som tekst)` : '—'}</dd>
-              <dt className="text-muted">Status</dt>
+              <dt>Status</dt>
               <dd>{it.status === 'decided' ? 'Bestemt' : it.status === 'escalated' ? 'Hos teamleder' : 'Ikke bestemt'}</dd>
-              <dt className="text-muted">Bilder</dt>
+              <dt>Bilder</dt>
               <dd className="flex flex-wrap gap-2">
                 {it.photos.filter((p) => p.url).length === 0
                   ? '—'
@@ -144,31 +138,31 @@ export default async function HolioReturnRecord({ params }: PageProps<'/holio/re
                       .filter((p) => p.url)
                       .map((p) => (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img key={p.photoId} src={p.url!} alt={p.purpose} title={p.purpose} className="h-20 w-20 rounded object-cover" />
+                        <img key={p.photoId} src={p.url!} alt={p.purpose} title={p.purpose} className="h-20 w-20 rounded-[2px] object-cover" />
                       ))}
               </dd>
             </dl>
-            {received !== it.orderedSku && <p className="mt-2 text-sm text-muted">Returen er bokført mot varen som faktisk kom tilbake.</p>}
-          </Card>
+            {received !== it.orderedSku && <p className="holio-muted mb-0 mt-2">Returen er bokført mot varen som faktisk kom tilbake.</p>}
+          </HolioCard>
         );
       })}
 
-      <Card title="Integrasjonshendelser (det Holio ville mottatt)">
+      <HolioCard title="Integrasjonshendelser (det Holio ville mottatt)">
         {(events ?? []).length === 0 ? (
-          <p className="text-muted">Ingen ennå.</p>
+          <p className="holio-muted">Ingen ennå.</p>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {(events ?? []).map((e) => (
               <li key={e.id}>
-                <div className="font-mono text-sm font-semibold">
+                <div className="holio-mono font-semibold">
                   {e.type} · {new Date(e.created_at).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo' })}
                 </div>
-                <pre className="mt-1 max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">{JSON.stringify(e.payload, null, 2)}</pre>
+                <HolioPayload value={e.payload} />
               </li>
             ))}
           </ul>
         )}
-      </Card>
+      </HolioCard>
     </>
   );
 }

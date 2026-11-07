@@ -14,6 +14,7 @@ import { useLatest } from '@/lib/hooks/use-latest';
 import { LANG_NAMES, LANGS, t } from '@/lib/i18n/strings';
 import { EL_LANG, fromElLang } from '@/lib/voice/agent-config';
 import { playEarcon } from '@/lib/audio/player';
+import { Banner, Button, PushToTalk, VoiceOrb } from '@/components/ui';
 
 // The voice dock shared by the stations: session start (mic check, token, language override),
 // push-to-talk and hands-free, captions, and the language chip. Each station registers its own
@@ -114,7 +115,10 @@ export function VoiceDock({
   handsFree,
   setHandsFree,
   languages = LANGS,
+  desk = false,
 }: {
+  /** lead console: 48px desk controls on one row instead of the handheld's stacked 56px ones */
+  desk?: boolean;
   station: 'return' | 'pack' | 'lead';
   dynamicVariables: Record<string, string>;
   firstMessage: (lang: Lang) => string;
@@ -255,34 +259,39 @@ export function VoiceDock({
   const statusText = !connected ? null : isSpeaking ? t('voiceSpeaking', lang) : listening ? t('voiceListening', lang) : t('voiceReady', lang);
 
   return (
-    <div className="sticky bottom-0 z-10 flex flex-col gap-2 border-t bg-white/95 p-3 backdrop-blur" data-testid="voice-dock" data-voice={state}>
+    <div className={desk && !connected ? 'flex flex-wrap items-center gap-3' : 'flex flex-col gap-3'} data-testid="voice-dock" data-voice={state}>
+      {/* Voice is optional, so losing it is information, not an error: the calm info banner. */}
       {state === 'mic_denied' && (
-        <p role="alert" className="rounded-xl bg-amber-50 px-3 py-2 text-base text-warn">
+        <Banner role="alert" icon="mic-off">
           {t('micDenied', lang)}
-        </p>
+        </Banner>
       )}
       {(state === 'capped' || state === 'rate_limited') && (
-        <p role="alert" className="rounded-xl bg-amber-50 px-3 py-2 text-base text-warn" data-testid="voice-limit">
+        <Banner role="alert" icon="mic-off" data-testid="voice-limit">
           {t(state === 'capped' ? 'voiceCapped' : 'rateLimited', lang)}
-        </p>
+        </Banner>
       )}
       {state === 'unavailable' && (
-        <p role="alert" className="rounded-xl bg-amber-50 px-3 py-2 text-base text-warn">
+        <Banner role="alert" icon="mic-off">
           {t('voiceUnavailable', lang)}
-        </p>
+        </Banner>
       )}
 
-      {connected && showCaptions && <CaptionList lines={captions.lines} lang={lang} />}
+      {connected && showCaptions && (
+        <div className="max-h-[32vh] overflow-y-auto">
+          <CaptionList lines={captions.lines} lang={lang} target={target} />
+        </div>
+      )}
 
-      <div className="flex items-center gap-2">
-        <label className="sr-only" htmlFor="voice-lang">
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="sp-sr" htmlFor="voice-lang">
           {t('language', lang)}
         </label>
         <select
           id="voice-lang"
           value={lang}
           onChange={(e) => pickLang(e.target.value as Lang)}
-          className="min-h-12 rounded-full bg-slate-100 px-3 text-base font-semibold"
+          className={`sp-input w-auto flex-[0_1_auto] font-semibold ${desk ? 'sp-input--desk' : 'py-2 text-[18px]'}`}
           data-testid="voice-lang"
         >
           {languages.map((l) => (
@@ -293,21 +302,13 @@ export function VoiceDock({
         </select>
         {connected && (
           <>
-            <button
-              onClick={() => setShowCaptions((v) => !v)}
-              aria-pressed={showCaptions}
-              className={`min-h-12 rounded-full px-3 text-sm font-semibold ${showCaptions ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}
-            >
+            <button type="button" onClick={() => setShowCaptions((v) => !v)} aria-pressed={showCaptions} className="sp-seg__opt flex-[0_1_auto]">
               {t('captions', lang)}
             </button>
-            <button onClick={toggleTarget} className="min-h-12 rounded-full bg-slate-100 px-3 text-sm font-semibold" aria-label={t('captions', lang)}>
+            <button type="button" onClick={toggleTarget} className="sp-seg__opt sp-mono flex-[0_1_auto]" aria-label={t('captions', lang)}>
               {target.toUpperCase()}
             </button>
-            <button
-              onClick={toggleHandsFree}
-              aria-pressed={handsFree}
-              className={`min-h-12 rounded-full px-3 text-sm font-semibold ${handsFree ? 'bg-accent text-white' : 'bg-slate-100'}`}
-            >
+            <button type="button" onClick={toggleHandsFree} aria-pressed={handsFree} className="sp-seg__opt flex-[0_1_auto]">
               {t('handsFree', lang)}
             </button>
           </>
@@ -315,59 +316,50 @@ export function VoiceDock({
       </div>
 
       {connected ? (
-        <div className="grid grid-cols-[1fr_auto] gap-2">
+        <div className="flex flex-wrap items-stretch gap-2">
           {handsFree ? (
-            <div className={`flex min-h-16 items-center justify-center gap-3 rounded-2xl text-lg font-semibold ${isSpeaking ? 'bg-slate-100' : 'bg-blue-50 text-accent'}`}>
-              <Orb active={isSpeaking || listening} speaking={isSpeaking} />
-              {statusText}
+            <div className="flex min-h-[76px] flex-[1_1_auto] items-center justify-center rounded-lg border-2 border-line px-4">
+              <VoiceOrb state={isSpeaking ? 'speaking' : 'listening'} label={statusText} />
             </div>
           ) : (
-            <button
-              className={`flex min-h-16 touch-none select-none items-center justify-center gap-3 rounded-2xl text-xl font-bold ${talk ? 'bg-accent text-white' : 'bg-blue-50 text-accent'}`}
-              onPointerDown={(e) => {
-                e.currentTarget.setPointerCapture(e.pointerId);
-                setTalk(true);
-              }}
-              onPointerUp={() => setTalk(false)}
-              onPointerCancel={() => setTalk(false)}
-              onLostPointerCapture={() => setTalk(false)}
-              onKeyDown={(e) => (e.key === ' ' || e.key === 'Enter') && !e.repeat && setTalk(true)}
-              onKeyUp={(e) => (e.key === ' ' || e.key === 'Enter') && setTalk(false)}
-              onContextMenu={(e) => e.preventDefault()}
-              aria-pressed={talk}
-              data-testid="push-to-talk"
-            >
-              <Orb active={isSpeaking || talk} speaking={isSpeaking} />
-              {talk ? t('voiceListening', lang) : isSpeaking ? t('voiceSpeaking', lang) : t('pushToTalk', lang)}
-            </button>
+            <span className="flex flex-[1_1_auto]">
+              <PushToTalk
+                main={talk ? t('voiceListening', lang) : isSpeaking ? t('voiceSpeaking', lang) : t('pushToTalk', lang)}
+                pressed={talk}
+                onPointerDown={(e) => {
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  setTalk(true);
+                }}
+                onPointerUp={() => setTalk(false)}
+                onPointerCancel={() => setTalk(false)}
+                onLostPointerCapture={() => setTalk(false)}
+                onKeyDown={(e) => (e.key === ' ' || e.key === 'Enter') && !e.repeat && setTalk(true)}
+                onKeyUp={(e) => (e.key === ' ' || e.key === 'Enter') && setTalk(false)}
+                onContextMenu={(e) => e.preventDefault()}
+                data-testid="push-to-talk"
+              />
+            </span>
           )}
-          <button className="btn-secondary min-h-16 px-4 text-base" onClick={stop}>
+          <Button variant="quiet" className="flex-[0_1_auto]" onClick={stop}>
             {t('voiceStop', lang)}
-          </button>
+          </Button>
         </div>
       ) : (
-        <div className="flex flex-col gap-1">
-          <button
-            className="btn-secondary min-h-14 text-lg"
+        <div className={desk ? 'flex flex-wrap items-center gap-3' : 'flex flex-col gap-2'}>
+          <Button
+            variant="secondary"
+            block={!desk}
+            desk={desk}
+            icon="mic"
             disabled={state === 'connecting' || status === 'connecting' || state === 'capped'}
             onClick={() => void start(lang)}
             data-testid="voice-start"
           >
-            🎙 {state === 'connecting' || status === 'connecting' ? t('voiceConnecting', lang) : t('voiceStart', lang)}
-          </button>
-          <p className="text-center text-sm text-muted">{t('tapOnlyHint', lang)}</p>
+            {state === 'connecting' || status === 'connecting' ? t('voiceConnecting', lang) : t('voiceStart', lang)}
+          </Button>
+          <p className={`m-0 text-[16px] leading-[22px] text-ink-2 ${desk ? '' : 'text-center'}`}>{t('tapOnlyHint', lang)}</p>
         </div>
       )}
     </div>
-  );
-}
-
-/** Agent state at a glance: pulses while listening, solid while the agent speaks. */
-function Orb({ active, speaking }: { active: boolean; speaking: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={`inline-block h-5 w-5 rounded-full ${speaking ? 'bg-ok' : active ? 'animate-pulse bg-white ring-4 ring-blue-300' : 'bg-blue-300'}`}
-    />
   );
 }

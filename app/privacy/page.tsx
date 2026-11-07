@@ -5,6 +5,8 @@ import { PRIVACY } from '@/lib/i18n/privacy-strings';
 import { LANG_NAMES } from '@/lib/i18n/strings';
 import { acknowledgePrivacy } from '@/lib/privacy/actions';
 import { privacySettings } from '@/lib/privacy/server';
+import { Banner, Button, ButtonLink } from '@/components/ui';
+import { SignedOutShell } from '@/components/ui/signed-out-shell';
 
 /**
  * Worker information (addendum section 10) in every enabled language: what is captured, what is
@@ -26,9 +28,9 @@ export default async function PrivacyPage({ searchParams }: PageProps<'/privacy'
     : null;
 
   const section = (title: string, items: string[], testId: string) => (
-    <section data-testid={testId}>
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <ul className="mt-2 list-disc space-y-1.5 pl-6">
+    <section data-testid={testId} className="flex flex-col gap-2">
+      <h2 className="m-0 text-[20px] font-bold leading-[26px]">{title}</h2>
+      <ul className="type-body m-0 flex list-disc flex-col gap-1.5 pl-6">
         {items.map((i) => (
           <li key={i}>{fill(i)}</li>
         ))}
@@ -37,44 +39,38 @@ export default async function PrivacyPage({ searchParams }: PageProps<'/privacy'
   );
 
   return (
-    <main className="flex flex-1 justify-center bg-frame sm:py-6" lang={lang}>
-      <div className="flex w-full max-w-md flex-col gap-5 bg-white p-6 text-lg sm:rounded-[2rem] sm:shadow-2xl">
-        {!first && (
-          <nav className="flex flex-wrap gap-1.5 text-sm" aria-label="Språk · Language">
-            {languages.map((l) => (
-              <Link
-                key={l}
-                href={`/privacy?lang=${l}`}
-                lang={l}
-                aria-current={l === lang ? 'page' : undefined}
-                className={`rounded-full px-3 py-1 ${l === lang ? 'bg-frame text-white' : 'bg-slate-100'}`}
-              >
-                {LANG_NAMES[l]}
-              </Link>
-            ))}
-          </nav>
-        )}
-        <h1 className="text-3xl font-bold leading-tight">{text.title}</h1>
-        <p>{text.intro}</p>
-        {section(text.capturedTitle, text.captured, 'privacy-captured')}
-        {section(text.notTitle, text.not, 'privacy-not')}
-        {section(text.keptTitle, text.kept, 'privacy-kept')}
-        {section(text.askTitle, text.ask, 'privacy-ask')}
-        <p className="rounded-xl bg-slate-100 p-3 font-semibold">{text.tapsOnly}</p>
-
-        {user && !user.privacyInfoReadAt ? (
-          <form action={acknowledgePrivacy}>
-            <button className="btn-primary w-full">{text.readButton}</button>
-          </form>
-        ) : (
-          <div className="flex items-center justify-between gap-3">
-            {readOn && <span className="text-base text-muted">{readOn}</span>}
-            <Link href={user ? HOME[user.role] : '/'} className="text-accent underline">
-              {text.back}
+    <SignedOutShell wide lang={lang}>
+      {!first && (
+        <nav className="flex flex-wrap gap-2" aria-label="Språk · Language">
+          {languages.map((l) => (
+            <Link key={l} href={`/privacy?lang=${l}`} lang={l} aria-current={l === lang ? 'page' : undefined} className="sp-toggle min-h-target-handheld text-[16px]">
+              {LANG_NAMES[l]}
             </Link>
-          </div>
-        )}
-      </div>
-    </main>
+          ))}
+        </nav>
+      )}
+      <h1 className="type-title m-0">{text.title}</h1>
+      <p className="type-body m-0">{text.intro}</p>
+      {section(text.capturedTitle, text.captured, 'privacy-captured')}
+      {section(text.notTitle, text.not, 'privacy-not')}
+      {section(text.keptTitle, text.kept, 'privacy-kept')}
+      {section(text.askTitle, text.ask, 'privacy-ask')}
+      <Banner icon="mic">{text.tapsOnly}</Banner>
+
+      {user && !user.privacyInfoReadAt ? (
+        <form action={acknowledgePrivacy}>
+          <Button type="submit" block icon="ok">
+            {text.readButton}
+          </Button>
+        </form>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {readOn && <span className="text-[16px] text-ink-2">{readOn}</span>}
+          <ButtonLink href={user ? HOME[user.role] : '/'} variant="quiet">
+            {text.back}
+          </ButtonLink>
+        </div>
+      )}
+    </SignedOutShell>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Icon } from '@/components/ui';
 import { ADMIN_ERROR_NB, send } from './api';
 
 const KB_NB: Record<string, string> = {
@@ -33,17 +34,18 @@ export function GuideEditor({ initial }: { initial: string }) {
         onChange={(e) => setText(e.target.value)}
         rows={24}
         spellCheck={false}
-        className="w-full rounded-xl border border-slate-300 p-4 font-mono text-sm leading-relaxed"
+        className="sp-input sp-textarea sp-mono text-[15px] leading-relaxed"
         aria-label="Vurderingsveiledning"
         data-testid="guide-text"
       />
       <div className="flex flex-wrap items-center gap-4">
-        <button className="btn-primary" onClick={() => void save()} disabled={state.kind === 'saving' || text === initial}>
+        <button className="sp-btn sp-btn--primary sp-btn--desk" onClick={() => void save()} disabled={state.kind === 'saving' || text === initial}>
           {state.kind === 'saving' ? 'Lagrer…' : 'Lagre og send til assistentene'}
         </button>
-        <span className="text-sm text-muted tabular-nums">{text.trim().length} / 8000 tegn</span>
+        <span className="text-[15px] text-ink-2 sp-mono">{text.trim().length} / 8000 tegn</span>
         {state.text && (
-          <span role="status" data-testid="guide-status" className={state.kind === 'error' ? 'text-bad' : state.kind === 'warn' ? 'text-warn' : 'text-ok'}>
+          <span role="status" data-testid="guide-status" className={`inline-flex items-center gap-2 font-semibold ${state.kind === 'error' ? 'text-stop' : state.kind === 'warn' ? 'text-warn' : 'text-ok'}`}>
+            <Icon name={state.kind === 'error' ? 'stop' : state.kind === 'warn' ? 'warn' : 'ok'} />
             {state.text}
           </span>
         )}

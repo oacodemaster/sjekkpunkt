@@ -15,6 +15,7 @@ choice goes in `docs/decisions.md`.
 - `npx playwright test` e2e (local prod server on :3100; `E2E_BASE_URL=https://…` for a deployment)
 - `pnpm db:push` apply migrations · `pnpm db:seed` reset data to seed, keeping the catalogue (product edits, reference photos) · `pnpm db:seed:full` also put the catalogue back to seed · `pnpm db:users` (re)create role test users
 - `pnpm voice:setup` create/update the ElevenLabs agents (returns, packing, lead) from `lib/voice/agent-config.ts` (never edit them in the dashboard)
+- `pnpm design:tokens` write `app/tokens.css` from `design/tokens.json` (copy of the design system's tokens; a unit test fails when they drift). Components: `app/ui.css` + `components/ui/`
 - `pnpm audio:generate` make missing demo audio in `public/audio` (earcons and scripted lines, ElevenLabs, once per file; delete a file to remake it; `--check` lists missing and stale files)
 - `E2E_VOICE=1 npx playwright test tests/e2e/voice-live*.spec.ts` live voice tests (real WebRTC, uses credits); fixtures from `pnpm tsx scripts/make-voice-fixture.ts [pack|lead]`
 - `PACK_SHOTS=<dir>` / `DEMO_SHOTS=<dir>` / `LEAD_SHOTS=<dir>` / `INSIGHTS_SHOTS=<dir>` / `ADMIN_SHOTS=<dir>` save screenshots from the pack / demo / lead / insights / admin e2e specs
@@ -34,6 +35,7 @@ choice goes in `docs/decisions.md`.
 - Admin writes go through one SQL function each (change + audit row), executable only by the service role.
 - Every paid AI call goes through `limitCall` / `spendGate` (`lib/limits/server.ts`): rate limit, daily spend cap, `record` the estimated cost.
 - CSP: scripts only from this origin plus the per-request nonce (`proxy.ts`, `lib/security/csp.ts`). A new external origin goes in `buildCsp` and its test.
+- Design system (`docs/decisions.md`, «The Sjekkpunkt design system in the app»): colours only from tokens; the lime `brand` only on dark pages and inside the mark, never on a station; status is colour + icon + word; the Holio mock uses no Sjekkpunkt token. New components go in `components/ui/` on the `sp-` classes.
 - Voice worklets in `public/elevenlabs/` are copies from `@elevenlabs/client/worklets`; copy them again when the SDK is upgraded (a unit test fails until you do).
 
 ## Environment

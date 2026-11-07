@@ -125,8 +125,8 @@ function StationWithVoice({
           router.push('/return');
           router.refresh();
         }}
+        dock={<ReturnVoice station={station} lang={uiLang} onLangChange={setUiLang} {...mic} />}
       />
-      <ReturnVoice station={station} lang={uiLang} onLangChange={setUiLang} {...mic} />
     </>
   );
 }

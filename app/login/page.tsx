@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { SignedOutShell } from '@/components/ui/signed-out-shell';
 import { getCurrentUser, HOME } from '@/lib/auth/dal';
 import { LoginForm } from './login-form';
 
@@ -8,12 +9,9 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   const { next } = await searchParams;
 
   return (
-    <main className="flex flex-1 items-center justify-center bg-frame p-4">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl">
-        <h1 className="text-3xl font-bold tracking-tight">Sjekkpunkt</h1>
-        <p className="mt-1 text-muted">Logg inn · Sign in</p>
-        <LoginForm next={typeof next === 'string' ? next : undefined} />
-      </div>
-    </main>
+    <SignedOutShell>
+      <h1 className="type-title m-0">Logg inn · Sign in</h1>
+      <LoginForm next={typeof next === 'string' ? next : undefined} />
+    </SignedOutShell>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { Lang } from '@/lib/engine/types';
 import { t } from '@/lib/i18n/strings';
+import { Banner, Button, Card, Field, Icon } from '@/components/ui';
 
 const noopSubscribe = () => () => {};
 
@@ -69,25 +70,25 @@ export function BarcodeScanner({
   }, [camera]);
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border-2 border-accent p-3" data-testid="barcode-scanner">
-      <h3 className="text-lg font-bold">{title}</h3>
+    <Card eyebrow={<><Icon name="barcode" />{t('barcode', lang)}</>} title={title} data-testid="barcode-scanner">
       {camera === 'on' && (
-        <div className="aspect-[4/3] w-full overflow-hidden rounded-xl bg-black">
-          <video ref={video} playsInline muted className="h-full w-full object-cover" />
+        <div className="sp-stage">
+          <div className="aspect-[4/3] w-full overflow-hidden rounded-[4px]">
+            <video ref={video} playsInline muted className="h-full w-full object-cover" />
+          </div>
         </div>
       )}
       {camera === 'denied' && (
-        <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-bad">
+        <Banner tone="error" role="alert">
           {t('cameraDenied', lang)}
-        </p>
+        </Banner>
       )}
       {canDetect && camera !== 'denied' && (
-        <button className="btn-secondary" onClick={() => setCamera((c) => (c === 'on' ? 'off' : 'on'))}>
+        <Button variant="secondary" block icon={camera === 'on' ? undefined : 'camera'} onClick={() => setCamera((c) => (c === 'on' ? 'off' : 'on'))}>
           {camera === 'on' ? t('cancel', lang) : t('scanCamera', lang)}
-        </button>
+        </Button>
       )}
       <form
-        className="grid grid-cols-[1fr_auto] gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           if (!code.trim() || busy) return;
@@ -95,25 +96,26 @@ export function BarcodeScanner({
           setCode('');
         }}
       >
-        <label className="sr-only" htmlFor="barcode-input">
-          {t('barcodePlaceholder', lang)}
-        </label>
-        <input
+        <Field
           id="barcode-input"
+          label={t('barcodePlaceholder', lang)}
+          srLabel
+          mono
           autoComplete="off"
           inputMode="text"
-          className="min-h-14 min-w-0 rounded-xl border-2 border-gray-300 px-3 text-lg"
           placeholder={t('barcodePlaceholder', lang)}
           value={code}
           onChange={(e) => setCode(e.target.value)}
+          action={
+            <Button type="submit" disabled={busy || !code.trim()}>
+              OK
+            </Button>
+          }
         />
-        <button className="btn-primary" disabled={busy || !code.trim()}>
-          OK
-        </button>
       </form>
-      <button className="text-base text-muted underline" onClick={onClose}>
+      <Button variant="quiet" onClick={onClose}>
         {t('done', lang)}
-      </button>
-    </div>
+      </Button>
+    </Card>
   );
 }

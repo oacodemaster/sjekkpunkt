@@ -29,15 +29,15 @@ export function DemoResetButton() {
     <div className="flex flex-wrap items-center gap-3">
       {armed ? (
         <>
-          <button className="btn bg-bad text-white" disabled={busy} onClick={reset}>
+          <button className="sp-btn sp-btn--destructive sp-btn--desk" disabled={busy} onClick={reset}>
             {busy ? 'Tilbakestiller…' : 'Ja, tilbakestill alt'}
           </button>
-          <button className="btn-secondary" disabled={busy} onClick={() => setArmed(false)}>
+          <button className="sp-btn sp-btn--secondary sp-btn--desk" disabled={busy} onClick={() => setArmed(false)}>
             Avbryt
           </button>
         </>
       ) : (
-        <button className="btn-secondary" onClick={() => (setArmed(true), setMsg(null))}>
+        <button className="sp-btn sp-btn--secondary sp-btn--desk" onClick={() => (setArmed(true), setMsg(null))}>
           Tilbakestill demodata
         </button>
       )}

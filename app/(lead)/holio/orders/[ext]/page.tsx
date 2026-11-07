@@ -1,6 +1,5 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Card } from '@/components/desk-shell';
+import { HolioBar, HolioCard, HolioPayload } from '@/components/holio';
 import { requireRole } from '@/lib/auth/dal';
 import { signedPhotoUrls } from '@/lib/db/common';
 import { productMap } from '@/lib/engine/catalog';
@@ -42,80 +41,75 @@ export default async function HolioOrderRecord({ params }: PageProps<'/holio/ord
 
   return (
     <>
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-3xl font-bold">Holio WMS (mock) · Ordre {ctx.order.id}</h1>
-        <Link href="/holio" className="underline">
-          Oversikt
-        </Link>
-      </div>
+      <HolioBar title={`Holio WMS (mock) · Ordre ${ctx.order.id}`} link={{ href: '/holio', label: 'Oversikt' }} />
 
-      <Card title="Ordre">
-        <dl className="grid grid-cols-[10rem_1fr] gap-x-6 gap-y-2 text-base">
-          <dt className="text-muted">Ordre</dt>
-          <dd className="font-mono">{ctx.order.id}</dd>
-          <dt className="text-muted">Kunde</dt>
+      <HolioCard title="Ordre">
+        <dl className="holio-kv">
+          <dt>Ordre</dt>
+          <dd className="holio-mono">{ctx.order.id}</dd>
+          <dt>Kunde</dt>
           <dd>{ctx.order.customerRef}</dd>
-          <dt className="text-muted">Status</dt>
-          <dd className={ctx.order.status === 'packed' ? 'font-semibold text-ok' : ''}>{STATUS_NB[ctx.order.status] ?? ctx.order.status}</dd>
-          <dt className="text-muted">Linjer</dt>
+          <dt>Status</dt>
+          <dd className={ctx.order.status === 'packed' ? 'holio-ok' : ''}>{STATUS_NB[ctx.order.status] ?? ctx.order.status}</dd>
+          <dt>Linjer</dt>
           <dd>
-            <ul>
+            <ul className="m-0 list-none p-0">
               {ctx.order.lines.map((l) => (
                 <li key={l.sku}>
-                  {l.qty} × {pm.get(l.sku)?.nameNb ?? l.sku} <span className="font-mono text-sm text-muted">{l.sku}</span>
+                  {l.qty} × {pm.get(l.sku)?.nameNb ?? l.sku} <span className="holio-mono holio-muted">{l.sku}</span>
                 </li>
               ))}
             </ul>
           </dd>
         </dl>
-      </Card>
+      </HolioCard>
 
-      <Card title="Pakkebevis">
+      <HolioCard title="Pakkebevis">
         {(checks ?? []).length === 0 ? (
-          <p className="text-muted">Ikke pakket ennå.</p>
+          <p className="holio-muted">Ikke pakket ennå.</p>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {(checks ?? []).map((c) => {
               const url = pathOf(c) ? urls.get(pathOf(c)!) : c.photo_ref?.endsWith('.svg') ? `/demo/${c.photo_ref}` : undefined;
               return (
-                <li key={c.id} className="flex items-center gap-4 rounded-xl border p-3" data-testid="pack-check-row">
+                <li key={c.id} className="flex items-center gap-4 rounded-[3px] border border-[#c5d0dc] p-3" data-testid="pack-check-row">
                   {url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={url} alt="Pakkebevis" className="h-20 w-20 rounded object-cover" />
+                    <img src={url} alt="Pakkebevis" className="h-20 w-20 rounded-[2px] object-cover" />
                   ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded bg-slate-100 text-sm text-muted">—</div>
+                    <div className="holio-muted flex h-20 w-20 items-center justify-center rounded-[2px] bg-[#e9eef3]">—</div>
                   )}
                   <div>
-                    <div className={`text-lg font-semibold ${c.status === 'MISMATCH' ? 'text-bad' : c.status === 'VERIFIED' ? 'text-ok' : 'text-warn'}`}>{CHECK_NB[c.status] ?? c.status}</div>
-                    <div className="text-sm">
+                    <div className={c.status === 'MISMATCH' ? 'holio-bad' : c.status === 'VERIFIED' ? 'holio-ok' : 'holio-warn'}>{CHECK_NB[c.status] ?? c.status}</div>
+                    <div>
                       {METHOD_NB[c.method] ?? c.method} · størrelse {c.size_verified ? 'lest' : 'ikke lest'} · sikkerhet {Number(c.confidence).toFixed(2)}
                       {c.manual_reason && <> · grunn: {REASON_NB[c.manual_reason] ?? c.manual_reason}</>}
                     </div>
-                    <div className="text-sm text-muted">{new Date(c.created_at).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo' })}</div>
+                    <div className="holio-muted">{new Date(c.created_at).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo' })}</div>
                   </div>
                 </li>
               );
             })}
           </ul>
         )}
-      </Card>
+      </HolioCard>
 
-      <Card title="Integrasjonshendelser (det Holio ville mottatt)">
+      <HolioCard title="Integrasjonshendelser (det Holio ville mottatt)">
         {(events ?? []).length === 0 ? (
-          <p className="text-muted">Ingen ennå.</p>
+          <p className="holio-muted">Ingen ennå.</p>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {(events ?? []).map((e) => (
               <li key={e.id}>
-                <div className="font-mono text-sm font-semibold">
+                <div className="holio-mono font-semibold">
                   {e.type} · {new Date(e.created_at).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo' })}
                 </div>
-                <pre className="mt-1 max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">{JSON.stringify(e.payload, null, 2)}</pre>
+                <HolioPayload value={e.payload} />
               </li>
             ))}
           </ul>
         )}
-      </Card>
+      </HolioCard>
     </>
   );
 }

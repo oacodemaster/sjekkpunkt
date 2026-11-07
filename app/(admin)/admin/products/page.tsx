@@ -18,22 +18,22 @@ export default async function ProductsPage({ searchParams }: PageProps<'/admin/p
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-3xl font-bold">Varer</h1>
+        <h1 className="type-title m-0">Varer</h1>
         <div className="flex gap-3">
           <form className="flex gap-2" role="search">
-            <input name="q" defaultValue={q} placeholder="Søk SKU, navn, strekkode" className="w-72 rounded-lg border border-slate-300 px-3 py-2 text-base" aria-label="Søk" />
-            <button className="rounded-lg bg-white px-4 py-2 ring-1 ring-slate-300">Søk</button>
+            <input name="q" defaultValue={q} placeholder="Søk SKU, navn, strekkode" className="w-72 sp-input sp-input--desk" aria-label="Søk" />
+            <button className="sp-btn sp-btn--secondary sp-btn--desk">Søk</button>
           </form>
-          <Link href="/admin/products/new" className="rounded-lg bg-accent px-4 py-2 font-semibold text-white">
+          <Link href="/admin/products/new" className="sp-btn sp-btn--primary sp-btn--desk">
             Ny vare
           </Link>
         </div>
       </div>
       <Card title={`${products?.length ?? 0} varer${q ? ` som passer «${q}»` : ''}`}>
-        <table className="w-full text-left text-base" data-testid="products">
-          <thead className="text-sm text-muted">
+        <table className="sp-table" data-testid="products">
+          <thead>
             <tr>
-              <th className="py-1">SKU</th>
+              <th>SKU</th>
               <th>Navn</th>
               <th>Hylle</th>
               <th>Variantgruppe</th>
@@ -43,17 +43,17 @@ export default async function ProductsPage({ searchParams }: PageProps<'/admin/p
           </thead>
           <tbody>
             {(products ?? []).map((p) => (
-              <tr key={p.sku} className="border-t">
-                <td className="py-2 font-mono">
-                  <Link href={`/admin/products/${encodeURIComponent(p.sku)}`} className="text-accent underline">
+              <tr key={p.sku}>
+                <td className="sp-mono">
+                  <Link href={`/admin/products/${encodeURIComponent(p.sku)}`} className="sp-link">
                     {p.sku}
                   </Link>
                 </td>
                 <td>{p.name_nb}</td>
-                <td className="font-mono text-sm">{p.location_code}</td>
-                <td className="text-sm text-muted">{p.variant_group ?? '—'}</td>
-                <td className="text-right tabular-nums">{p.price_nok.toLocaleString('nb-NO')} kr</td>
-                <td className="text-right tabular-nums">{(p.reference_photo_paths ?? []).length || '—'}</td>
+                <td className="type-code-dense">{p.location_code}</td>
+                <td className="text-ink-2">{p.variant_group ?? '—'}</td>
+                <td className="type-code-dense text-right">{p.price_nok.toLocaleString('nb-NO')} kr</td>
+                <td className="type-code-dense text-right">{(p.reference_photo_paths ?? []).length || '—'}</td>
               </tr>
             ))}
           </tbody>

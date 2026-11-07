@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ConversationProvider } from '@elevenlabs/react';
+import { EmptyState } from '@/components/ui';
+import { Stat } from '@/components/ui/stat';
 import { useVoiceLink } from '@/components/voice/voice-dock';
 import { REASON_NB } from '@/lib/lead/plan';
 import type { LeadCard, LeadConsoleData } from '@/lib/lead/types';
@@ -10,17 +12,6 @@ import { EscalationCard, postJson, type ResolveBody } from './escalation-card';
 import { LeadVoice } from './lead-voice';
 import { LiveFeed, PackAlerts, StockAdjustments } from './side-panels';
 import { useLiveFeed } from './use-live-feed';
-
-function Stat({ label, value, testId }: { label: string; value: number; testId: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="text-sm text-muted">{label}</div>
-      <div className="mt-1 text-4xl font-bold tabular-nums" data-testid={testId}>
-        {value}
-      </div>
-    </div>
-  );
-}
 
 /** Team lead console: escalations, stock corrections, pack alerts, the live feed and the lead assistant. */
 export function LeadConsole({ data }: { data: LeadConsoleData }) {
@@ -70,8 +61,8 @@ function Console({
 
   return (
     <>
-      <h1 className="text-3xl font-bold">Teamleder</h1>
-      <div className="grid grid-cols-3 gap-3">
+      <h1 className="type-title m-0">Teamleder</h1>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Stat label="Åpne saker" value={data.open.length} testId="stat-open" />
         <Stat label="Lagerkorreksjoner" value={proposed} testId="stat-adjustments" />
         <Stat label="Aktive pakkevarsler" value={activeAlerts} testId="stat-alerts" />
@@ -79,17 +70,21 @@ function Console({
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section className="flex min-w-0 flex-col gap-3">
-          <h2 className="text-xl font-semibold">Eskaleringer</h2>
-          <ul className="flex flex-col gap-4" data-testid="escalations">
+          <h2 className="type-desk-title m-0">Eskaleringer</h2>
+          <ul className="m-0 flex list-none flex-col gap-4 p-0" data-testid="escalations">
             {data.open.map((c, k) => (
               <EscalationCard key={c.id} card={c} number={k + 1} focused={focusId === c.id} locations={data.locations} onFocus={() => setFocusId(c.id)} onResolve={resolve} />
             ))}
-            {data.open.length === 0 && <li className="rounded-2xl bg-white p-6 text-center text-muted shadow-sm">Ingen åpne saker.</li>}
+            {data.open.length === 0 && (
+              <li>
+                <EmptyState title="Ingen åpne saker." text="Nye eskaleringer fra stasjonene kommer hit." />
+              </li>
+            )}
           </ul>
           {data.resolved.length > 0 && (
             <details className="mt-2">
-              <summary className="cursor-pointer text-base font-semibold text-muted">Behandlet nylig ({data.resolved.length})</summary>
-              <ul className="mt-3 flex flex-col gap-3" data-testid="resolved">
+              <summary className="type-dense-strong flex min-h-target-desk cursor-pointer items-center text-ink-2">Behandlet nylig ({data.resolved.length})</summary>
+              <ul className="m-0 mt-3 flex list-none flex-col gap-3 p-0" data-testid="resolved">
                 {data.resolved.map((c) => (
                   <EscalationCard key={c.id} card={c} number={0} focused={false} locations={data.locations} onFocus={() => {}} onResolve={resolve} />
                 ))}
@@ -105,7 +100,7 @@ function Console({
         </aside>
       </div>
 
-      <div className="sticky bottom-0 -mx-6 mt-auto">
+      <div className="sticky bottom-0 z-10 -mx-4 mt-auto border-t-2 border-line bg-surface px-4 py-3 sm:-mx-8 sm:px-8">
         <LeadVoice cards={data.open} focusId={focusId} setFocusId={setFocusId} {...mic} />
       </div>
     </>

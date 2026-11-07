@@ -121,8 +121,8 @@ function StationWithVoice({
           router.push('/pack');
           router.refresh();
         }}
+        dock={<PackVoice station={station} lang={uiLang} onLangChange={setUiLang} {...mic} />}
       />
-      <PackVoice station={station} lang={uiLang} onLangChange={setUiLang} {...mic} />
     </>
   );
 }

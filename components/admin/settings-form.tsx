@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { AdminSettings } from '@/lib/admin/schemas';
 import type { Lang } from '@/lib/engine/types';
 import { LANG_NAMES, LANGS } from '@/lib/i18n/strings';
+import { Icon } from '@/components/ui';
 import { ADMIN_ERROR_NB, send } from './api';
 
 type NumKey = Exclude<keyof AdminSettings, 'enabled_languages' | 'daily_spend_cap_nok' | 'grading_guide'>;
@@ -64,11 +65,11 @@ export function SettingsForm({ initial }: { initial: AdminSettings }) {
                 max={f.max}
                 value={s[f.key]}
                 onChange={(e) => setS((x) => ({ ...x, [f.key]: e.target.value === '' ? x[f.key] : Number(e.target.value) }))}
-                className="w-32 rounded-lg border border-slate-300 px-3 py-2 text-base tabular-nums"
+                className="w-32 sp-input sp-input--desk sp-input--mono"
               />
-              {f.unit && <span className="text-muted">{f.unit}</span>}
+              {f.unit && <span className="text-ink-2">{f.unit}</span>}
             </span>
-            <span className="text-sm text-muted">{f.help}</span>
+            <span className="text-[15px] text-ink-2">{f.help}</span>
           </label>
         ))}
       </div>
@@ -77,13 +78,13 @@ export function SettingsForm({ initial }: { initial: AdminSettings }) {
         <legend className="font-semibold">Språk på stasjonene</legend>
         <div className="flex flex-wrap gap-2">
           {LANGS.map((l) => (
-            <label key={l} className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5">
-              <input type="checkbox" name={`lang-${l}`} checked={s.enabled_languages.includes(l)} disabled={l === 'nb'} onChange={() => toggleLang(l)} />
+            <label key={l} className="flex min-h-target-desk cursor-pointer items-center gap-2 rounded-md border-2 border-ink-2 px-3 text-[15px] font-semibold">
+              <input type="checkbox" className="h-5 w-5 accent-ink" name={`lang-${l}`} checked={s.enabled_languages.includes(l)} disabled={l === 'nb'} onChange={() => toggleLang(l)} />
               {LANG_NAMES[l]}
             </label>
           ))}
         </div>
-        <span className="text-sm text-muted">Norsk er alltid på (teamleder og oversettelser). Språkvalget ved første oppstart og personvernsiden viser bare disse.</span>
+        <span className="text-[15px] text-ink-2">Norsk er alltid på (teamleder og oversettelser). Språkvalget ved første oppstart og personvernsiden viser bare disse.</span>
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
@@ -100,21 +101,22 @@ export function SettingsForm({ initial }: { initial: AdminSettings }) {
                 step={1}
                 value={s.daily_spend_cap_nok[k]}
                 onChange={(e) => setS((x) => ({ ...x, daily_spend_cap_nok: { ...x.daily_spend_cap_nok, [k]: Number(e.target.value || 0) } }))}
-                className="w-28 rounded-lg border border-slate-300 px-3 py-2 text-base tabular-nums"
+                className="w-28 sp-input sp-input--desk sp-input--mono"
               />
-              <span className="text-muted">kr</span>
+              <span className="text-ink-2">kr</span>
             </label>
           ))}
         </div>
-        <span className="text-sm text-muted">Håndheves fra M8: når taket er nådd, går stasjonene over til bare knapper.</span>
+        <span className="text-[15px] text-ink-2">Håndheves fra M8: når taket er nådd, går stasjonene over til bare knapper.</span>
       </fieldset>
 
       <div className="flex items-center gap-4">
-        <button className="btn-primary" disabled={changed.length === 0 || state.kind === 'saving'}>
+        <button className="sp-btn sp-btn--primary sp-btn--desk" disabled={changed.length === 0 || state.kind === 'saving'}>
           {state.kind === 'saving' ? 'Lagrer…' : 'Lagre innstillinger'}
         </button>
         {state.text && (
-          <span role="status" className={state.kind === 'error' ? 'text-bad' : 'text-ok'} data-testid="settings-status">
+          <span role="status" className={`inline-flex items-center gap-2 font-semibold ${state.kind === 'error' ? 'text-stop' : 'text-ok'}`} data-testid="settings-status">
+            <Icon name={state.kind === 'error' ? 'stop' : 'ok'} />
             {state.text}
           </span>
         )}

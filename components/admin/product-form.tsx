@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { fileToJpeg } from '@/lib/camera/image';
+import { Icon } from '@/components/ui';
 import { ADMIN_ERROR_NB, send } from './api';
 
 export interface ProductFormValues {
@@ -53,7 +54,7 @@ export function ProductForm({ mode, initial, locations, groups }: { mode: 'creat
   const input = (k: keyof ProductFormValues, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className="flex flex-col gap-1">
       <span className="font-semibold">{FIELD_NB[k]}</span>
-      <input name={k} value={v[k]} onChange={set(k)} className="rounded-lg border border-slate-300 px-3 py-2 text-base" {...props} />
+      <input name={k} value={v[k]} onChange={set(k)} className="sp-input sp-input--desk" {...props} />
     </label>
   );
 
@@ -67,10 +68,10 @@ export function ProductForm({ mode, initial, locations, groups }: { mode: 'creat
       }}
     >
       <div className="grid gap-4 md:grid-cols-2">
-        {input('sku', { readOnly: mode === 'edit', required: true, pattern: '[A-Z0-9][A-Z0-9-]{1,39}', className: `rounded-lg border border-slate-300 px-3 py-2 font-mono text-base ${mode === 'edit' ? 'bg-slate-100' : ''}` })}
+        {input('sku', { readOnly: mode === 'edit', required: true, pattern: '[A-Z0-9][A-Z0-9-]{1,39}', className: `sp-input sp-input--desk sp-input--mono ${mode === 'edit' ? 'bg-surface-2' : ''}` })}
         <label className="flex flex-col gap-1">
           <span className="font-semibold">Kategori</span>
-          <select name="category" value={v.category} onChange={set('category')} className="rounded-lg border border-slate-300 px-3 py-2 text-base">
+          <select name="category" value={v.category} onChange={set('category')} className="sp-input sp-input--desk">
             <option value="apparel">Klær</option>
             <option value="accessory">Tilbehør</option>
           </select>
@@ -80,9 +81,9 @@ export function ProductForm({ mode, initial, locations, groups }: { mode: 'creat
         {input('color', { required: true })}
         {input('size')}
         {input('price_nok', { type: 'number', min: 0, step: 1, required: true })}
-        {input('location_code', { list: 'locations', required: true, className: 'rounded-lg border border-slate-300 px-3 py-2 font-mono text-base' })}
+        {input('location_code', { list: 'locations', required: true, className: 'sp-input sp-input--desk sp-input--mono' })}
         {input('variant_group', { list: 'groups' })}
-        {input('barcode', { inputMode: 'numeric', className: 'rounded-lg border border-slate-300 px-3 py-2 font-mono text-base' })}
+        {input('barcode', { inputMode: 'numeric', className: 'sp-input sp-input--desk sp-input--mono' })}
       </div>
       <datalist id="locations">
         {locations.map((l) => (
@@ -94,15 +95,16 @@ export function ProductForm({ mode, initial, locations, groups }: { mode: 'creat
           <option key={g} value={g} />
         ))}
       </datalist>
-      <p className="text-sm text-muted">
+      <p className="text-[15px] text-ink-2">
         Varianter av samme vare (for eksempel størrelser eller farger) deler variantgruppe; det er de bildeanalysen må skille fra hverandre. En ny hylle blir opprettet som lagerhylle.
       </p>
       <div className="flex items-center gap-4">
-        <button className="btn-primary" disabled={state.kind === 'saving'}>
+        <button className="sp-btn sp-btn--primary sp-btn--desk" disabled={state.kind === 'saving'}>
           {state.kind === 'saving' ? 'Lagrer…' : mode === 'create' ? 'Opprett vare' : 'Lagre endringer'}
         </button>
         {state.text && (
-          <span role="status" data-testid="product-status" className={state.kind === 'error' ? 'text-bad' : 'text-ok'}>
+          <span role="status" data-testid="product-status" className={`inline-flex items-center gap-2 font-semibold ${state.kind === 'error' ? 'text-stop' : 'text-ok'}`}>
+            <Icon name={state.kind === 'error' ? 'stop' : 'ok'} />
             {state.text}
           </span>
         )}
@@ -149,10 +151,10 @@ export function ReferencePhotos({ sku, photos }: { sku: string; photos: { id: st
         {photos.map((p, i) => (
           <li key={p.id} className="flex flex-col gap-1">
             {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL */}
-            {p.url ? <img src={p.url} alt={`Referansebilde ${i + 1}`} className="aspect-square w-full rounded-lg bg-slate-100 object-cover" /> : <div className="aspect-square rounded-lg bg-slate-100" />}
-            <span className="flex items-center justify-between text-sm">
-              <span className="text-muted">{i === 0 ? 'Brukes av bildeanalysen' : `Bilde ${i + 1}`}</span>
-              <button className="text-bad underline" disabled={busy} onClick={() => void remove(p.id)}>
+            {p.url ? <img src={p.url} alt={`Referansebilde ${i + 1}`} className="aspect-square w-full rounded-lg bg-surface-2 object-cover" /> : <div className="aspect-square rounded-lg bg-surface-2" />}
+            <span className="flex items-center justify-between text-[15px]">
+              <span className="text-ink-2">{i === 0 ? 'Brukes av bildeanalysen' : `Bilde ${i + 1}`}</span>
+              <button className="sp-link text-stop" disabled={busy} onClick={() => void remove(p.id)}>
                 Fjern
               </button>
             </span>
@@ -160,7 +162,7 @@ export function ReferencePhotos({ sku, photos }: { sku: string; photos: { id: st
         ))}
       </ul>
       {photos.length < 4 && (
-        <label className="btn-secondary w-fit cursor-pointer">
+        <label className="sp-btn sp-btn--secondary sp-btn--desk w-fit cursor-pointer">
           {busy ? 'Laster opp…' : 'Legg til referansebilde'}
           <input
             ref={input}
@@ -177,11 +179,12 @@ export function ReferencePhotos({ sku, photos }: { sku: string; photos: { id: st
         </label>
       )}
       {msg && (
-        <span role="status" className={msg.bad ? 'text-bad' : 'text-ok'}>
+        <span role="status" className={`inline-flex items-center gap-2 font-semibold ${msg.bad ? 'text-stop' : 'text-ok'}`}>
+          <Icon name={msg.bad ? 'stop' : 'ok'} />
           {msg.text}
         </span>
       )}
-      <p className="text-sm text-muted">Bare varen, ingen personer. Bildet skaleres ned og stedsdata fjernes før opplasting. Referansebilder slettes ikke automatisk.</p>
+      <p className="text-[15px] text-ink-2">Bare varen, ingen personer. Bildet skaleres ned og stedsdata fjernes før opplasting. Referansebilder slettes ikke automatisk.</p>
     </div>
   );
 }

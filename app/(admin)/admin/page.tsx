@@ -26,31 +26,31 @@ export default async function AdminPage() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold">Admin</h1>
+      <h1 className="type-title m-0">Admin</h1>
       <Card title="Innstillinger">
         <SettingsForm initial={settings} />
       </Card>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Sletting av bilder">
-          <dl className="grid grid-cols-2 gap-3 text-base" data-testid="retention">
+          <dl className="grid grid-cols-2 gap-3 text-[15px]" data-testid="retention">
             <div>
-              <dt className="text-sm text-muted">Lagrede bilder</dt>
-              <dd className="text-2xl font-bold tabular-nums">{retention.stored}</dd>
+              <dt className="text-[15px] text-ink-2">Lagrede bilder</dt>
+              <dd className="type-code-lg m-0">{retention.stored}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted">Utløpt, venter på sletting</dt>
-              <dd className="text-2xl font-bold tabular-nums">{retention.expiredWaiting}</dd>
+              <dt className="text-[15px] text-ink-2">Utløpt, venter på sletting</dt>
+              <dd className="type-code-lg m-0">{retention.expiredWaiting}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted">Neste utløper</dt>
+              <dt className="text-[15px] text-ink-2">Neste utløper</dt>
               <dd>{retention.nextExpiry ? when(retention.nextExpiry) : '—'}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted">Siste kjøring</dt>
+              <dt className="text-[15px] text-ink-2">Siste kjøring</dt>
               <dd>{retention.lastRun ? `${when(retention.lastRun.at)} · ${retention.lastRun.summary}` : 'Ikke kjørt ennå'}</dd>
             </div>
           </dl>
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-3 text-[15px] text-ink-2">
             Bilder slettes etter {settings.photo_retention_days} dager. Jobben kjører hver natt (Vercel Cron) og kan kjøres nå. Referansebilder av varer slettes ikke.
           </p>
           <div className="mt-3">
@@ -58,43 +58,43 @@ export default async function AdminPage() {
           </div>
         </Card>
         <Card title="Kostnad i dag (estimat)">
-          <dl className="grid grid-cols-2 gap-3 text-base" data-testid="spend">
+          <dl className="grid grid-cols-2 gap-3 text-[15px]" data-testid="spend">
             {[
               { s: spend.vision, label: 'Gemini: bilder og oversettelse' },
               { s: spend.elevenlabs, label: 'ElevenLabs: stemme og opplesning' },
             ].map(({ s, label }) => (
               <div key={s.provider} data-provider={s.provider} data-capped={s.capped}>
-                <dt className="text-sm text-muted">{label}</dt>
-                <dd className={`text-2xl font-bold tabular-nums ${s.capped ? 'text-bad' : ''}`}>
+                <dt className="text-[15px] text-ink-2">{label}</dt>
+                <dd className={`type-code-lg m-0 ${s.capped ? 'text-stop' : ''}`}>
                   {nok(s.spentOre)} / {nok(s.capOre)} kr
                 </dd>
-                <dd className="text-sm text-muted">
+                <dd className="text-[15px] text-ink-2">
                   {s.calls} kall{s.capped ? ' · grensen er nådd, stasjonene bruker trykk' : ''}
                 </dd>
               </div>
             ))}
           </dl>
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-3 text-[15px] text-ink-2">
             Grove estimater per kall, ikke en faktura. Når grensen er nådd slår stasjonene av bildeanalyse eller stemme til midnatt og viser det til de ansatte. Grensene endres under Innstillinger. Ingen tall per ansatt.
           </p>
         </Card>
         {process.env.DEMO_ENABLED === 'true' && (
           <Card title="Demo">
-            <p className="text-base">
+            <p className="text-[15px]">
               Setter alt tilbake til startdata før en demo: ordre 2207 og 2311, retur 1043, historikken bak innsikt og forvekslinger. Saker, beslutninger, bilder, varsler, logg og
               innstillinger fra testing slettes. Varekatalogen beholdes: varer og hyller du har lagt til eller endret, og referansebilder av rekvisitter, blir stående. Brukere og enheter beholdes.
             </p>
-            <p className="mt-2 text-sm text-muted">Demoen på /demo kjører i nettleseren og trenger ikke dette; den nullstilles med R.</p>
+            <p className="mt-2 text-[15px] text-ink-2">Demoen på /demo kjører i nettleseren og trenger ikke dette; den nullstilles med R.</p>
             <div className="mt-3">
               <DemoResetButton />
             </div>
           </Card>
         )}
         <Card title="Brukere">
-          <table className="w-full text-left text-base">
-            <thead className="text-sm text-muted">
+          <table className="sp-table">
+            <thead>
               <tr>
-                <th className="py-1">Navn</th>
+                <th>Navn</th>
                 <th>Rolle</th>
                 <th>Språk</th>
                 <th>Personvern lest</th>
@@ -102,16 +102,16 @@ export default async function AdminPage() {
             </thead>
             <tbody>
               {(profiles ?? []).map((p, i) => (
-                <tr key={i} className="border-t">
-                  <td className="py-2">{p.display_name}</td>
+                <tr key={i}>
+                  <td>{p.display_name}</td>
                   <td>{ROLE_NB[p.role] ?? p.role}</td>
-                  <td className="uppercase">{p.preferred_lang}</td>
-                  <td className="text-sm">{p.privacy_info_read_at ? when(p.privacy_info_read_at) : '—'}</td>
+                  <td className="sp-mono uppercase">{p.preferred_lang}</td>
+                  <td>{p.privacy_info_read_at ? when(p.privacy_info_read_at) : '—'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="mt-4 text-sm text-muted">Regelmotor v{ENGINE_VERSION}</p>
+          <p className="mt-4 text-[15px] text-ink-2">Regelmotor v{ENGINE_VERSION}</p>
         </Card>
       </div>
     </>

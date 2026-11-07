@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import Link from 'next/link';
+import { Banner, Button, GRADE_WORD_NB, GradeBadge, StatusChip } from '@/components/ui';
 import { REASON_NB } from '@/lib/lead/plan';
 import type { LeadAction, LeadCard } from '@/lib/lead/types';
 
@@ -73,13 +74,13 @@ function PlayButton({ id }: { id: string }) {
   return (
     <button
       onClick={play}
-      className="rounded-full bg-frame px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+      className="sp-btn sp-btn--secondary sp-btn--desk"
       disabled={state === 'loading' || state === 'capped'}
       aria-label="Spill av oppsummering"
       title={state === 'capped' ? 'Opplesning er satt på pause til midnatt (dagens kostnadsgrense er nådd).' : undefined}
       data-testid="play-summary"
     >
-      {state === 'loading' ? 'Lager lyd…' : state === 'playing' ? '■ Stopp' : state === 'error' ? '▶ Prøv igjen' : state === 'capped' ? 'Opplesning på pause' : '▶ Spill av'}
+      {state === 'loading' ? 'Lager lyd …' : state === 'playing' ? 'Stopp' : state === 'error' ? 'Prøv igjen' : state === 'capped' ? 'Opplesning på pause' : 'Spill av'}
     </button>
   );
 }
@@ -87,8 +88,8 @@ function PlayButton({ id }: { id: string }) {
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <>
-      <dt className="text-muted">{label}</dt>
-      <dd>{children}</dd>
+      <dt className="text-ink-2">{label}</dt>
+      <dd className="m-0 min-w-0">{children}</dd>
     </>
   );
 }
@@ -137,33 +138,36 @@ export function EscalationCard({
   };
 
   const resolved = card.status === 'resolved';
+  const field = 'sp-input sp-input--desk';
   return (
     <li
       id={`esc-${card.id}`}
       onClick={onFocus}
-      className={`rounded-2xl border-2 bg-white p-4 shadow-sm transition ${resolved ? 'border-slate-200 opacity-70' : focused ? 'border-accent ring-4 ring-blue-100' : 'border-warn'}`}
+      className={`sp-card sp-card--desk gap-3 p-5 ${resolved ? 'opacity-70' : focused ? 'border-2 border-ink' : ''}`}
       data-testid="escalation-card"
       data-reason={card.reason}
     >
       <div className="flex flex-wrap items-center gap-2">
-        {!resolved && <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-sm">#{number}</span>}
-        <span className={`font-semibold ${resolved ? 'text-muted' : 'text-warn'}`}>{REASON_NB[card.reason] ?? card.reason}</span>
+        {!resolved && <span className="sp-chip sp-chip--desk sp-mono">#{number}</span>}
+        <StatusChip desk tone={resolved ? undefined : 'warn'}>
+          {REASON_NB[card.reason] ?? card.reason}
+        </StatusChip>
         {card.href ? (
-          <Link href={card.href} className="font-mono text-sm underline" onClick={(e) => e.stopPropagation()}>
+          <Link href={card.href} className="sp-link type-code-dense" onClick={(e) => e.stopPropagation()}>
             {card.refLabel}
           </Link>
         ) : (
-          <span className="font-mono text-sm">{card.refLabel}</span>
+          <span className="type-code-dense">{card.refLabel}</span>
         )}
-        <time className="text-sm text-muted">{time(card.createdAt)}</time>
+        <time className="type-code-dense text-ink-2">{time(card.createdAt)}</time>
         <span className="ml-auto" onClick={(e) => e.stopPropagation()}>
           {card.summaryNb && <PlayButton id={card.id} />}
         </span>
       </div>
-      <p className="mt-2 text-base leading-snug">{card.summaryNb}</p>
+      <p className="type-dense m-0">{card.summaryNb}</p>
 
       {resolved && card.resolution && (
-        <p className="mt-2 text-sm text-muted">
+        <p className="type-dense m-0 text-ink-2">
           {card.resolution.action === 'override' ? 'Overstyrt' : card.resolution.action === 'reject' ? 'Avvist' : 'Godkjent'}
           {card.resolution.grade ? ` · grad ${card.resolution.grade}, ${card.resolution.locationCode}, ${nok(card.resolution.refundNok)}` : ''}
           {card.resolution.note ? ` · «${card.resolution.note}»` : ''}
@@ -171,33 +175,42 @@ export function EscalationCard({
       )}
 
       {i && !resolved && (
-        <div className="mt-3 flex flex-col gap-3">
-          <dl className="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-base">
+        <div className="flex flex-col gap-3">
+          <dl className="type-dense m-0 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-[10rem_minmax(0,1fr)]">
             <Fact label="Bestilt">{i.orderedName}</Fact>
             {i.receivedSku && i.receivedSku !== i.orderedSku && <Fact label="Mottatt">{i.receivedName}</Fact>}
             <Fact label={current ? 'Beslutning' : 'Motorens forslag'}>
               {current ? (
-                <span data-testid="card-decision">
-                  Grad <b>{current.grade}</b> · <span className="font-mono">{current.locationCode}</span> · {current.refundNok === null ? <b className="text-warn">refusjon: du avgjør</b> : nok(current.refundNok)}
-                  {current.isOverride && <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-sm font-semibold text-accent">Overstyrt</span>}
+                <span data-testid="card-decision" className="flex flex-wrap items-center gap-2">
+                  <GradeBadge desk grade={current.grade} kicker={`Grad ${current.grade}`} word={GRADE_WORD_NB[current.grade]} />
+                  <span className="type-code-dense">{current.locationCode}</span>
+                  {current.refundNok === null ? <b className="text-warn">refusjon: du avgjør</b> : <span className="type-code-dense">{nok(current.refundNok)}</span>}
+                  {current.isOverride && <StatusChip desk>Overstyrt</StatusChip>}
                 </span>
               ) : (
-                <span>
+                // What the engine proposes: dashed until the lead decides.
+                <span className="inline-block rounded-md border-2 border-dashed border-ink-2 px-2 py-1">
                   {i.proposal.grade ? `Grad ${i.proposal.grade} · ${i.proposal.locationCode} · ${i.proposal.refundNok === null ? 'refusjon: du avgjør' : nok(i.proposal.refundNok)}` : 'Ingen grad ennå'}
                 </span>
               )}
             </Fact>
             {(current?.cause ?? i.proposal.cause) && <Fact label="Sannsynlig årsak">{CAUSE_NB[(current?.cause ?? i.proposal.cause)!]}</Fact>}
-            <Fact label="Ordreverdi">{nok(i.lineValueNok)} (maks refusjon)</Fact>
+            <Fact label="Ordreverdi">
+              <span className="type-code-dense">{nok(i.lineValueNok)}</span> (maks refusjon)
+            </Fact>
             {i.suspiciousNote && (
               <Fact label="Kundelapp">
-                <span className="font-semibold text-bad">Inneholder instruksjoner, lest som tekst</span>
+                <StatusChip desk tone="stop">
+                  Inneholder instruksjoner, lest som tekst
+                </StatusChip>
               </Fact>
             )}
             {i.workerNote && (
               <Fact label="Medarbeider sa">
-                <span className="block">«{i.workerNote.original}» <span className="text-sm text-muted">({LANG_NB[i.workerNote.lang ?? ''] ?? i.workerNote.lang})</span></span>
-                {i.workerNote.nb && i.workerNote.lang !== 'nb' && <span className="block text-sm text-muted">Norsk: «{i.workerNote.nb}»</span>}
+                <span className="block">
+                  «{i.workerNote.original}» <span className="text-ink-2">({LANG_NB[i.workerNote.lang ?? ''] ?? i.workerNote.lang})</span>
+                </span>
+                {i.workerNote.nb && i.workerNote.lang !== 'nb' && <span className="block italic text-ink-2">Norsk: «{i.workerNote.nb}»</span>}
               </Fact>
             )}
             {i.packEvidence && (
@@ -208,27 +221,35 @@ export function EscalationCard({
           </dl>
           <div className="flex flex-wrap gap-2">
             {i.photos.map((p) => (
-              <figure key={p.photoId} className="w-24 text-center text-xs">
-                {p.url ? (
-                  <a href={p.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.url} alt={PURPOSE_NB[p.purpose] ?? p.purpose} className="h-24 w-24 rounded-lg object-cover" />
-                  </a>
-                ) : (
-                  <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-slate-100 text-muted">{p.facesDiscarded ? 'Slettet' : '—'}</div>
-                )}
-                <figcaption className="mt-0.5 leading-tight">
+              <figure key={p.photoId} className="m-0 w-28 text-[13px] leading-tight">
+                <div className="sp-stage p-1">
+                  {p.url ? (
+                    <a href={p.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.url} alt={PURPOSE_NB[p.purpose] ?? p.purpose} className="block aspect-square w-full rounded-[4px] object-contain" />
+                    </a>
+                  ) : (
+                    <div className="flex aspect-square w-full items-center justify-center text-ink-2-on-dark">{p.facesDiscarded ? 'Slettet' : '—'}</div>
+                  )}
+                </div>
+                <figcaption className="mt-1">
                   {PURPOSE_NB[p.purpose] ?? p.purpose}
                   {p.sizeRead ? ` · ${p.sizeRead}` : ''}
-                  {p.confidence !== null && <span className="block text-muted">{Math.round(p.confidence * 100)} % · {p.model?.replace(/^gemini-/, '')}</span>}
+                  {p.confidence !== null && (
+                    <span className="sp-mono block text-ink-2">
+                      {Math.round(p.confidence * 100)} % · {p.model?.replace(/^gemini-/, '')}
+                    </span>
+                  )}
                 </figcaption>
               </figure>
             ))}
             {i.packEvidence?.photoUrl && (
-              <figure className="w-24 text-center text-xs">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={i.packEvidence.photoUrl} alt="Pakkebevis" className="h-24 w-24 rounded-lg object-cover ring-2 ring-slate-300" />
-                <figcaption className="mt-0.5">Pakkebevis</figcaption>
+              <figure className="m-0 w-28 text-[13px] leading-tight">
+                <div className="sp-stage p-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={i.packEvidence.photoUrl} alt="Pakkebevis" className="block aspect-square w-full rounded-[4px] object-contain" />
+                </div>
+                <figcaption className="mt-1">Pakkebevis</figcaption>
               </figure>
             )}
           </div>
@@ -236,7 +257,7 @@ export function EscalationCard({
       )}
 
       {card.order && !resolved && (
-        <dl className="mt-3 grid grid-cols-[8.5rem_1fr] gap-x-3 gap-y-1 text-base">
+        <dl className="type-dense m-0 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-[10rem_minmax(0,1fr)]">
           <Fact label="Pakkesjekk">
             {EVIDENCE_NB[card.order.status] ?? card.order.status}
             {card.order.manualReason ? ` (${MANUAL_NB[card.order.manualReason] ?? card.order.manualReason})` : ''}, størrelse {card.order.sizeVerified ? 'lest' : 'ikke lest'}
@@ -245,27 +266,27 @@ export function EscalationCard({
       )}
 
       {!resolved && (
-        <div className="mt-4 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
-          <div className="flex flex-wrap gap-2">
-            <button className="btn-primary px-4" disabled={busy || !card.actions.approve} onClick={() => submit({ action: 'approve' })} title={card.actions.refundRequired ? 'Refusjonen må settes først' : undefined}>
+        <div className="flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button desk icon="ok" disabled={busy || !card.actions.approve} onClick={() => submit({ action: 'approve' })} title={card.actions.refundRequired ? 'Refusjonen må settes først' : undefined}>
               Godkjenn
-            </button>
+            </Button>
             {card.actions.override && (
-              <button className={`btn-secondary px-4 ${form === 'override' ? 'ring-2 ring-accent' : ''}`} disabled={busy} onClick={() => setForm(form === 'override' ? null : 'override')}>
+              <Button desk variant="secondary" aria-expanded={form === 'override'} className={form === 'override' ? 'bg-surface-2' : ''} disabled={busy} onClick={() => setForm(form === 'override' ? null : 'override')}>
                 Overstyr
-              </button>
+              </Button>
             )}
             {card.actions.reject && (
-              <button className={`btn-secondary px-4 text-bad ${form === 'reject' ? 'ring-2 ring-bad' : ''}`} disabled={busy} onClick={() => setForm(form === 'reject' ? null : 'reject')}>
+              <Button desk variant="secondary" aria-expanded={form === 'reject'} className={form === 'reject' ? 'bg-surface-2' : ''} disabled={busy} onClick={() => setForm(form === 'reject' ? null : 'reject')}>
                 {i ? 'Avvis refusjon' : 'Avvis'}
-              </button>
+              </Button>
             )}
-            {card.actions.refundRequired && <span className="self-center text-sm text-warn">Refusjonen avgjøres av deg: bruk Overstyr.</span>}
+            {card.actions.refundRequired && <span className="type-dense text-warn">Refusjonen avgjøres av deg: bruk Overstyr.</span>}
           </div>
 
           {form && (
             <form
-              className="grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-3"
+              className="grid gap-3 rounded-lg border-2 border-line bg-surface-2 p-4 sm:grid-cols-3"
               onSubmit={(e) => {
                 e.preventDefault();
                 if (form === 'reject') void submit({ action: 'reject', reason });
@@ -274,17 +295,17 @@ export function EscalationCard({
             >
               {form === 'override' && i && (
                 <>
-                  <label className="flex flex-col gap-1 text-sm">
+                  <label className="type-dense-strong flex flex-col gap-1">
                     Grad
-                    <select value={grade} onChange={(e) => setGrade(e.target.value as 'A')} className="min-h-11 rounded-lg border px-2 text-base" name="grade">
+                    <select value={grade} onChange={(e) => setGrade(e.target.value as 'A')} className={field} name="grade">
                       {(['A', 'B', 'C', 'D'] as const).map((g) => (
                         <option key={g}>{g}</option>
                       ))}
                     </select>
                   </label>
-                  <label className="flex flex-col gap-1 text-sm">
+                  <label className="type-dense-strong flex flex-col gap-1">
                     Hylle
-                    <select value={shelf} onChange={(e) => setShelf(e.target.value)} className="min-h-11 rounded-lg border px-2 text-base" name="shelf">
+                    <select value={shelf} onChange={(e) => setShelf(e.target.value)} className={`${field} sp-input--mono`} name="shelf">
                       <option value="">Etter grad (automatisk)</option>
                       {locations.map((l) => (
                         <option key={l.code} value={l.code}>
@@ -293,28 +314,28 @@ export function EscalationCard({
                       ))}
                     </select>
                   </label>
-                  <label className="flex flex-col gap-1 text-sm">
+                  <label className="type-dense-strong flex flex-col gap-1">
                     Refusjon (maks {nok(i.lineValueNok)})
-                    <input type="number" min={0} max={i.lineValueNok} value={refund} onChange={(e) => setRefund(e.target.value)} className="min-h-11 rounded-lg border px-2 text-base" name="refund" />
+                    <input type="number" min={0} max={i.lineValueNok} value={refund} onChange={(e) => setRefund(e.target.value)} className={`${field} sp-input--mono`} name="refund" />
                   </label>
                 </>
               )}
-              {form === 'reject' && <p className="text-sm sm:col-span-3">{i ? 'Refusjonen settes til 0 kr. Grad og hylle beholdes.' : 'Saken lukkes som avvist.'}</p>}
-              <label className="flex flex-col gap-1 text-sm sm:col-span-3">
+              {form === 'reject' && <p className="type-dense m-0 sm:col-span-3">{i ? 'Refusjonen settes til 0 kr. Grad og hylle beholdes.' : 'Saken lukkes som avvist.'}</p>}
+              <label className="type-dense-strong flex flex-col gap-1 sm:col-span-3">
                 Grunn (påkrevd)
-                <input value={reason} onChange={(e) => setReason(e.target.value)} required maxLength={500} className="min-h-11 rounded-lg border px-2 text-base" name="reason" placeholder="Hvorfor?" />
+                <input value={reason} onChange={(e) => setReason(e.target.value)} required maxLength={500} className={field} name="reason" placeholder="Hvorfor?" />
               </label>
               <div className="sm:col-span-3">
-                <button type="submit" className="btn-primary px-4" disabled={busy || !reason.trim()}>
+                <Button type="submit" desk variant={form === 'reject' ? 'destructive' : 'primary'} disabled={busy || !reason.trim()}>
                   {form === 'reject' ? 'Avvis' : 'Lagre overstyring'}
-                </button>
+                </Button>
               </div>
             </form>
           )}
           {error && (
-            <p role="alert" className="text-base font-semibold text-bad">
+            <Banner tone="error" role="alert">
               {error}
-            </p>
+            </Banner>
           )}
         </div>
       )}

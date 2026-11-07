@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui';
+import { SignedOutShell } from '@/components/ui/signed-out-shell';
 import { setDevice } from '@/lib/auth/actions';
 import { getDeviceLabel, requireRole } from '@/lib/auth/dal';
 import { t } from '@/lib/i18n/strings';
@@ -11,24 +13,19 @@ export default async function DevicePage({ searchParams }: PageProps<'/device'>)
   const { data: devices } = await supabase.from('devices').select('label').order('label');
 
   return (
-    <main className="flex flex-1 items-center justify-center bg-frame p-4">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-xl">
-        <h1 className="text-2xl font-bold">{t('pickDevice', user.lang)}</h1>
-        <p className="mt-1 text-muted">{t('pickDeviceHelp', user.lang)}</p>
-        <form action={setDevice} className="mt-6 grid grid-cols-2 gap-3">
-          {typeof next === 'string' && <input type="hidden" name="next" value={next} />}
-          {(devices ?? []).map((d) => (
-            <button
-              key={d.label}
-              name="label"
-              value={d.label}
-              className={d.label === current ? 'btn-primary' : 'btn-secondary'}
-            >
-              {d.label}
-            </button>
-          ))}
-        </form>
+    <SignedOutShell lang={user.lang}>
+      <div className="flex flex-col gap-2">
+        <h1 className="type-title m-0">{t('pickDevice', user.lang)}</h1>
+        <p className="type-body m-0 text-ink-2">{t('pickDeviceHelp', user.lang)}</p>
       </div>
-    </main>
+      <form action={setDevice} className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3">
+        {typeof next === 'string' && <input type="hidden" name="next" value={next} />}
+        {(devices ?? []).map((d) => (
+          <Button key={d.label} type="submit" name="label" value={d.label} variant={d.label === current ? 'primary' : 'secondary'} icon="device" aria-current={d.label === current ? 'true' : undefined}>
+            <span className="sp-mono">{d.label}</span>
+          </Button>
+        ))}
+      </form>
+    </SignedOutShell>
   );
 }

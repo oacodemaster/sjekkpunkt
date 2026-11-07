@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Camera } from '@/components/camera';
-import { PhotoWithBoxes } from '@/components/photo-boxes';
+import { Banner, Button, Card, GradeBadge, Icon, PhotoStage, ShelfCode, StatusChip, StepIndicator, type StageBox } from '@/components/ui';
+import { scrollBehavior } from '@/components/ui/motion';
 import { productMap } from '@/lib/engine/catalog';
-import type { Box2d, Grade, Lang, PhotoPurpose, Product, Severity } from '@/lib/engine/types';
+import type { Box2d, Lang, PhotoPurpose, Product, Severity } from '@/lib/engine/types';
 import { t, type StringKey } from '@/lib/i18n/strings';
 import type { StationPhoto } from '@/lib/returns/types';
 import type { ReturnStation } from './use-return-station';
@@ -29,59 +30,71 @@ const CAUSE_KEY: Record<string, StringKey> = {
   unknown: 'causeUnknown',
   customer_side: 'causeCustomer',
 };
-const GRADE_TONE: Record<Grade, string> = {
-  A: 'bg-ok text-white',
-  B: 'bg-accent text-white',
-  C: 'bg-warn text-white',
-  D: 'bg-bad text-white',
-};
 
-const nok = (n: number) => `${n.toLocaleString('nb-NO').replace(/ /g, ' ')} kr`;
+const nok = (n: number) => `${n.toLocaleString('nb-NO').replace(/ /g, ' ')} kr`;
 export const productName = (p: Product | undefined, sku: string, lang: Lang) => (p ? (lang === 'nb' ? p.nameNb : p.nameEn) : sku);
 
-/** A photo with one box (returns). */
-export function PhotoWithBox({ url, box, tone = 'ok', alt, onLoad }: { url: string | null; box?: Box2d; tone?: 'ok' | 'bad' | 'warn'; alt: string; onLoad?: () => void }) {
-  return <PhotoWithBoxes url={url} boxes={box ? [{ box, tone }] : []} alt={alt} onLoad={onLoad} />;
+type BoxTone = 'ok' | 'bad' | 'warn';
+const KIND: Record<BoxTone, StageBox['kind']> = { ok: 'present', bad: 'unexpected', warn: 'uncertain' };
+
+/** A photo on the stage with one box (returns). */
+export function PhotoWithBox({
+  url,
+  box,
+  tone = 'ok',
+  alt,
+  tag,
+  meta,
+  onLoad,
+}: {
+  url: string | null;
+  box?: Box2d;
+  tone?: BoxTone;
+  alt: string;
+  tag?: string;
+  meta?: [ReactNode, ReactNode?];
+  onLoad?: () => void;
+}) {
+  return <PhotoStage url={url} boxes={box ? [{ box, kind: KIND[tone], tone, label: tag, icon: tag ? 'label' : undefined }] : []} alt={alt} meta={meta} onLoad={onLoad} />;
 }
 
 function NoticeBar({ station, lang }: { station: ReturnStation; lang: Lang }) {
   if (!station.notice) return null;
-  const tone = station.notice.tone === 'bad' ? 'bg-red-50 text-bad' : station.notice.tone === 'warn' ? 'bg-amber-50 text-warn' : 'bg-green-50 text-ok';
+  const tone = station.notice.tone === 'bad' ? 'error' : station.notice.tone === 'warn' ? 'warn' : 'info';
   return (
-    <p role="alert" className={`rounded-xl px-4 py-3 text-lg font-semibold ${tone}`}>
+    <Banner tone={tone} icon={station.notice.tone === 'ok' ? 'ok' : undefined} role="alert">
       {t(station.notice.key, lang)}
-    </p>
+    </Banner>
   );
 }
 
+/** One choice of a few (findings). Selected is solid ink; every option is a 56px target. */
 function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: { v: T; label: string }[]; onChange: (v: T) => void; label: string }) {
   return (
-    <div role="radiogroup" aria-label={label} className="grid grid-flow-col gap-1 rounded-xl bg-slate-100 p-1">
-      {options.map((o) => (
-        <button
-          key={o.v}
-          role="radio"
-          aria-checked={value === o.v}
-          onClick={() => onChange(o.v)}
-          className={`min-h-12 rounded-lg px-2 text-base font-semibold ${value === o.v ? 'bg-white shadow' : 'text-muted'}`}
-        >
-          {o.label}
-        </button>
-      ))}
+    <div className="flex flex-col gap-2">
+      <span className="type-label">{label}</span>
+      <div role="radiogroup" aria-label={label} className="sp-seg">
+        {options.map((o) => (
+          <button key={o.v} type="button" role="radio" aria-checked={value === o.v} onClick={() => onChange(o.v)} className="sp-seg__opt">
+            {o.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
+/** A finding: colour, icon and word. ok green tick, a problem amber triangle, unknown neutral. */
 function Row({ ok, label, value }: { ok: boolean | null; label: string; value: ReactNode }) {
-  const icon = ok === null ? '?' : ok ? '✓' : '!';
-  const tone = ok === null ? 'bg-slate-200 text-muted' : ok ? 'bg-ok text-white' : 'bg-warn text-white';
+  const icon = ok === null ? 'info' : ok ? 'ok' : 'warn';
+  const tone = ok === null ? 'text-ink-2' : ok ? 'text-ok' : 'text-warn';
   return (
-    <li className="flex items-center gap-3 py-2">
-      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg font-bold ${tone}`} aria-hidden>
-        {icon}
+    <li className="flex items-start gap-3 border-t-2 border-line py-3 first:border-t-0">
+      <span className={tone}>
+        <Icon name={icon} />
       </span>
-      <span className="flex-1 text-lg">{label}</span>
-      <span className="text-right text-lg font-semibold">{value}</span>
+      <span className="type-body min-w-0 flex-1">{label}</span>
+      <span className="type-label text-right">{value}</span>
     </li>
   );
 }
@@ -96,24 +109,31 @@ function photoSummary(p: StationPhoto | undefined, lang: Lang): string | null {
   return t('photoOk', lang);
 }
 
-/** The returns station screen. Same component for live mode and demo mode. */
+/**
+ * The returns station screen. Same component for live mode and demo mode. The phase's main action
+ * sits in the thumb zone with the voice dock (`dock`, live mode) above it; the dock is always
+ * mounted, so a voice session survives the camera and every phase change.
+ */
 export function ReturnStationView({
   station,
   lang,
   captureMode,
   onBackToQueue,
+  dock,
 }: {
   station: ReturnStation;
   lang: Lang;
   /** live: real camera; demo: the shutter uses the scripted fixture for this step */
   captureMode: 'camera' | 'fixture';
   onBackToQueue?: () => void;
+  dock?: ReactNode;
 }) {
   const { view, item, decision, steps, phase, activeStep, busy, actions } = station;
   const pm = productMap(view.products);
   const [escalating, setEscalating] = useState(false);
   const [note, setNote] = useState('');
   const decided = item.status === 'decided' || item.status === 'escalated';
+  const cameraOpen = station.cameraOpen && captureMode === 'camera';
 
   // Keep the screen awake while the station is open (addendum section 7).
   useEffect(() => {
@@ -126,9 +146,9 @@ export function ReturnStationView({
   // Bring a new photo result, or a raised flag, into view on a small screen or the demo frame.
   const resultRef = useRef<HTMLDivElement>(null);
   const flagRef = useRef<HTMLDivElement>(null);
-  const showResult = () => resultRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  const showResult = () => resultRef.current?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() });
   useEffect(() => {
-    if (phase === 'decision' && decision.suspiciousNote) flagRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (phase === 'decision' && decision.suspiciousNote) flagRef.current?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() });
   }, [phase, decision.suspiciousNote]);
 
   const latest = (p: PhotoPurpose) => [...item.photos].reverse().find((x) => x.purpose === p);
@@ -142,357 +162,411 @@ export function ReturnStationView({
         ? 'evidenceVerifiedSize'
         : 'evidenceVerified'
       : 'evidenceManual';
+  const evidenceTone = !ev ? undefined : ev.status === 'VERIFIED' && ev.sizeVerified ? 'ok' : 'warn';
+  const stepIdx = Math.max(0, steps.findIndex((s) => s.purpose === activeStep));
+  const activePhoto = latest(activeStep);
+  // While the escalation form is open its Send is the primary action, so the phase action steps back.
+  const mainVariant = escalating ? 'secondary' : 'primary';
+
+  // The phase's main action (always a tap).
+  let main: ReactNode = null;
+  if (phase === 'overview') {
+    main = (
+      <Button block variant={mainVariant} icon="camera" onClick={actions.start}>
+        {t('startInspection', lang)}
+      </Button>
+    );
+  } else if (phase === 'photos' && !station.cameraOpen) {
+    main = (
+      <Button block variant={activePhoto ? mainVariant : 'secondary'} iconAfter="arrow-right" onClick={() => actions.setPhase('findings')} disabled={busy !== null}>
+        {t('next', lang)}
+      </Button>
+    );
+  } else if (phase === 'findings') {
+    main = (
+      <Button block variant={mainVariant} iconAfter="arrow-right" onClick={() => actions.setPhase('decision')}>
+        {t('next', lang)}
+      </Button>
+    );
+  } else if (phase === 'decision') {
+    main = (
+      <Button block variant={mainVariant} icon="ok" disabled={!decision.canConfirm || busy !== null} onClick={() => void actions.confirm()}>
+        {busy === 'confirm' ? t('checking', lang) : t('confirmReturn', lang)}
+      </Button>
+    );
+  } else if (phase === 'done') {
+    main =
+      station.nextOpenItem >= 0 ? (
+        <Button block iconAfter="arrow-right" onClick={() => actions.selectItem(station.nextOpenItem)}>
+          {t('nextItem', lang)}
+        </Button>
+      ) : (
+        onBackToQueue && (
+          <Button block iconAfter="arrow-right" onClick={onBackToQueue}>
+            {t('backToQueue', lang)}
+          </Button>
+        )
+      );
+  }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4" data-phase={phase}>
-      {/* Header: return, item switcher, retakes */}
-      <div className="flex items-baseline justify-between gap-2">
-        <h1 className="text-2xl font-bold">
-          {t('returnWord', lang)} #{view.ret.id}
-        </h1>
-        {station.retakes > 0 && !decided && (
-          <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-warn">
-            {t('retakes', lang)}: {station.retakes}
-          </span>
+    <div className="flex flex-1 flex-col" data-phase={phase}>
+      <div className="flex flex-col gap-6 p-4">
+        {/* Return, item switcher, retakes */}
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h1 className="type-title m-0">
+            {t('returnWord', lang)} <span className="sp-mono">#{view.ret.id}</span>
+          </h1>
+          {station.retakes > 0 && !decided && (
+            <StatusChip icon="camera">
+              {t('retakes', lang)}: <span className="sp-mono">{station.retakes}</span>
+            </StatusChip>
+          )}
+        </div>
+        {view.items.length > 1 && (
+          <nav className="sp-seg" aria-label={t('item', lang)}>
+            {view.items.map((it, k) => (
+              <button key={it.id} type="button" onClick={() => actions.selectItem(k)} aria-current={k === station.itemIdx} className="sp-seg__opt inline-flex items-center justify-center gap-2">
+                {t('item', lang)} <span className="sp-mono">{k + 1}</span>
+                {it.status === 'decided' && <Icon name="ok" />}
+                {it.status === 'escalated' && <Icon name="arrow-right" />}
+              </button>
+            ))}
+          </nav>
+        )}
+
+        <NoticeBar station={station} lang={lang} />
+
+        {phase === 'overview' && (
+          <section className="flex flex-col gap-4">
+            {view.lateDays !== null && view.lateDays > (view.settings.returnWindowDays ?? 30) && (
+              <Banner tone="warn" title={t('lateReturn', lang)}>
+                {t('lateReturnHint', lang)}
+              </Banner>
+            )}
+            <Card
+              eyebrow={t('ordered', lang)}
+              title={
+                <>
+                  {item.qty > 1 && <span className="sp-mono">{item.qty} × </span>}
+                  {productName(ordered, item.orderedSku, lang)}
+                </>
+              }
+            >
+              <dl className="sp-kv">
+                <dt>SKU</dt>
+                <dd className="sp-mono">{item.orderedSku}</dd>
+                <dt>{t('customerReason', lang)}</dt>
+                <dd>«{view.ret.customerReasonNb}»</dd>
+              </dl>
+            </Card>
+            <Card
+              eyebrow={
+                <span>
+                  {t('packingEvidence', lang)} · {t('order', lang)} <span className="sp-mono">{view.order.id}</span>
+                </span>
+              }
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                {view.packEvidence?.photoUrl && (
+                  <span className="sp-stage p-1.5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={view.packEvidence.photoUrl} alt={t('packingEvidence', lang)} className="block h-20 w-20 rounded-[4px] object-contain" />
+                  </span>
+                )}
+                <StatusChip tone={evidenceTone}>{t(evidenceKey, lang)}</StatusChip>
+              </div>
+            </Card>
+          </section>
+        )}
+
+        {phase === 'photos' && (
+          <section className="flex flex-col gap-4">
+            <StepIndicator
+              count={
+                <span className="sp-mono">
+                  {stepIdx + 1} {t('of', lang)} {steps.length}
+                </span>
+              }
+              label={t('takePhoto', lang)}
+              current={activeStep}
+              onSelect={(k) => actions.selectStep(k as PhotoPurpose)}
+              steps={steps.map(({ purpose, optional }) => ({ key: purpose, label: t(STEP_KEY[purpose], lang), optional: optional ? t('optional', lang) : undefined, done: !!latest(purpose)?.inspection }))}
+            />
+
+            {cameraOpen ? (
+              <Camera
+                lang={lang}
+                hint={t(HINT_KEY[activeStep], lang)}
+                onCapture={(jpeg) => void actions.capture(activeStep, jpeg)}
+                onCancel={actions.closeCamera}
+                controlRef={station.cameraControl}
+                countdown={station.countdown}
+              />
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="type-body m-0 font-semibold">{t(HINT_KEY[activeStep], lang)}</p>
+                {(() => {
+                  const p = activePhoto;
+                  const summary = photoSummary(p, lang);
+                  const weak = !!p && (!p.inspection || (activeStep === 'label' && (!p.inspection.sizeRead || p.inspection.identityConfidence < (view.settings.returnConfidenceMin ?? 0.7))));
+                  const conf = p?.inspection?.identityConfidence;
+                  return p ? (
+                    <div className="flex flex-col gap-3" ref={resultRef}>
+                      <PhotoWithBox
+                        url={p.url}
+                        box={p.inspection?.box_2d}
+                        tone={p.inspection?.containsInstructions ? 'bad' : weak ? 'warn' : 'ok'}
+                        tag={activeStep === 'label' && p.inspection?.sizeRead ? `${t('size', lang)} ${p.inspection.sizeRead}` : undefined}
+                        alt={t(STEP_KEY[activeStep], lang)}
+                        meta={[`${t('returnWord', lang)} ${view.ret.id} · ${t(STEP_KEY[activeStep], lang)}`, conf != null ? conf.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : undefined]}
+                        onLoad={showResult}
+                      />
+                      {summary && (
+                        <span>
+                          <StatusChip tone={weak ? 'warn' : 'ok'}>{summary}</StatusChip>
+                        </span>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
+                {busy === 'capture' ? (
+                  <p className="sp-busy m-0" aria-live="polite">
+                    {t('checking', lang)}
+                  </p>
+                ) : (
+                  <Button
+                    block
+                    icon="camera"
+                    variant={activePhoto ? 'secondary' : 'primary'}
+                    onClick={() => (captureMode === 'camera' ? actions.openCamera() : void actions.capture(activeStep, null))}
+                    disabled={decided}
+                  >
+                    {activePhoto ? t('retake', lang) : t('takePhoto', lang)}
+                  </Button>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
+        {phase === 'findings' && (
+          <section className="flex flex-col gap-4">
+            <h2 className="type-title m-0">{t('findings', lang)}</h2>
+            <ul className="m-0 list-none p-0">
+              <Row
+                ok={decision.receivedSku === null ? null : !decision.wrongItemShipped}
+                label={decision.receivedSku === null ? t('identityUnknown', lang) : decision.wrongItemShipped ? t('wrongItemDelivered', lang) : t('rightItem', lang)}
+                value={decision.receivedSku ? <span className="sp-mono">{decision.receivedSku}</span> : '—'}
+              />
+              {decision.wrongItemShipped && decision.cause && (
+                <li className="pb-3 pl-9">
+                  <StatusChip tone="warn">{t(CAUSE_KEY[decision.cause] ?? 'causeUnknown', lang)}</StatusChip>
+                </li>
+              )}
+              <Row
+                ok={decision.condition.tagsAttached === 'unknown' ? null : decision.condition.tagsAttached}
+                label={t('tags', lang)}
+                value={decision.condition.tagsAttached === 'unknown' ? t('unknownWord', lang) : decision.condition.tagsAttached ? t('attached', lang) : t('removed', lang)}
+              />
+              <Row ok={decision.condition.damage === 'none'} label={t('damage', lang)} value={t(decision.condition.damage, lang)} />
+              <Row ok={decision.condition.stains === 'none'} label={t('stains', lang)} value={t(decision.condition.stains, lang)} />
+              <Row
+                ok={decision.condition.packaging !== 'missing'}
+                label={t('packaging', lang)}
+                value={t(decision.condition.packaging === 'missing' ? 'missingWord' : decision.condition.packaging, lang)}
+              />
+            </ul>
+
+            {latest('label')?.inspection && (
+              <PhotoWithBox
+                url={latest('label')!.url}
+                box={latest('label')!.inspection!.box_2d}
+                alt={t('stepLabel', lang)}
+                tone={decision.wrongItemShipped ? 'bad' : 'ok'}
+                tag={latest('label')!.inspection!.sizeRead ? `${t('size', lang)} ${latest('label')!.inspection!.sizeRead}` : undefined}
+              />
+            )}
+
+            <Card title={t('anyDamage', lang)} className="bg-surface-2">
+              <Segmented<Severity>
+                label={t('stains', lang)}
+                value={item.worker.stains ?? 'none'}
+                onChange={(v) => actions.setWorker({ stains: v })}
+                options={(['none', 'minor', 'major'] as const).map((v) => ({ v, label: t(v, lang) }))}
+              />
+              <Segmented<Severity>
+                label={t('damage', lang)}
+                value={item.worker.damage ?? 'none'}
+                onChange={(v) => actions.setWorker({ damage: v })}
+                options={(['none', 'minor', 'major'] as const).map((v) => ({ v, label: t(v, lang) }))}
+              />
+              <Segmented<'yes' | 'no'>
+                label={t('tags', lang)}
+                value={item.worker.tagsAttached === false ? 'no' : 'yes'}
+                onChange={(v) => actions.setWorker({ tagsAttached: v === 'no' ? false : undefined })}
+                options={[
+                  { v: 'yes', label: t('attached', lang) },
+                  { v: 'no', label: t('removed', lang) },
+                ]}
+              />
+              <label className="sp-checkrow">
+                <input type="checkbox" checked={!!item.worker.unusable} onChange={(e) => actions.setWorker({ unusable: e.target.checked })} />
+                {t('unusable', lang)}
+              </label>
+            </Card>
+
+            <Button variant="quiet" onClick={() => actions.setPhase('photos')}>
+              {t('back', lang)}
+            </Button>
+          </section>
+        )}
+
+        {phase === 'decision' && (
+          <section className="flex flex-col gap-4">
+            <h2 className="type-title m-0">{t('decision', lang)}</h2>
+            {decision.status === 'needs_photos' && (
+              <button type="button" className="sp-banner sp-banner--warn w-full cursor-pointer text-left font-semibold" onClick={() => actions.selectStep(decision.missingPhotos[0])}>
+                <Icon name="camera" />
+                <span>
+                  {t('missingPhotos', lang)}: {decision.missingPhotos.map((p) => t(STEP_KEY[p], lang)).join(', ')}
+                </span>
+              </button>
+            )}
+            {decision.status === 'needs_retake' && (
+              <button type="button" className="sp-banner sp-banner--warn w-full cursor-pointer text-left font-semibold" onClick={() => actions.selectStep('label')}>
+                <Icon name="camera" />
+                <span>{t('retakeUnclear', lang)}</span>
+              </button>
+            )}
+            {decision.status === 'escalated' && <Banner tone="warn">{t('escalatedHint', lang)}</Banner>}
+
+            {decision.suspiciousNote && (
+              <div ref={flagRef}>
+                <Banner tone="error" role="alert" title={t('suspiciousNote', lang)}>
+                  {t('noteReadAsText', lang)}
+                </Banner>
+              </div>
+            )}
+
+            {decision.grade && (
+              // What the engine proposes, dashed until «Bekreft retur» commits it.
+              <Card proposal>
+                <div className="flex flex-wrap items-center gap-4">
+                  <GradeBadge grade={decision.grade} kicker={`${t('grade', lang)} ${decision.grade}`} letterTestId="grade" />
+                </div>
+                <ShelfCode label={t('shelf', lang)} code={decision.locationCode ?? '—'} codeTestId="shelf" className="w-full" />
+                <dl className="sp-kv">
+                  <dt>{t('refund', lang)}</dt>
+                  <dd>
+                    <span className={decision.refundNok === null ? '' : 'sp-mono'} data-testid="refund">
+                      {decision.refundNok === null ? t('leadDecidesRefund', lang) : nok(decision.refundNok)}
+                    </span>
+                  </dd>
+                </dl>
+                {decision.wrongItemShipped && received && (
+                  <p className="type-body m-0">
+                    <span className="block text-ink-2">{t('wrongItemDelivered', lang)}</span>
+                    <strong>{productName(received, decision.receivedSku!, lang)}</strong> · {t(CAUSE_KEY[decision.cause ?? 'unknown'], lang)}
+                  </p>
+                )}
+              </Card>
+            )}
+            {!decision.grade && decision.wrongItemShipped && received && (
+              <p className="type-body m-0">
+                <strong>{t('wrongItemDelivered', lang)}:</strong> {productName(received, decision.receivedSku!, lang)} · {t(CAUSE_KEY[decision.cause ?? 'unknown'], lang)}
+              </p>
+            )}
+            {decision.stockProposals.length > 0 && (
+              <Card proposal eyebrow={t('stockCorrection', lang)}>
+                <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                  {decision.stockProposals.map((s) => (
+                    <li key={s.sku} className="type-code flex justify-between gap-3">
+                      <span>{s.sku}</span>
+                      <span>{s.delta > 0 ? `+${s.delta}` : s.delta}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+            {decision.escalations.length > 0 && !decision.suspiciousNote && decision.status !== 'escalated' && (
+              <span>
+                <StatusChip tone="warn" icon="arrow-right">
+                  {t('goesToLead', lang)}
+                </StatusChip>
+              </span>
+            )}
+
+            <Button variant="quiet" onClick={() => actions.setPhase('findings')}>
+              {t('back', lang)}
+            </Button>
+          </section>
+        )}
+
+        {phase === 'done' && (
+          <section className="sp-done">
+            <span className={`sp-done__icon ${item.status === 'escalated' ? 'sp-done__icon--warn' : 'sp-done__icon--ok'}`} aria-hidden>
+              <Icon name={item.status === 'escalated' ? 'arrow-right' : 'ok'} />
+            </span>
+            <h2 className="type-title m-0">
+              {item.status === 'escalated' ? t('sentToLead', lang) : view.status === 'confirmed' ? t('returnConfirmed', lang) : t('confirmed', lang)}
+            </h2>
+            {item.committed && (
+              <p className="type-body m-0">
+                {t('grade', lang)} <strong className="sp-mono">{item.committed.grade}</strong> · {t('shelf', lang)} <strong className="sp-mono">{item.committed.locationCode}</strong>
+              </p>
+            )}
+          </section>
+        )}
+
+        {/* «Send til teamleder» is always available until the item is decided, never in a menu. */}
+        {!decided && phase !== 'overview' && (
+          <div>
+            {escalating ? (
+              <Card eyebrow={<><Icon name="arrow-right" />{t('sendToLead', lang)}</>}>
+                <label className="sp-sr" htmlFor="escalate-note">
+                  {t('notePlaceholder', lang)}
+                </label>
+                <textarea
+                  id="escalate-note"
+                  className="sp-input sp-textarea"
+                  placeholder={t('notePlaceholder', lang)}
+                  maxLength={500}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="quiet" onClick={() => setEscalating(false)}>
+                    {t('cancel', lang)}
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    disabled={busy !== null}
+                    onClick={async () => {
+                      const r = await actions.escalate(note.trim() || undefined, lang);
+                      if (r.ok) {
+                        setEscalating(false);
+                        setNote('');
+                      }
+                    }}
+                  >
+                    {t('send', lang)}
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <Button variant="secondary" block icon="arrow-right" onClick={() => setEscalating(true)}>
+                {t('sendToLead', lang)}
+              </Button>
+            )}
+          </div>
         )}
       </div>
-      {view.items.length > 1 && (
-        <nav className="flex gap-2 overflow-x-auto" aria-label={t('item', lang)}>
-          {view.items.map((it, k) => (
-            <button
-              key={it.id}
-              onClick={() => actions.selectItem(k)}
-              aria-current={k === station.itemIdx}
-              className={`min-h-12 shrink-0 rounded-xl border-2 px-4 text-base font-semibold ${k === station.itemIdx ? 'border-accent bg-blue-50' : 'border-gray-200'}`}
-            >
-              {t('item', lang)} {k + 1}
-              {it.status === 'decided' ? ' ✓' : it.status === 'escalated' ? ' →' : ''}
-            </button>
-          ))}
-        </nav>
-      )}
 
-      <NoticeBar station={station} lang={lang} />
-
-      {phase === 'overview' && (
-        <section className="flex flex-col gap-4">
-          {view.lateDays !== null && view.lateDays > (view.settings.returnWindowDays ?? 30) && (
-            <p className="rounded-xl bg-amber-50 px-4 py-3 text-warn">
-              <strong>{t('lateReturn', lang)}.</strong> {t('lateReturnHint', lang)}
-            </p>
-          )}
-          <div>
-            <div className="text-sm text-muted">{t('ordered', lang)}</div>
-            <div className="text-xl font-semibold">
-              {item.qty > 1 && `${item.qty} × `}
-              {productName(ordered, item.orderedSku, lang)}
-            </div>
-            <div className="font-mono text-sm text-muted">{item.orderedSku}</div>
-          </div>
-          <div>
-            <div className="text-sm text-muted">{t('customerReason', lang)}</div>
-            <p className="text-xl">“{view.ret.customerReasonNb}”</p>
-          </div>
-          <div className="rounded-2xl border-2 border-gray-200 p-3">
-            <div className="text-sm text-muted">
-              {t('packingEvidence', lang)} · {t('order', lang)} {view.order.id}
-            </div>
-            <div className="mt-1 flex items-center gap-3">
-              {view.packEvidence?.photoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={view.packEvidence.photoUrl} alt={t('packingEvidence', lang)} className="h-20 w-20 rounded-lg object-cover" />
-              )}
-              <span className={`text-lg font-semibold ${ev && !(ev.status === 'VERIFIED' && ev.sizeVerified) ? 'text-warn' : ''}`}>{t(evidenceKey, lang)}</span>
-            </div>
-          </div>
-          <button className="btn-primary text-xl" onClick={actions.start}>
-            {t('startInspection', lang)}
-          </button>
-        </section>
-      )}
-
-      {phase === 'photos' && (
-        <section className="flex flex-col gap-3">
-          <ol className="grid grid-cols-2 gap-2" aria-label={t('takePhoto', lang)}>
-            {steps.map(({ purpose, optional }) => {
-              const p = latest(purpose);
-              const done = !!p?.inspection;
-              const active = purpose === activeStep;
-              return (
-                <li key={purpose}>
-                  <button
-                    onClick={() => actions.selectStep(purpose)}
-                    aria-current={active ? 'step' : undefined}
-                    className={`flex min-h-14 w-full items-center justify-between rounded-xl border-2 px-3 text-left text-base font-semibold ${active ? 'border-accent bg-blue-50' : 'border-gray-200'}`}
-                  >
-                    <span>
-                      {t(STEP_KEY[purpose], lang)}
-                      {optional && <span className="block text-xs font-normal text-muted">{t('optional', lang)}</span>}
-                    </span>
-                    <span aria-hidden className={done ? 'text-ok' : 'text-muted'}>
-                      {done ? '✓' : '○'}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-
-          {station.cameraOpen && captureMode === 'camera' ? (
-            <Camera
-              lang={lang}
-              hint={t(HINT_KEY[activeStep], lang)}
-              onCapture={(jpeg) => void actions.capture(activeStep, jpeg)}
-              onCancel={actions.closeCamera}
-              controlRef={station.cameraControl}
-              countdown={station.countdown}
-            />
-          ) : (
-            <div className="flex flex-col gap-3">
-              <p className="text-lg font-semibold">{t(HINT_KEY[activeStep], lang)}</p>
-              {(() => {
-                const p = latest(activeStep);
-                const summary = photoSummary(p, lang);
-                const weak = !!p && (!p.inspection || (activeStep === 'label' && (!p.inspection.sizeRead || p.inspection.identityConfidence < (view.settings.returnConfidenceMin ?? 0.7))));
-                return p ? (
-                  <div className="flex flex-col gap-2" ref={resultRef}>
-                    <PhotoWithBox url={p.url} box={p.inspection?.box_2d} tone={p.inspection?.containsInstructions ? 'bad' : weak ? 'warn' : 'ok'} alt={t(STEP_KEY[activeStep], lang)} onLoad={showResult} />
-                    {summary && <p className={`text-lg font-semibold ${weak ? 'text-warn' : 'text-ok'}`}>{summary}</p>}
-                  </div>
-                ) : null;
-              })()}
-              {busy === 'capture' ? (
-                <p className="btn-secondary animate-pulse" aria-live="polite">
-                  {t('checking', lang)}
-                </p>
-              ) : (
-                <button
-                  className={latest(activeStep) ? 'btn-secondary' : 'btn-primary text-xl'}
-                  onClick={() => (captureMode === 'camera' ? actions.openCamera() : void actions.capture(activeStep, null))}
-                  disabled={decided}
-                >
-                  {latest(activeStep) ? t('retake', lang) : t('takePhoto', lang)}
-                </button>
-              )}
-            </div>
-          )}
-
-          {!station.cameraOpen && (
-            <button className="btn-primary mt-2" onClick={() => actions.setPhase('findings')} disabled={busy !== null}>
-              {t('next', lang)}
-            </button>
-          )}
-        </section>
-      )}
-
-      {phase === 'findings' && (
-        <section className="flex flex-col gap-4">
-          <h2 className="text-xl font-bold">{t('findings', lang)}</h2>
-          <ul className="divide-y">
-            <Row
-              ok={decision.receivedSku === null ? null : !decision.wrongItemShipped}
-              label={decision.receivedSku === null ? t('identityUnknown', lang) : decision.wrongItemShipped ? t('wrongItemDelivered', lang) : t('rightItem', lang)}
-              value={decision.receivedSku ? <span className="font-mono">{decision.receivedSku}</span> : '—'}
-            />
-            {decision.wrongItemShipped && decision.cause && (
-              <li className="py-1 pl-11 text-lg font-semibold text-warn">{t(CAUSE_KEY[decision.cause] ?? 'causeUnknown', lang)}</li>
-            )}
-            <Row
-              ok={decision.condition.tagsAttached === 'unknown' ? null : decision.condition.tagsAttached}
-              label={t('tags', lang)}
-              value={decision.condition.tagsAttached === 'unknown' ? t('unknownWord', lang) : decision.condition.tagsAttached ? t('attached', lang) : t('removed', lang)}
-            />
-            <Row ok={decision.condition.damage === 'none'} label={t('damage', lang)} value={t(decision.condition.damage, lang)} />
-            <Row ok={decision.condition.stains === 'none'} label={t('stains', lang)} value={t(decision.condition.stains, lang)} />
-            <Row
-              ok={decision.condition.packaging !== 'missing'}
-              label={t('packaging', lang)}
-              value={t(decision.condition.packaging === 'missing' ? 'missingWord' : decision.condition.packaging, lang)}
-            />
-          </ul>
-
-          {latest('label')?.inspection && (
-            <PhotoWithBox url={latest('label')!.url} box={latest('label')!.inspection!.box_2d} alt={t('stepLabel', lang)} tone={decision.wrongItemShipped ? 'bad' : 'ok'} />
-          )}
-
-          <div className="flex flex-col gap-3 rounded-2xl bg-slate-50 p-3">
-            <h3 className="text-lg font-semibold">{t('anyDamage', lang)}</h3>
-            <label className="text-sm text-muted">{t('stains', lang)}</label>
-            <Segmented<Severity>
-              label={t('stains', lang)}
-              value={item.worker.stains ?? 'none'}
-              onChange={(v) => actions.setWorker({ stains: v })}
-              options={(['none', 'minor', 'major'] as const).map((v) => ({ v, label: t(v, lang) }))}
-            />
-            <label className="text-sm text-muted">{t('damage', lang)}</label>
-            <Segmented<Severity>
-              label={t('damage', lang)}
-              value={item.worker.damage ?? 'none'}
-              onChange={(v) => actions.setWorker({ damage: v })}
-              options={(['none', 'minor', 'major'] as const).map((v) => ({ v, label: t(v, lang) }))}
-            />
-            <label className="text-sm text-muted">{t('tags', lang)}</label>
-            <Segmented<'yes' | 'no'>
-              label={t('tags', lang)}
-              value={item.worker.tagsAttached === false ? 'no' : 'yes'}
-              onChange={(v) => actions.setWorker({ tagsAttached: v === 'no' ? false : undefined })}
-              options={[
-                { v: 'yes', label: t('attached', lang) },
-                { v: 'no', label: t('removed', lang) },
-              ]}
-            />
-            <label className="flex min-h-12 items-center gap-3 text-lg">
-              <input type="checkbox" className="h-6 w-6" checked={!!item.worker.unusable} onChange={(e) => actions.setWorker({ unusable: e.target.checked })} />
-              {t('unusable', lang)}
-            </label>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <button className="btn-secondary" onClick={() => actions.setPhase('photos')}>
-              {t('back', lang)}
-            </button>
-            <button className="btn-primary" onClick={() => actions.setPhase('decision')}>
-              {t('next', lang)}
-            </button>
-          </div>
-        </section>
-      )}
-
-      {phase === 'decision' && (
-        <section className="flex flex-col gap-4">
-          <h2 className="text-xl font-bold">{t('decision', lang)}</h2>
-          {decision.status === 'needs_photos' && (
-            <button className="rounded-xl bg-amber-50 px-4 py-3 text-left text-lg font-semibold text-warn" onClick={() => actions.selectStep(decision.missingPhotos[0])}>
-              {t('missingPhotos', lang)}: {decision.missingPhotos.map((p) => t(STEP_KEY[p], lang)).join(', ')}
-            </button>
-          )}
-          {decision.status === 'needs_retake' && (
-            <button className="rounded-xl bg-amber-50 px-4 py-3 text-left text-lg font-semibold text-warn" onClick={() => actions.selectStep('label')}>
-              {t('retakeUnclear', lang)}
-            </button>
-          )}
-          {decision.status === 'escalated' && <p className="rounded-xl bg-amber-50 px-4 py-3 text-lg font-semibold text-warn">{t('escalatedHint', lang)}</p>}
-
-          {decision.grade && (
-            <div className="flex items-center gap-4">
-              <span className={`flex h-24 w-24 items-center justify-center rounded-2xl text-6xl font-black ${GRADE_TONE[decision.grade]}`} data-testid="grade">
-                {decision.grade}
-              </span>
-              <div>
-                <div className="text-sm text-muted">{t('shelf', lang)}</div>
-                <div className="font-mono text-5xl font-black tracking-tight" data-testid="shelf">
-                  {decision.locationCode}
-                </div>
-              </div>
-            </div>
-          )}
-          {decision.grade && (
-            <div className="flex items-baseline justify-between rounded-xl bg-slate-50 px-4 py-3">
-              <span className="text-lg">{t('refund', lang)}</span>
-              <span className="text-2xl font-bold" data-testid="refund">
-                {decision.refundNok === null ? t('leadDecidesRefund', lang) : nok(decision.refundNok)}
-              </span>
-            </div>
-          )}
-          {decision.suspiciousNote && (
-            <div ref={flagRef} className="rounded-xl border-2 border-bad bg-red-50 px-4 py-3 text-bad" role="alert">
-              <div className="text-lg font-bold">⚑ {t('suspiciousNote', lang)}</div>
-              <p>{t('noteReadAsText', lang)}</p>
-            </div>
-          )}
-          {decision.wrongItemShipped && received && (
-            <p className="text-lg">
-              <strong>{t('wrongItemDelivered', lang)}:</strong> {productName(received, decision.receivedSku!, lang)} · {t(CAUSE_KEY[decision.cause ?? 'unknown'], lang)}
-            </p>
-          )}
-          {decision.stockProposals.length > 0 && (
-            <div className="rounded-xl border-2 border-gray-200 px-4 py-3">
-              <div className="text-sm text-muted">{t('stockCorrection', lang)}</div>
-              {decision.stockProposals.map((s) => (
-                <div key={s.sku} className="flex justify-between font-mono text-lg">
-                  <span>{s.sku}</span>
-                  <span className={s.delta > 0 ? 'text-ok' : 'text-bad'}>{s.delta > 0 ? `+${s.delta}` : s.delta}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          {decision.escalations.length > 0 && !decision.suspiciousNote && decision.status !== 'escalated' && (
-            <p className="text-lg font-semibold text-warn">{t('goesToLead', lang)}</p>
-          )}
-
-          <button className="btn min-h-16 bg-ok text-2xl text-white" disabled={!decision.canConfirm || busy !== null} onClick={() => void actions.confirm()}>
-            {busy === 'confirm' ? t('checking', lang) : t('confirmReturn', lang)}
-          </button>
-          <button className="btn-secondary" onClick={() => actions.setPhase('findings')}>
-            {t('back', lang)}
-          </button>
-        </section>
-      )}
-
-      {phase === 'done' && (
-        <section className="flex flex-col items-center gap-4 py-6 text-center">
-          <div className={`flex h-24 w-24 items-center justify-center rounded-full text-5xl text-white ${item.status === 'escalated' ? 'bg-warn' : 'bg-ok'}`} aria-hidden>
-            {item.status === 'escalated' ? '→' : '✓'}
-          </div>
-          <h2 className="text-2xl font-bold">
-            {item.status === 'escalated' ? t('sentToLead', lang) : view.status === 'confirmed' ? t('returnConfirmed', lang) : t('confirmed', lang)}
-          </h2>
-          {item.committed && (
-            <p className="text-xl">
-              {t('grade', lang)} <strong>{item.committed.grade}</strong> · {t('shelf', lang)}{' '}
-              <strong className="font-mono">{item.committed.locationCode}</strong>
-            </p>
-          )}
-          {station.nextOpenItem >= 0 ? (
-            <button className="btn-primary w-full text-xl" onClick={() => actions.selectItem(station.nextOpenItem)}>
-              {t('nextItem', lang)}
-            </button>
-          ) : (
-            onBackToQueue && (
-              <button className="btn-primary w-full text-xl" onClick={onBackToQueue}>
-                {t('backToQueue', lang)}
-              </button>
-            )
-          )}
-        </section>
-      )}
-
-      {/* "Send til teamleder" is always available until the item is decided. */}
-      {!decided && phase !== 'overview' && (
-        <div className="mt-auto pt-2">
-          {escalating ? (
-            <div className="flex flex-col gap-2 rounded-2xl border-2 border-warn p-3">
-              <textarea
-                className="min-h-20 rounded-xl border-2 border-gray-200 p-3 text-lg"
-                placeholder={t('notePlaceholder', lang)}
-                maxLength={500}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <button className="btn-secondary" onClick={() => setEscalating(false)}>
-                  {t('cancel', lang)}
-                </button>
-                <button
-                  className="btn bg-warn text-white"
-                  disabled={busy !== null}
-                  onClick={async () => {
-                    const r = await actions.escalate(note.trim() || undefined, lang);
-                    if (r.ok) {
-                      setEscalating(false);
-                      setNote('');
-                    }
-                  }}
-                >
-                  {t('send', lang)}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button className={`w-full ${decision.status === 'escalated' ? 'btn bg-warn text-white' : 'btn-secondary'}`} onClick={() => setEscalating(true)}>
-              {t('sendToLead', lang)}
-            </button>
-          )}
+      {(dock || main) && (
+        <div className="sp-thumb">
+          {dock}
+          {main}
         </div>
       )}
     </div>

@@ -51,13 +51,13 @@ export default async function AuditPage({ searchParams }: PageProps<'/admin/audi
     if (p) u.set('page', String(p));
     return `/admin/audit${u.size ? `?${u}` : ''}`;
   };
-  const field = 'rounded-lg border border-slate-300 px-3 py-2 text-base';
+  const field = 'sp-input sp-input--desk';
 
   return (
     <>
-      <h1 className="text-3xl font-bold">Revisjonslogg</h1>
+      <h1 className="type-title m-0">Revisjonslogg</h1>
       <form className="flex flex-wrap items-end gap-3" data-testid="audit-filters">
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-[15px]">
           Stasjon
           <select name="station" defaultValue={station} className={field}>
             <option value="">Alle</option>
@@ -68,7 +68,7 @@ export default async function AuditPage({ searchParams }: PageProps<'/admin/audi
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-[15px]">
           Hendelse
           <select name="type" defaultValue={type} className={field}>
             <option value="">Alle</option>
@@ -79,29 +79,29 @@ export default async function AuditPage({ searchParams }: PageProps<'/admin/audi
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-[15px]">
           Referanse
           <input name="q" defaultValue={q} placeholder="1043, JK-SHELL-L …" className={`${field} w-44`} />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-[15px]">
           Fra
           <input type="date" name="from" defaultValue={from} className={field} />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-[15px]">
           Til
           <input type="date" name="to" defaultValue={to} className={field} />
         </label>
-        <button className="rounded-lg bg-frame px-4 py-2 font-semibold text-white">Filtrer</button>
-        <Link href="/admin/audit" className="pb-2 underline">
+        <button className="sp-btn sp-btn--primary sp-btn--desk">Filtrer</button>
+        <Link href="/admin/audit" className="sp-link pb-3">
           Nullstill
         </Link>
       </form>
 
       <Card title={`${total} hendelser`}>
-        <table className="w-full text-left text-base" data-testid="audit-table">
-          <thead className="text-sm text-muted">
+        <table className="sp-table" data-testid="audit-table">
+          <thead>
             <tr>
-              <th className="py-1">Tid</th>
+              <th>Tid</th>
               <th>Stasjon</th>
               <th>Hendelse</th>
               <th>Ref.</th>
@@ -111,36 +111,36 @@ export default async function AuditPage({ searchParams }: PageProps<'/admin/audi
           </thead>
           <tbody>
             {(events ?? []).map((e) => (
-              <tr key={e.id} className="border-t align-top" data-type={e.type}>
-                <td className="whitespace-nowrap py-2 pr-3 font-mono text-sm">
+              <tr key={e.id} data-type={e.type}>
+                <td className="type-code-dense whitespace-nowrap">
                   {new Date(e.at).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo', dateStyle: 'short', timeStyle: 'medium' })}
                 </td>
-                <td className="pr-3 text-sm">{STATIONS[e.station] ?? e.station}</td>
-                <td className="pr-3 font-mono text-xs">{e.type}</td>
-                <td className="pr-3 font-mono text-sm">{e.ref_label ?? '—'}</td>
-                <td className="pr-3">
+                <td>{STATIONS[e.station] ?? e.station}</td>
+                <td className="type-code-dense">{e.type}</td>
+                <td className="type-code-dense">{e.ref_label ?? '—'}</td>
+                <td>
                   <details>
                     <summary className="cursor-pointer" title={e.summary_en}>
                       {e.summary_nb}
                     </summary>
                     {e.payload ? (
-                      <pre className="mt-1 max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">{JSON.stringify(e.payload, null, 2)}</pre>
+                      <pre className="sp-pre mt-1">{JSON.stringify(e.payload, null, 2)}</pre>
                     ) : (
-                      <p className="mt-1 text-sm text-muted">Ingen detaljer.</p>
+                      <p className="mt-1 text-[15px] text-ink-2">Ingen detaljer.</p>
                     )}
                   </details>
                 </td>
-                <td className="text-sm">{e.actor_user ? (person.get(e.actor_user) ?? 'ukjent bruker') : e.actor_device ? (device.get(e.actor_device) ?? 'ukjent enhet') : '—'}</td>
+                <td>{e.actor_user ? (person.get(e.actor_user) ?? 'ukjent bruker') : e.actor_device ? (device.get(e.actor_device) ?? 'ukjent enhet') : '—'}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <div className="mt-4 flex items-center justify-between text-base">
-          {page > 0 ? <Link href={link(page - 1)} className="underline">← Nyere</Link> : <span />}
-          <span className="text-muted">
+        <div className="mt-4 flex items-center justify-between text-[15px]">
+          {page > 0 ? <Link href={link(page - 1)} className="sp-link">← Nyere</Link> : <span />}
+          <span className="text-ink-2">
             Side {page + 1} av {Math.max(1, Math.ceil(total / PAGE))}
           </span>
-          {(page + 1) * PAGE < total ? <Link href={link(page + 1)} className="underline">Eldre →</Link> : <span />}
+          {(page + 1) * PAGE < total ? <Link href={link(page + 1)} className="sp-link">Eldre →</Link> : <span />}
         </div>
       </Card>
     </>

@@ -19,15 +19,15 @@ export default async function GuidePage() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold">Vurderingsveiledning</h1>
+      <h1 className="type-title m-0">Vurderingsveiledning</h1>
       <Card title="Veiledning for grad, hylle og refusjon">
-        <p className="mb-3 text-base text-muted">
+        <p className="mb-3 text-[15px] text-ink-2">
           Teksten er kunnskapsbasen til retur-assistenten og teamleder-assistenten. Når du lagrer, sendes den til ElevenLabs med en gang. Regelmotoren bestemmer fortsatt grad og refusjon;
           veiledningen styrer hva assistentene forklarer.
         </p>
         <GuideEditor initial={settings.grading_guide} />
         {last && (
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-3 text-[15px] text-ink-2">
             Sist {last.type === 'GRADING_GUIDE_SYNCED' ? 'sendt' : 'forsøkt sendt (feilet)'}{' '}
             {new Date(last.at).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo', dateStyle: 'short', timeStyle: 'short' })}.
           </p>

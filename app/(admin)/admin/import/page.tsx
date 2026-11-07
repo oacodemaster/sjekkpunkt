@@ -10,16 +10,16 @@ export default async function ImportPage() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold">Import</h1>
+      <h1 className="type-title m-0">Import</h1>
       <Card title="CSV-import av varer, ordrer og returer">
         <ImportForm />
       </Card>
       {(recent ?? []).length > 0 && (
         <Card title="Siste importer">
-          <ul className="flex flex-col gap-1 text-base">
+          <ul className="flex flex-col gap-1 text-[15px]">
             {(recent ?? []).map((r) => (
               <li key={r.id}>
-                <span className="font-mono text-sm text-muted">{new Date(r.at).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo', dateStyle: 'short', timeStyle: 'short' })}</span> {r.summary_nb}
+                <span className="sp-mono text-[15px] text-ink-2">{new Date(r.at).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo', dateStyle: 'short', timeStyle: 'short' })}</span> {r.summary_nb}
               </li>
             ))}
           </ul>

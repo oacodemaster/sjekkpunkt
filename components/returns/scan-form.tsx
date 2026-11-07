@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Lang } from '@/lib/engine/types';
 import { t, type StringKey } from '@/lib/i18n/strings';
+import { Banner, Button, Card, Field, Icon } from '@/components/ui';
 
 interface Detector {
   detect(source: CanvasImageSource): Promise<{ rawValue: string }[]>;
@@ -91,47 +92,48 @@ export function ScanForm({ lang }: { lang: Lang }) {
   }, [scanning]);
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border-2 border-accent p-4">
-      <h2 className="text-xl font-bold">{t('scanReturn', lang)}</h2>
+    <Card eyebrow={<><Icon name="barcode" />{t('scanReturn', lang)}</>}>
       {scanning && (
-        <div className="aspect-square w-full overflow-hidden rounded-xl bg-black">
-          <video ref={video} playsInline muted className="h-full w-full object-cover" />
+        <div className="sp-stage">
+          <div className="aspect-square w-full overflow-hidden rounded-[4px]">
+            <video ref={video} playsInline muted className="h-full w-full object-cover" />
+          </div>
         </div>
       )}
       {canScan && (
-        <button className="btn-primary text-xl" onClick={() => setScanning((s) => !s)}>
+        <Button block icon={scanning ? undefined : 'camera'} variant={scanning ? 'secondary' : 'primary'} onClick={() => setScanning((s) => !s)}>
           {scanning ? t('cancel', lang) : t('scanCamera', lang)}
-        </button>
+        </Button>
       )}
       <form
-        className="grid grid-cols-[1fr_auto] gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           void submit(code);
         }}
       >
-        <label className="sr-only" htmlFor="return-code">
-          {t('returnNumber', lang)}
-        </label>
-        <input
+        <Field
           id="return-code"
+          label={t('returnNumber', lang)}
+          srLabel
+          mono
           inputMode="numeric"
           autoComplete="off"
-          className="min-h-14 rounded-xl border-2 border-gray-300 px-4 text-xl"
           placeholder={t('returnNumber', lang)}
           value={code}
           onChange={(e) => setCode(e.target.value)}
+          help={t('scanHint', lang)}
+          action={
+            <Button type="submit" variant={canScan ? 'secondary' : 'primary'} disabled={busy || !code.trim()}>
+              {t('open', lang)}
+            </Button>
+          }
         />
-        <button className={canScan ? 'btn-secondary' : 'btn-primary'} disabled={busy || !code.trim()}>
-          {t('open', lang)}
-        </button>
       </form>
-      <p className="text-sm text-muted">{t('scanHint', lang)}</p>
       {msg && (
-        <p role="alert" className={`rounded-xl px-4 py-3 text-lg font-semibold ${msg.tone === 'bad' ? 'bg-red-50 text-bad' : 'bg-amber-50 text-warn'}`}>
+        <Banner tone={msg.tone === 'bad' ? 'error' : 'warn'} role="alert">
           {t(msg.key, lang)}
-        </p>
+        </Banner>
       )}
-    </div>
+    </Card>
   );
 }

@@ -10,8 +10,8 @@ export default async function NewProductPage() {
   return (
     <>
       <div className="flex items-baseline justify-between">
-        <h1 className="text-3xl font-bold">Ny vare</h1>
-        <Link href="/admin/products" className="underline">
+        <h1 className="type-title m-0">Ny vare</h1>
+        <Link href="/admin/products" className="sp-link">
           Alle varer
         </Link>
       </div>
@@ -23,7 +23,7 @@ export default async function NewProductPage() {
           initial={{ sku: '', name_nb: '', name_en: '', category: 'apparel', color: '', size: '', price_nok: 0, location_code: '', variant_group: '', barcode: '' }}
         />
       </Card>
-      <p className="text-base text-muted">Referansebilder kan legges til når varen er opprettet.</p>
+      <p className="text-[15px] text-ink-2">Referansebilder kan legges til når varen er opprettet.</p>
     </>
   );
 }

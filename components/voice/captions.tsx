@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Lang } from '@/lib/engine/types';
 import { useLatest } from '@/lib/hooks/use-latest';
 import { t } from '@/lib/i18n/strings';
+import { CaptionPair } from '@/components/ui';
 
 // Captions for every agent and worker turn (addendum section 8): the line as spoken, and under
 // it a Norwegian or English line translated on the server. Plain text only, never HTML.
@@ -73,20 +74,22 @@ export function useCaptions(target: CaptionTarget) {
   return { lines, add, clear: () => setLines([]) };
 }
 
-export function CaptionList({ lines, lang, max = 3 }: { lines: Caption[]; lang: Lang; max?: number }) {
+export function CaptionList({ lines, lang, max = 3, target }: { lines: Caption[]; lang: Lang; max?: number; target?: CaptionTarget }) {
   const shown = lines.slice(-max);
   if (!shown.length) return null;
   return (
-    <ol className="flex flex-col gap-2" aria-live="polite" data-testid="captions">
+    <ol className="sp-captions" aria-live="polite" data-testid="captions">
       {shown.map((l) => (
-        <li key={l.id} data-role={l.role} className={`rounded-xl px-3 py-2 ${l.role === 'agent' ? 'bg-slate-100' : 'ml-6 bg-blue-50'}`}>
-          <p className="text-base leading-snug">{l.text}</p>
-          {l.pending ? (
-            <p className="text-sm italic text-muted">{t('translating', lang)}</p>
-          ) : (
-            l.translation && <p className="text-sm leading-snug text-muted">{l.translation}</p>
-          )}
-        </li>
+        <CaptionPair
+          key={l.id}
+          role={l.role}
+          text={l.text}
+          lang={l.lang}
+          target={target}
+          pending={l.pending}
+          pendingLabel={t('translating', lang)}
+          translation={l.translation}
+        />
       ))}
     </ol>
   );

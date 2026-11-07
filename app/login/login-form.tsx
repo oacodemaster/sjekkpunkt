@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { Banner, Button, Field } from '@/components/ui';
 import { signIn, type SignInState } from '@/lib/auth/actions';
 
 const ERRORS: Record<string, string> = {
@@ -12,36 +13,18 @@ export function LoginForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<SignInState, FormData>(signIn, {});
 
   return (
-    <form action={action} className="mt-6 flex flex-col gap-4">
+    <form action={action} className="flex flex-col gap-4">
       {next && <input type="hidden" name="next" value={next} />}
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-muted">E-post · Email</span>
-        <input
-          name="email"
-          type="email"
-          autoComplete="username"
-          required
-          className="min-h-14 rounded-xl border-2 border-gray-300 px-4 text-lg"
-        />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-muted">Passord · Password</span>
-        <input
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          className="min-h-14 rounded-xl border-2 border-gray-300 px-4 text-lg"
-        />
-      </label>
+      <Field id="email" label="E-post · Email" name="email" type="email" autoComplete="username" required />
+      <Field id="password" label="Passord · Password" name="password" type="password" autoComplete="current-password" required />
       {state.error && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-bad">
+        <Banner tone="error" role="alert">
           {ERRORS[state.error] ?? state.error}
-        </p>
+        </Banner>
       )}
-      <button type="submit" disabled={pending} className="btn-primary">
+      <Button type="submit" block disabled={pending}>
         {pending ? '…' : 'Logg inn'}
-      </button>
+      </Button>
     </form>
   );
 }

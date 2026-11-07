@@ -11,7 +11,7 @@ export function RetentionButton() {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <button
-        className="btn-secondary"
+        className="sp-btn sp-btn--secondary sp-btn--desk"
         disabled={busy}
         onClick={async () => {
           setBusy(true);

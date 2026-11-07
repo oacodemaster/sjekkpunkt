@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { PackStationView } from '@/components/pack/pack-station';
 import { usePackStation } from '@/components/pack/use-pack-station';
 import { ReturnStationView } from '@/components/returns/return-station';
+import { CaptionPair, Icon, Wordmark } from '@/components/ui';
 import { useReturnStation } from '@/components/returns/use-return-station';
 import { earconSrc, playEarcon, playLine, preloadAudio, stopLine } from '@/lib/audio/player';
 import { EARCONS, voiceLines, type EarconName } from '@/lib/demo/audio';
@@ -53,22 +54,28 @@ function Typewriter({ text, animate }: { text: string; animate: boolean }) {
   const [n, setN] = useState(animate ? 0 : text.length);
   useEffect(() => {
     if (!animate) return;
-    const id = setInterval(() => setN((k) => (k >= text.length ? (clearInterval(id), k) : k + 2)), 18);
+    // Under reduced motion nothing moves: the line appears whole on the first tick.
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const id = setInterval(() => setN((k) => (still ? (clearInterval(id), text.length) : k >= text.length ? (clearInterval(id), k) : k + 2)), still ? 0 : 18);
     return () => clearInterval(id);
   }, [text, animate]);
   return <>{text.slice(0, animate ? n : text.length)}</>;
 }
 
-function Panel({ title, children, className = '', testId }: { title: string; children: React.ReactNode; className?: string; testId?: string }) {
+/** A back-office panel on the stage: frame-2 on the graphite ground. */
+function Panel({ title, children, className = '', testId, tag }: { title: string; children: React.ReactNode; className?: string; testId?: string; tag?: string }) {
   return (
-    <section className={`flex scroll-mt-2 flex-col rounded-2xl bg-white p-4 shadow lg:min-h-0 ${className}`} data-panel={testId}>
-      <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">{title}</h2>
+    <section className={`sp-panel-dark flex scroll-mt-2 flex-col p-4 lg:min-h-0 ${className}`} data-panel={testId}>
+      <h2 className="m-0 mb-2 flex items-baseline gap-2 text-[15px] font-bold uppercase tracking-wide text-ink-2-on-dark">
+        {title}
+        {tag && <span className="text-[13px] font-semibold normal-case tracking-normal">{tag}</span>}
+      </h2>
       <div className="flex-1 lg:min-h-0 lg:overflow-auto">{children}</div>
     </section>
   );
 }
 
-/** Agent and worker bubbles with an EN or NB line under them. */
+/** Coach and worker lines as caption pairs (dark), with the EN or NB line typed out under them. */
 function Captions({
   spoken,
   currentId,
@@ -85,21 +92,23 @@ function Captions({
   compact?: boolean;
 }) {
   return (
-    <div className={className} aria-live="polite" data-testid={testId}>
+    <ol className={`sp-captions ${compact ? '' : 'demo-captions'} ${className}`} aria-live="polite" data-testid={testId}>
       {spoken.map((s, k) => {
         const latest = k === spoken.length - 1 && currentId === s.id;
         return (
-          <div key={s.id} className={`rounded-2xl ${compact ? 'px-3 py-1.5' : 'px-4 py-2'} ${s.speaker === 'worker' ? 'ml-8 bg-accent' : 'mr-8 bg-white/15'} ${latest ? '' : 'opacity-60'}`}>
-            <div className={`${compact ? 'text-sm' : 'text-base'} leading-snug`}>{s.line}</div>
-            {s.lang !== captionLang && (
-              <div className={`mt-1 ${compact ? 'text-xs' : 'text-sm'} leading-snug text-slate-300`}>
-                <Typewriter text={(captionLang === 'en' ? s.captionEn : s.captionNb) ?? ''} animate={latest} />
-              </div>
-            )}
-          </div>
+          <CaptionPair
+            key={s.id}
+            role={s.speaker === 'worker' ? 'worker' : 'agent'}
+            text={s.line}
+            lang={s.lang}
+            target={s.lang !== captionLang ? captionLang : undefined}
+            translation={s.lang !== captionLang ? <Typewriter text={(captionLang === 'en' ? s.captionEn : s.captionNb) ?? ''} animate={latest} /> : null}
+            dim={!latest}
+            className={compact ? 'demo-captions--compact' : ''}
+          />
         );
       })}
-    </div>
+    </ol>
   );
 }
 
@@ -384,45 +393,52 @@ export function DemoStage() {
 
   const field = (label: string, value: React.ReactNode, wide = false, big = false) => (
     <div className={wide ? 'col-span-2' : ''}>
-      <dt className="text-xs uppercase tracking-wide text-muted">{label}</dt>
-      <dd className={big ? 'font-mono text-xl font-bold' : 'text-base leading-snug'}>{value}</dd>
+      <dt className="holio-muted text-[12px] uppercase tracking-wide">{label}</dt>
+      <dd className={big ? 'holio-mono text-[20px] font-bold' : 'leading-snug'}>{value}</dd>
     </div>
   );
+  const darkBtn = 'sp-btn sp-btn--on-dark sp-btn--desk min-h-11 px-3 text-[15px]';
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-frame text-white lg:h-screen lg:min-h-[860px]">
+    <div className="sp-dark flex h-dvh flex-col overflow-hidden lg:h-screen lg:min-h-[860px]">
       {/* Top bar */}
       <header className="flex flex-wrap items-center gap-2 px-4 py-2 lg:gap-4 lg:px-6 lg:py-3">
-        <span className="text-xl font-bold tracking-tight lg:text-2xl">Sjekkpunkt</span>
-        <div className="hidden rounded-xl bg-white/10 p-1 text-base lg:flex">
+        <Wordmark surface="dark" size={32} nameSize={22} href={null} />
+        <div className="hidden gap-1 lg:flex">
           {(['pack', 'return'] as const).map((k) => (
-            <span key={k} className={`rounded-lg px-4 py-1 transition-colors ${stationKind === k ? 'bg-white font-semibold text-frame' : 'text-slate-400'}`} data-testid={`station-${k}`} aria-current={stationKind === k}>
+            <span
+              key={k}
+              className={`rounded-md border-2 px-3 py-1 text-[16px] font-semibold ${stationKind === k ? 'border-ink-on-dark bg-ink-on-dark text-frame' : 'border-line-on-dark text-ink-2-on-dark'}`}
+              data-testid={`station-${k}`}
+              aria-current={stationKind === k}
+            >
               {k === 'pack' ? 'Pakking' : 'Retur'}
             </span>
           ))}
         </div>
-        <span className="rounded-md bg-warn px-2 py-0.5 text-sm font-bold">DEMO</span>
-        <span className="rounded-full bg-white/15 px-3 py-1 font-semibold" aria-label="worker language" data-testid="lang-chip">
+        <span className="sp-mono rounded-sm border-2 border-ink-2-on-dark px-2 py-0.5 text-[13px] font-bold tracking-wide text-ink-2-on-dark">DEMO</span>
+        <span className="sp-lang border-ink-on-dark" aria-label="worker language" data-testid="lang-chip">
           {lang.toUpperCase()}
         </span>
-        <button className="rounded-full bg-white/15 px-3 py-1 text-sm" onClick={() => setCaptionLang((v) => (v === 'en' ? 'nb' : 'en'))}>
-          Tekst: {captionLang.toUpperCase()}
+        <button className={darkBtn} onClick={() => setCaptionLang((v) => (v === 'en' ? 'nb' : 'en'))}>
+          Tekst: <span className="sp-mono">{captionLang.toUpperCase()}</span>
         </button>
-        {muted && <span className="text-sm text-slate-400">Lyd av</span>}
-        <span className="ml-auto hidden text-sm text-slate-400 lg:inline">{DEMO_DEVICE}</span>
+        {muted && <span className="text-[15px] text-ink-2-on-dark">Lyd av</span>}
+        <span className="sp-mono ml-auto hidden text-[15px] text-ink-2-on-dark lg:inline">{DEMO_DEVICE}</span>
         {step < 0 && (
-          <button className="hidden rounded-xl bg-accent px-4 py-2 font-semibold lg:block" onClick={() => go(0)}>
-            Start demo →
+          <button className="sp-btn sp-btn--brand hidden lg:inline-flex" onClick={() => go(0)}>
+            Start demo
+            <Icon name="arrow-right" />
           </button>
         )}
         {/* Phone: the handheld or the back office */}
-        <div className="flex w-full rounded-xl bg-white/10 p-1 text-sm lg:hidden" role="tablist">
+        <div className="flex w-full gap-1 lg:hidden" role="tablist">
           {(['phone', 'office'] as const).map((v) => (
             <button
               key={v}
               role="tab"
               aria-selected={mobileView === v}
-              className={`flex-1 rounded-lg px-3 py-1.5 ${mobileView === v ? 'bg-white font-semibold text-frame' : 'text-slate-300'}`}
+              className={`min-h-11 flex-1 rounded-md border-2 px-3 text-[15px] font-semibold ${mobileView === v ? 'border-ink-on-dark bg-ink-on-dark text-frame' : 'border-line-on-dark text-ink-2-on-dark'}`}
               onClick={() => setMobileView(v)}
             >
               {v === 'phone' ? (stationKind === 'pack' ? 'Håndholdt · Pakking' : 'Håndholdt · Retur') : 'Holio WMS'}
@@ -432,9 +448,9 @@ export function DemoStage() {
       </header>
 
       <div className="flex min-h-0 flex-1 gap-6 overflow-y-auto lg:overflow-hidden lg:px-6 lg:pb-4">
-        {/* Phone frame + captions */}
+        {/* The handheld in its device frame, then the captions */}
         <div className={`w-full shrink-0 flex-col gap-3 lg:flex lg:w-[420px] ${mobileView === 'phone' ? 'flex' : 'hidden'}`}>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white text-foreground lg:rounded-[2.2rem] lg:border-[10px] lg:border-slate-800 lg:shadow-2xl">
+          <div className="sp-handheld sp-light flex min-h-0 flex-1 flex-col overflow-hidden bg-surface text-ink lg:rounded-xl lg:border-[10px] lg:border-[#2a2c28] lg:shadow-device">
             <div className="min-h-0 flex-1 lg:overflow-y-auto">
               {stationKind === 'pack' ? (
                 <PackStationView station={pack} lang={lang} captureMode="fixture" />
@@ -443,29 +459,31 @@ export function DemoStage() {
               )}
             </div>
           </div>
-          <Captions spoken={spoken} currentId={current?.id} captionLang={captionLang} className="hidden min-h-[150px] flex-col justify-end gap-2 lg:flex" testId="captions" />
+          {/* The latest line only, at back-row size: two lines would squeeze the handheld (docs/decisions.md). */}
+          <Captions spoken={spoken.slice(-1)} currentId={current?.id} captionLang={captionLang} className="hidden min-h-[120px] justify-end lg:flex" testId="captions" />
         </div>
 
         {/* Back office */}
-        <div ref={panels} className={`min-h-0 flex-1 flex-col gap-3 px-3 pb-3 text-foreground lg:flex lg:px-0 lg:pb-0 ${mobileView === 'office' ? 'flex' : 'hidden'}`}>
-          <div className="hidden text-lg font-semibold text-slate-300 lg:block">Holio WMS (mock)</div>
+        <div ref={panels} className={`min-h-0 flex-1 flex-col gap-3 px-3 pb-3 lg:flex lg:px-0 lg:pb-0 ${mobileView === 'office' ? 'flex' : 'hidden'}`}>
+          <div className="hidden text-[18px] font-semibold text-ink-2-on-dark lg:block">Holio WMS (mock)</div>
           <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-2 lg:grid-rows-[minmax(0,1.12fr)_minmax(0,1fr)] lg:gap-4">
             <Panel title="Hendelseslogg" testId="event-log" className="order-4 lg:order-none">
-              <ul className="flex flex-col gap-1.5 text-base" data-testid="event-log">
+              {/* Holio's own list: a separate system, no Sjekkpunkt tokens. */}
+              <ul className="holio m-0 flex list-none flex-col gap-1.5 border-0 p-3" data-testid="event-log">
                 {state.events.map((e) => (
                   <li key={e.id} className="flex gap-3" title={e.summaryEn}>
-                    <span className="shrink-0 font-mono text-sm text-muted">{time(e.at)}</span>
+                    <span className="holio-mono holio-muted shrink-0 text-[13px]">{time(e.at)}</span>
                     <span className="flex-1">{e.summaryNb}</span>
-                    <span className="hidden shrink-0 font-mono text-xs text-muted sm:inline">{e.actor}</span>
+                    <span className="holio-mono holio-muted hidden shrink-0 text-[12px] sm:inline">{e.actor}</span>
                   </li>
                 ))}
               </ul>
             </Panel>
 
             <Panel title="Returkort" testId="return-record" className="order-1 lg:order-none">
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-2" data-testid="return-record">
-                {field('Retur', <span className="font-mono">{state.view.ret.id}</span>)}
-                {field('Ordre', <span className="font-mono">{state.view.order.id}</span>)}
+              <dl className="holio m-0 grid grid-cols-2 gap-x-4 gap-y-2 border-0 p-3" data-testid="return-record">
+                {field('Retur', <span className="holio-mono">{state.view.ret.id}</span>)}
+                {field('Ordre', <span className="holio-mono">{state.view.order.id}</span>)}
                 {field('Lokasjon', decided?.committed.locationCode ?? '—', false, true)}
                 {field('Grad', decided?.committed.grade ?? '—', false, true)}
                 {field('Tilstand', decided ? (decided.decision.condition.damage === 'none' && decided.decision.condition.stains === 'none' ? 'Som ny' : 'Merker/skade') : '—')}
@@ -476,20 +494,20 @@ export function DemoStage() {
                   'Flagg',
                   <span className="flex flex-wrap gap-1">
                     {(decided?.committed.flags ?? []).map((f) => (
-                      <span key={f} className={`rounded-full px-2 py-0.5 text-sm font-semibold ${f === 'suspicious_note' ? 'bg-red-50 text-bad' : 'bg-amber-50 text-warn'}`}>
+                      <span key={f} className={`holio-tag ${f === 'suspicious_note' ? 'holio-bad' : 'holio-warn'}`}>
                         {FLAG_NB[f] ?? f}
                       </span>
                     ))}
                     {!decided && '—'}
                   </span>,
                 )}
-                {field('Lagerkorreksjon', <span className="font-mono text-sm">{decided ? decided.decision.stockProposals.map((s) => `${s.sku} ${s.delta > 0 ? '+' : ''}${s.delta}`).join(' · ') || '—' : '—'}</span>)}
+                {field('Lagerkorreksjon', <span className="holio-mono text-[13px]">{decided ? decided.decision.stockProposals.map((s) => `${s.sku} ${s.delta > 0 ? '+' : ''}${s.delta}`).join(' · ') || '—' : '—'}</span>)}
                 {field(
                   'Bilder',
                   <span className="flex gap-1">
                     {record?.photos.map((p) => (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img key={p.photoId} src={p.url ?? ''} alt={p.purpose} className="h-11 w-11 rounded object-cover" />
+                      <img key={p.photoId} src={p.url ?? ''} alt={p.purpose} className="h-11 w-11 rounded-[2px] object-cover" />
                     ))}
                     {!record?.photos.length && '—'}
                   </span>,
@@ -498,55 +516,72 @@ export function DemoStage() {
                   'Pakkebevis',
                   <span className="flex items-center gap-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={state.view.packEvidence?.photoUrl ?? ''} alt="Pakkebevis" className="h-11 w-11 rounded object-cover" />
-                    <span className="text-sm leading-tight">Manuelt bekreftet, størrelse ikke lest</span>
+                    <img src={state.view.packEvidence?.photoUrl ?? ''} alt="Pakkebevis" className="h-11 w-11 rounded-[2px] object-cover" />
+                    <span className="text-[13px] leading-tight">Manuelt bekreftet, størrelse ikke lest</span>
                   </span>,
                 )}
               </dl>
             </Panel>
 
-            <Panel title="Forvekslinger siste 7 dager" testId="insights" className={`order-3 lg:order-none ${loopHighlight ? 'animate-pulse ring-4 ring-warn' : ''}`}>
-              <ul className="flex flex-col gap-2 text-base" data-testid="insights">
+            <Panel
+              title="Forvekslinger siste 7 dager"
+              tag="Sjekkpunkt"
+              testId="insights"
+              className={`order-3 lg:order-none ${loopHighlight ? 'outline outline-3 outline-brand' : ''}`}
+            >
+              <ul className="m-0 flex list-none flex-col gap-2 p-0" data-testid="insights">
                 {pairs.map(({ pair, count }) => {
                   const alert = state.alerts.find((a) => a.active && pairKey(a.skuPair) === pairKey(pair));
                   return (
-                    <li key={pairKey(pair)} className={`rounded-xl px-3 py-2 transition-colors ${alert ? 'bg-amber-50 ring-2 ring-warn' : 'bg-slate-50'}`}>
-                      <div className="flex justify-between">
+                    <li key={pairKey(pair)} className={`rounded-md border-2 px-3 py-2 ${alert ? (loopHighlight ? 'border-brand bg-brand-wash' : 'border-warn-on-dark') : 'border-line-on-dark'}`}>
+                      <div className="flex justify-between gap-3">
                         <span className="font-semibold">{pairLabelNb(pair, PRODUCTS)}</span>
-                        <span className="font-mono text-lg font-bold">{count}</span>
+                        <span className="type-code font-bold">{count}</span>
                       </div>
-                      {alert && <div className="text-sm font-semibold text-warn">Pakkevarsel aktivt: etikettfoto kreves</div>}
+                      {alert && (
+                        <div className="mt-1 flex items-center gap-1.5 text-[15px] font-semibold text-warn-on-dark">
+                          <Icon name="warn" className="h-5 w-5" />
+                          Pakkevarsel aktivt: etikettfoto kreves
+                        </div>
+                      )}
                     </li>
                   );
                 })}
               </ul>
             </Panel>
 
-            <Panel title="Teamleder" testId="lead-panel" className="order-2 lg:order-none">
-              <ul className="flex flex-col gap-3" data-testid="lead-panel">
+            <Panel title="Teamleder" tag="Sjekkpunkt" testId="lead-panel" className="order-2 lg:order-none">
+              <ul className="m-0 flex list-none flex-col gap-3 p-0" data-testid="lead-panel">
                 {state.leadCards.map((c) => {
                   const spokenCard = leadPlaying && c.reason === 'suspicious_note';
                   return (
-                    <li key={c.id} className="rounded-xl border-2 border-warn p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold text-warn">{REASON_NB[c.reason] ?? c.reason}</span>
+                    <li key={c.id} className="rounded-md border-2 border-line-on-dark p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="flex items-center gap-1.5 font-semibold text-warn-on-dark">
+                          <Icon name="warn" className="h-5 w-5" />
+                          {REASON_NB[c.reason] ?? c.reason}
+                        </span>
                         <button
-                          className="shrink-0 rounded-full bg-frame px-3 py-1 text-sm text-white"
+                          className={`${darkBtn} shrink-0`}
                           onClick={() => {
                             setLeadPlaying(true);
                             void playLine(lineSrc(leadLine.id), muted);
                           }}
                           aria-label="Spill av oppsummering"
                         >
-                          ▶ Spill av
+                          Spill av
                         </button>
                       </div>
-                      <p className="mt-1 text-[15px] leading-snug">{spokenCard ? leadLine.line : c.summaryNb}</p>
-                      {spokenCard && captionLang === 'en' && <p className="mt-1 text-sm leading-snug text-muted">{leadLine.captionEn}</p>}
+                      <p className="m-0 mt-1 text-[16px] leading-snug">{spokenCard ? leadLine.line : c.summaryNb}</p>
+                      {spokenCard && captionLang === 'en' && (
+                        <p className="m-0 mt-1 text-[15px] italic leading-snug text-ink-2-on-dark" lang="en">
+                          {leadLine.captionEn}
+                        </p>
+                      )}
                     </li>
                   );
                 })}
-                {state.leadCards.length === 0 && <li className="text-muted">Ingen saker.</li>}
+                {state.leadCards.length === 0 && <li className="text-ink-2-on-dark">Ingen saker.</li>}
               </ul>
             </Panel>
           </div>
@@ -554,36 +589,37 @@ export function DemoStage() {
       </div>
 
       {/* Phone: the latest line and the controls (there are no keys on a phone) */}
-      <div className="border-t border-white/10 bg-black/60 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 lg:hidden" data-testid="mobile-bar">
-        <Captions spoken={spoken.slice(-1)} currentId={current?.id} captionLang={captionLang} className="mb-2 flex max-h-36 flex-col overflow-y-auto" compact />
+      <div className="border-t border-line-on-dark bg-frame px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 lg:hidden" data-testid="mobile-bar">
+        <Captions spoken={spoken.slice(-1)} currentId={current?.id} captionLang={captionLang} className="mb-2 max-h-36 overflow-y-auto" compact />
         <div className="flex items-center gap-2">
-          <button className="h-12 w-12 rounded-xl bg-white/10 text-xl disabled:opacity-40" onClick={() => go((c) => c - 1)} disabled={step < 0} aria-label="Forrige steg">
-            ←
+          <button className="sp-btn sp-btn--on-dark min-w-14 px-3" onClick={() => go((c) => c - 1)} disabled={step < 0} aria-label="Forrige steg">
+            <Icon name="arrow-right" className="rotate-180" />
           </button>
-          <button className="flex min-w-0 flex-1 flex-col items-start rounded-xl px-2 text-left" onClick={() => setDirector((v) => !v)} aria-expanded={director} aria-label="Regi">
-            <span className="font-mono text-sm font-bold" data-testid="mobile-step">
-              {current?.id ?? 'START'} <span className="font-normal text-slate-400">{progress}</span>
-              {running && <span className="ml-1 animate-pulse" data-testid="step-running">…</span>}
+          <button className="flex min-h-14 min-w-0 flex-1 flex-col items-start justify-center rounded-md px-2 text-left" onClick={() => setDirector((v) => !v)} aria-expanded={director} aria-label="Regi">
+            <span className="sp-mono text-[15px] font-bold" data-testid="mobile-step">
+              {current?.id ?? 'START'} <span className="font-normal text-ink-2-on-dark">{progress}</span>
+              {running && <span className="ml-1" data-testid="step-running">…</span>}
             </span>
-            <span className="w-full truncate text-xs text-slate-400">{scene ? `Scene ${scene.n} · ${scene.name}` : 'Trykk → for å starte'}</span>
+            <span className="text-[13px] text-ink-2-on-dark">{scene ? `Scene ${scene.n} · ${scene.name}` : 'Trykk → for å starte'}</span>
           </button>
-          <button className="h-12 min-w-24 rounded-xl bg-accent px-4 text-lg font-semibold disabled:opacity-40" onClick={() => go((c) => c + 1)} disabled={step >= DEMO_SCRIPT.length - 1} aria-label="Neste steg">
-            {step < 0 ? 'Start →' : '→'}
+          <button className="sp-btn sp-btn--brand min-w-24 px-4" onClick={() => go((c) => c + 1)} disabled={step >= DEMO_SCRIPT.length - 1} aria-label="Neste steg">
+            {step < 0 && 'Start'}
+            <Icon name="arrow-right" />
           </button>
         </div>
         {director && (
-          <div className="mt-2 flex flex-col gap-2 text-sm">
-            <p className="text-slate-300">Neste: {nextLabel}</p>
+          <div className="mt-2 flex flex-col gap-2 text-[15px]">
+            <p className="m-0 text-ink-2-on-dark">Neste: {nextLabel}</p>
             <div className="flex flex-wrap gap-2">
               {SCENES.map((sc) => (
-                <button key={sc.n} className="rounded-lg bg-white/10 px-3 py-1.5" onClick={() => go(sc.start)}>
+                <button key={sc.n} className={`${darkBtn} ${scene?.n === sc.n ? 'border-brand bg-brand-wash' : ''}`} aria-current={scene?.n === sc.n ? 'step' : undefined} onClick={() => go(sc.start)}>
                   {sc.n} {sc.name}
                 </button>
               ))}
-              <button className="rounded-lg bg-white/10 px-3 py-1.5" onClick={() => go(-1)}>
+              <button className={darkBtn} onClick={() => go(-1)}>
                 Nullstill
               </button>
-              <button className="rounded-lg bg-white/10 px-3 py-1.5" onClick={() => setMuted((v) => !v)}>
+              <button className={darkBtn} onClick={() => setMuted((v) => !v)}>
                 {muted ? 'Lyd på' : 'Lyd av'}
               </button>
             </div>
@@ -593,35 +629,38 @@ export function DemoStage() {
 
       {/* Director bar (projector; hidden by default, D toggles) */}
       {director && (
-        <footer className="hidden flex-col border-t border-white/10 bg-black/70 text-sm lg:flex" data-testid="director">
-          <div className="h-1 bg-white/10">
-            <div className="h-1 bg-accent transition-all" style={{ width: `${((step + 1) / DEMO_SCRIPT.length) * 100}%` }} />
+        <footer className="hidden flex-col border-t border-line-on-dark bg-frame-2 text-[15px] lg:flex" data-testid="director">
+          <div className="h-1 bg-line-on-dark">
+            <div className="h-1 bg-brand transition-[width] duration-200 ease-out" style={{ width: `${((step + 1) / DEMO_SCRIPT.length) * 100}%` }} />
           </div>
           <div className="flex items-center gap-4 px-6 py-2">
-            <span className="font-mono font-bold" data-testid="director-step">
+            <span className="sp-mono font-bold" data-testid="director-step">
               {current?.id ?? 'START'}
             </span>
-            <span className="font-mono text-slate-400">{progress}</span>
-            <span className="text-slate-400">{scene ? `Scene ${scene.n} · ${scene.name}` : 'Klar'}</span>
+            <span className="sp-mono text-ink-2-on-dark">{progress}</span>
+            {/* The active scene: the lime on brand-wash, its one place in the director bar. */}
+            <span className={`rounded-sm border-2 px-2 py-0.5 font-semibold ${scene ? 'border-brand bg-brand-wash text-brand' : 'border-line-on-dark text-ink-2-on-dark'}`}>
+              {scene ? `Scene ${scene.n} · ${scene.name}` : 'Klar'}
+            </span>
             {audioNote && (
-              <span className={`rounded px-1.5 py-0.5 text-xs ${audioNote === 'lyd' ? 'bg-ok/30' : 'bg-white/10 text-slate-400'}`} data-testid="director-audio">
+              <span className={`sp-mono rounded-sm border px-1.5 py-0.5 text-[13px] ${audioNote === 'lyd' ? 'border-ink-on-dark text-ink-on-dark' : 'border-line-on-dark text-ink-2-on-dark'}`} data-testid="director-audio">
                 {audioNote}
               </span>
             )}
-            <span className="min-w-0 flex-1 truncate text-slate-300" title={nextLabel}>
+            <span className="min-w-0 flex-1 truncate text-ink-2-on-dark" title={nextLabel}>
               Neste: {nextLabel}
             </span>
-            {running && <span className="animate-pulse" data-testid="step-running">…</span>}
-            <button className="rounded bg-white/10 px-3 py-1" onClick={() => go((c) => c - 1)} aria-label="Forrige steg">
-              ←
+            {running && <span data-testid="step-running">…</span>}
+            <button className={darkBtn} onClick={() => go((c) => c - 1)} aria-label="Forrige steg">
+              <Icon name="arrow-right" className="rotate-180" />
             </button>
-            <button className="rounded bg-white/10 px-3 py-1" onClick={() => go((c) => c + 1)} aria-label="Neste steg">
-              →
+            <button className={darkBtn} onClick={() => go((c) => c + 1)} aria-label="Neste steg">
+              <Icon name="arrow-right" />
             </button>
-            <button className="rounded bg-white/10 px-3 py-1" onClick={() => go(-1)}>
+            <button className={darkBtn} onClick={() => go(-1)}>
               R
             </button>
-            <span className="text-slate-500">1 2 3 scene · C tekst · M lyd · D skjul</span>
+            <span className="text-[13px] text-ink-2-on-dark">1 2 3 scene · C tekst · M lyd · D skjul</span>
           </div>
         </footer>
       )}

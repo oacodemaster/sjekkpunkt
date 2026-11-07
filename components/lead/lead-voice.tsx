@@ -74,6 +74,7 @@ export function LeadVoice({
       handsFree={handsFree}
       setHandsFree={setHandsFree}
       languages={NB_ONLY}
+      desk
     />
   );
 }

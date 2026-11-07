@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Card } from '@/components/desk-shell';
+import { HolioBar, HolioCard, HolioPayload } from '@/components/holio';
 import { requireRole } from '@/lib/auth/dal';
 import { createClient } from '@/lib/supabase/server';
 
@@ -57,7 +57,7 @@ export default async function HolioEventsPage({ searchParams }: PageProps<'/holi
       key={t ?? 'all'}
       href={t ? `/holio/events?type=${t}` : '/holio/events'}
       aria-current={t === type ? 'page' : undefined}
-      className={`rounded-full px-3 py-1 text-sm font-semibold ${t === type ? 'bg-frame text-white' : 'bg-white ring-1 ring-slate-300 hover:bg-slate-100'}`}
+      className="holio-chip"
     >
       {label}
     </Link>
@@ -65,44 +65,33 @@ export default async function HolioEventsPage({ searchParams }: PageProps<'/holi
 
   return (
     <>
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-3xl font-bold">Holio WMS (mock) · Integrasjon</h1>
-        <Link href="/holio" className="underline">
-          Oversikt
-        </Link>
-      </div>
-      <p className="text-base text-muted">
+      <HolioBar title="Holio WMS (mock) · Integrasjon" link={{ href: '/holio', label: 'Oversikt' }} />
+      <p className="holio-muted m-0">
         Hendelsene Sjekkpunkt ville sendt til Holio, med Holios feltnavn. Det finnes ikke noe åpent Holio-API ennå, så de lagres her.
       </p>
       <nav className="flex flex-wrap gap-2" aria-label="Hendelsestype">
         {chip(null, 'Alle')}
         {TYPES.map((t) => chip(t, t))}
       </nav>
-      <Card title={`${type ? TYPE_NB[type] : 'Alle hendelser'} (nyeste ${LIMIT})`}>
+      <HolioCard title={`${type ? TYPE_NB[type] : 'Alle hendelser'} (nyeste ${LIMIT})`}>
         {(events ?? []).length === 0 ? (
-          <p className="text-muted">Ingen hendelser.</p>
+          <p className="holio-muted">Ingen hendelser.</p>
         ) : (
-          <ul className="flex flex-col divide-y" data-testid="integration-events">
+          <ul className="m-0 flex list-none flex-col p-0" data-testid="integration-events">
             {(events ?? []).map((e) => {
               const p = (e.payload ?? {}) as Record<string, unknown>;
               const href = recordHref(e.type, p);
               return (
-                <li key={e.id} className="py-2" data-type={e.type}>
+                <li key={e.id} className="border-t border-[#c5d0dc] py-2 first:border-t-0" data-type={e.type}>
                   <details>
-                    <summary className="flex cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <span className="font-mono text-sm font-semibold">{e.type}</span>
-                      <span className="text-base">{summary(e.type, p)}</span>
-                      <span className="ml-auto text-sm text-muted tabular-nums">
-                        {new Date(e.created_at).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo' })}
-                      </span>
+                    <summary className="flex min-h-11 cursor-pointer flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <span className="holio-mono font-semibold">{e.type}</span>
+                      <span>{summary(e.type, p)}</span>
+                      <span className="holio-muted ml-auto">{new Date(e.created_at).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo' })}</span>
                     </summary>
                     <div className="mt-2 flex flex-col gap-2">
-                      {href && (
-                        <Link href={href} className="text-sm text-accent underline">
-                          Åpne i Holio (mock)
-                        </Link>
-                      )}
-                      <pre className="max-h-80 overflow-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">{JSON.stringify(e.payload, null, 2)}</pre>
+                      {href && <Link href={href}>Åpne i Holio (mock)</Link>}
+                      <HolioPayload value={e.payload} />
                     </div>
                   </details>
                 </li>
@@ -110,7 +99,7 @@ export default async function HolioEventsPage({ searchParams }: PageProps<'/holi
             })}
           </ul>
         )}
-      </Card>
+      </HolioCard>
     </>
   );
 }

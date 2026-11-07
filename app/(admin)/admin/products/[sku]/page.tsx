@@ -25,10 +25,10 @@ export default async function ProductPage({ params }: PageProps<'/admin/products
   return (
     <>
       <div className="flex items-baseline justify-between">
-        <h1 className="text-3xl font-bold">
-          {p.name_nb} <span className="font-mono text-xl text-muted">{p.sku}</span>
+        <h1 className="type-title m-0">
+          {p.name_nb} <span className="type-code text-ink-2">{p.sku}</span>
         </h1>
-        <Link href="/admin/products" className="underline">
+        <Link href="/admin/products" className="sp-link">
           Alle varer
         </Link>
       </div>

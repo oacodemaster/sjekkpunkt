@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button, Field } from '@/components/ui';
 import type { Lang } from '@/lib/engine/types';
 import { t } from '@/lib/i18n/strings';
 
@@ -11,28 +12,27 @@ export function OrderForm({ lang }: { lang: Lang }) {
   const [code, setCode] = useState('');
   return (
     <form
-      className="grid grid-cols-[1fr_auto] gap-2"
       onSubmit={(e) => {
         e.preventDefault();
         const v = code.trim().replace(/^#/, '');
         if (v) router.push(`/pack/${encodeURIComponent(v)}`);
       }}
     >
-      <label className="sr-only" htmlFor="order-code">
-        {t('orderNumber', lang)}
-      </label>
-      <input
+      <Field
         id="order-code"
+        label={t('orderNumber', lang)}
+        mono
         inputMode="numeric"
         autoComplete="off"
-        className="min-h-14 min-w-0 rounded-xl border-2 border-gray-300 px-4 text-xl"
         placeholder={t('orderNumber', lang)}
         value={code}
         onChange={(e) => setCode(e.target.value)}
+        action={
+          <Button type="submit" disabled={!code.trim()}>
+            {t('open', lang)}
+          </Button>
+        }
       />
-      <button className="btn-primary" disabled={!code.trim()}>
-        {t('open', lang)}
-      </button>
     </form>
   );
 }
