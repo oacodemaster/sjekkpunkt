@@ -5,6 +5,13 @@ The addendum wins on conflicts. Milestones follow addendum section 12. Choices a
 
 Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 
+## Status
+
+| Milestone | State |
+|---|---|
+| M1 Foundation | Done 2026-11-07. Live at https://sjekkpunkt.vercel.app |
+| M2-M9, S1 | Not started |
+
 ## Stack
 
 | Layer | Choice |
