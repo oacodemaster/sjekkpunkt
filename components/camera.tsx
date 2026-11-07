@@ -1,26 +1,38 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { fileToJpeg, frameToJpeg } from '@/lib/camera/image';
 import type { Lang } from '@/lib/engine/types';
 import { t } from '@/lib/i18n/strings';
 
-type CamState = 'starting' | 'live' | 'denied' | 'unavailable';
+export type CamState = 'starting' | 'live' | 'denied' | 'unavailable';
+
+/** Lets the voice agent's capture_photo tool take the shot the shutter would take. */
+export interface CameraControl {
+  state: CamState;
+  shoot: () => Promise<Blob | null>;
+}
 
 /**
- * Rear camera with a big shutter. Worker-triggered only: nothing is captured until the
- * shutter is pressed, and the stream stops when the component unmounts.
+ * Rear camera with a big shutter. Nothing is captured until the worker presses the shutter
+ * or asks the voice coach to take the photo (push-to-talk), and the stream stops when the
+ * component unmounts.
  */
 export function Camera({
   lang,
   hint,
   onCapture,
   onCancel,
+  controlRef,
+  countdown,
 }: {
   lang: Lang;
   hint: string;
   onCapture: (jpeg: Blob) => void;
   onCancel: () => void;
+  controlRef?: RefObject<CameraControl | null>;
+  /** seconds left before a voice-requested photo is taken */
+  countdown?: number | null;
 }) {
   const video = useRef<HTMLVideoElement>(null);
   const file = useRef<HTMLInputElement>(null);
@@ -58,6 +70,17 @@ export function Camera({
     onCapture(await frameToJpeg(video.current));
   }
 
+  useEffect(() => {
+    if (!controlRef) return;
+    controlRef.current = {
+      state,
+      shoot: async () => (state === 'live' && video.current?.videoWidth ? frameToJpeg(video.current) : null),
+    };
+    return () => {
+      controlRef.current = null;
+    };
+  }, [controlRef, state]);
+
   async function picked(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (f) onCapture(await fileToJpeg(f));
@@ -69,6 +92,11 @@ export function Camera({
       <p className="text-lg font-semibold">{hint}</p>
       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-black">
         <video ref={video} playsInline muted className={`h-full w-full object-cover ${state === 'live' ? '' : 'hidden'}`} />
+        {state === 'live' && countdown != null && countdown > 0 && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 text-8xl font-black text-white" aria-live="assertive">
+            {countdown}
+          </div>
+        )}
         {state !== 'live' && (
           <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-white">
             {state === 'starting' && <span className="animate-pulse">…</span>}

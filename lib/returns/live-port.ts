@@ -1,8 +1,8 @@
 'use client';
 
-import type { PhotoPurpose, ReturnDecision, WorkerInput } from '@/lib/engine/types';
+import type { Lang, PhotoPurpose, ReturnDecision, WorkerInput } from '@/lib/engine/types';
 import { createClient } from '@/lib/supabase/client';
-import type { CaptureFailure, CaptureResult, ConfirmResult, EscalateResult, ReturnsPort, StationPhoto } from './types';
+import type { CaptureFailure, CaptureResult, ConfirmResult, EscalateResult, ReturnsPort, StationPhoto, WorkerNote } from './types';
 
 async function post<T>(url: string, body: unknown): Promise<{ status: number; data: T | null }> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) return { status: 0, data: null };
@@ -50,8 +50,9 @@ export function livePort(): ReturnsPort {
       return { ok: false, reason: v.data.reason ?? 'unavailable', photo: v.data.photo };
     },
 
-    async evaluate(itemId, worker: WorkerInput) {
-      const r = await post<{ decision: ReturnDecision }>(`/api/returns/items/${itemId}/evaluate`, { worker });
+    async evaluate(itemId, worker: WorkerInput, note?: WorkerNote) {
+      const body = note ? { worker, workerNoteOriginal: note.text, lang: note.lang } : { worker };
+      const r = await post<{ decision: ReturnDecision }>(`/api/returns/items/${itemId}/evaluate`, body);
       return r.status === 200 && r.data ? r.data.decision : null;
     },
 
@@ -65,8 +66,8 @@ export function livePort(): ReturnsPort {
       return { ok: false, error: 'failed' };
     },
 
-    async escalate(itemId, note): Promise<EscalateResult> {
-      const r = await post<EscalateResult & { error?: string }>(`/api/returns/items/${itemId}/escalate`, note ? { note } : {});
+    async escalate(itemId, note, lang?: Lang): Promise<EscalateResult> {
+      const r = await post<EscalateResult & { error?: string }>(`/api/returns/items/${itemId}/escalate`, note ? { note, lang } : {});
       if (r.status === 0) return { ok: false, error: 'offline' };
       if (r.status === 200 && r.data?.ok) return r.data;
       return { ok: false, error: r.data?.error === 'already_decided' ? 'already_decided' : 'failed' };

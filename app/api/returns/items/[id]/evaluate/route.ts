@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { fail, guard, RETURN_ROLES } from '@/lib/api/http';
+import type { Lang } from '@/lib/engine/types';
 import { LANGS } from '@/lib/i18n/strings';
 import { evaluateItem, loadItemContext } from '@/lib/returns/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { noteToNorwegian } from '@/lib/translate/server';
 
 const severity = z.enum(['none', 'minor', 'major']);
 const Body = z.object({
@@ -16,7 +18,7 @@ const Body = z.object({
     })
     .default({}),
   workerNoteOriginal: z.string().trim().max(1000).optional(),
-  lang: z.enum(LANGS as [string, ...string[]]).optional(),
+  lang: z.enum(LANGS as [Lang, ...Lang[]]).optional(),
 });
 
 /**
@@ -34,18 +36,21 @@ export async function POST(req: NextRequest, ctx: RouteContext<'/api/returns/ite
   if (!before) return fail('not_found', 404);
   if (before.item.status === 'decided') return fail('already_decided', 409);
 
-  const note = body.workerNoteOriginal ?? before.workerNote.original;
-  const lang = body.lang ?? before.workerNote.lang ?? user.lang;
+  const changed = body.workerNoteOriginal !== undefined && body.workerNoteOriginal !== before.workerNote.original;
+  const note = (body.workerNoteOriginal ?? before.workerNote.original) || null;
+  const lang = (changed ? body.lang : before.workerNote.lang) ?? body.lang ?? user.lang;
+  // The original stays as spoken; the Norwegian line is translated on the server (addendum 8).
+  // If translation fails the note is kept and confirm or escalate try again.
+  const noteNb = !note ? null : changed || !before.workerNote.nb ? await noteToNorwegian(note, lang as Lang) : before.workerNote.nb;
   const db = createAdminClient();
   const { error } = await db.from('inspections').upsert(
     {
       warehouse_id: user.warehouseId,
       return_item_id: id,
       condition: { worker: body.worker },
-      worker_note_original: note ?? null,
+      worker_note_original: note,
       worker_note_lang: note ? lang : null,
-      // Notes in other languages are translated server-side in M3 (/api/translate).
-      worker_note_nb: note && lang === 'nb' ? note : before.workerNote.nb,
+      worker_note_nb: noteNb,
     },
     { onConflict: 'return_item_id' },
   );

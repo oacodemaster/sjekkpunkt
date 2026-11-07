@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { currentDeviceId, fail, guard, RETURN_ROLES } from '@/lib/api/http';
 import { commitPayload } from '@/lib/returns/commit';
-import { evaluateItem, loadItemContext } from '@/lib/returns/server';
+import { ensureNoteNb, evaluateItem, loadItemContext } from '@/lib/returns/server';
 import type { CommittedDecision } from '@/lib/returns/types';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<'/api/returns/ite
     retakes,
     lateDays: item.lateDays,
     returnWindowDays: item.settings.returnWindowDays,
-    workerNoteNb: item.workerNote.nb,
+    workerNoteNb: await ensureNoteNb(item),
     photoIds: item.photos.filter((p) => p.inspection).map((p) => p.photoId),
   });
 

@@ -14,9 +14,11 @@
     "db:push": "supabase db push",
     "db:seed:build": "tsx scripts/build-seed.ts",
     "db:seed": "tsx scripts/build-seed.ts && sh -c 'set -a; . ./.env.local; psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql'",
-    "db:users": "tsx scripts/seed-users.ts"
+    "db:users": "tsx scripts/seed-users.ts",
+    "voice:setup": "tsx scripts/setup-voice-agents.ts"
   },
   "dependencies": {
+    "@elevenlabs/react": "1.21.1",
     "@google/genai": "3.0.0",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.119.0",

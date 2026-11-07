@@ -11,7 +11,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 |---|---|
 | M1 Foundation | Done 2026-11-07. Live at https://sjekkpunkt.vercel.app |
 | M2 Returns, live | Done 2026-11-07 (see M2 notes below) |
-| M3-M9, S1 | Not started |
+| M3 Voice on returns | Done 2026-11-07, local (see M3 notes below) |
+| M4-M9, S1 | Not started |
 
 ## Stack
 
@@ -57,6 +58,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 
 ### M3 Voice on returns
 - Check current ElevenLabs docs. Returns agent, client tools calling API routes, token route, language from `preferred_lang` + detection, push-to-talk, captions, `/api/translate`, tap-only fallback when mic denied.
+
+**M3 notes.** Built: the returns agent from code (`lib/voice/agent-config.ts`, `pnpm voice:setup`), six client tools bound to the station (`get_return`, `show_step`, `capture_photo`, `evaluate_return`, `select_item`, `escalate_to_lead`), `POST /api/voice/token` with database keyterms, push-to-talk with a hands-free toggle, language switching (detection flips the screen; the chip restarts the session), captions with a NB/EN line from `POST /api/translate`, worker and escalation notes translated to Norwegian on the server, tap-only fallback for mic denied or voice unavailable, and `[screen]` updates for taps. Verified with a live WebRTC test (fake mic and camera). Left for later on purpose: rate limits and spend caps (M8), earcons and the tool-call sound (M9), voice in demo mode stays scripted audio (M9).
 
 ### M4 Packing, live (+ demo packing flow)
 - Queue, camera check with box overlay, quantity badges, retake counter, barcode fallback (`BarcodeDetector` + manual field), manual confirm with reason, evidence photo, seal. Packing agent. Demo scene 1.

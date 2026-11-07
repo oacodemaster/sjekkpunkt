@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { withDefaults, type EngineSettings } from '@/lib/engine/constants';
 import { evaluateReturn } from '@/lib/engine/returns';
 import type {
+  Lang,
   Order,
   PackCheck,
   PhotoPurpose,
@@ -13,6 +14,7 @@ import type {
   WorkerInput,
 } from '@/lib/engine/types';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { noteToNorwegian } from '@/lib/translate/server';
 import { buildFindings, type PhotoRecord } from './findings';
 import { lateDays } from './preview';
 
@@ -237,6 +239,20 @@ export async function loadItemContext(itemId: string, warehouseId: string): Prom
   };
 }
 
+
+/**
+ * The Norwegian line for a stored worker note. Translated when the note was saved; if that
+ * call failed, it is tried again here (on confirm or escalate) and stored.
+ */
+export async function ensureNoteNb(ctx: ItemContext): Promise<string | null> {
+  const { original, lang, nb } = ctx.workerNote;
+  if (nb || !original) return nb;
+  const translated = await noteToNorwegian(original, (lang ?? 'nb') as Lang);
+  if (translated) {
+    await createAdminClient().from('inspections').update({ worker_note_nb: translated }).eq('return_item_id', ctx.item.id);
+  }
+  return translated;
+}
 
 /** The engine run the server trusts: stored photos, stored worker input, stored settings. */
 export function evaluateItem(ctx: ItemContext, now = new Date()): { decision: ReturnDecision; retakes: number } {

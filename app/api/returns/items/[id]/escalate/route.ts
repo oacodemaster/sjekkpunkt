@@ -2,10 +2,17 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { currentDeviceId, fail, guard, RETURN_ROLES } from '@/lib/api/http';
 import { escalatePayload } from '@/lib/returns/commit';
-import { evaluateItem, loadItemContext } from '@/lib/returns/server';
+import type { Lang } from '@/lib/engine/types';
+import { LANGS } from '@/lib/i18n/strings';
+import { ensureNoteNb, evaluateItem, loadItemContext } from '@/lib/returns/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { noteToNorwegian } from '@/lib/translate/server';
 
-const Body = z.object({ note: z.string().trim().max(500).optional() });
+const Body = z.object({
+  note: z.string().trim().max(500).optional(),
+  /** the language the note was written or spoken in (the station may have switched from the profile language) */
+  lang: z.enum(LANGS as [Lang, ...Lang[]]).optional(),
+});
 
 /**
  * "Send til teamleder", always available. Sends the item with every reason the engine
@@ -23,18 +30,23 @@ export async function POST(req: NextRequest, ctx: RouteContext<'/api/returns/ite
   if (item.item.status === 'decided') return fail('already_decided', 409);
 
   const db = createAdminClient();
+  const lang = body.lang ?? user.lang;
+  let noteNb: string | null;
   if (body.note) {
+    noteNb = await noteToNorwegian(body.note, lang);
     await db.from('inspections').upsert(
       {
         warehouse_id: user.warehouseId,
         return_item_id: id,
         condition: { worker: item.worker },
         worker_note_original: body.note,
-        worker_note_lang: user.lang,
-        worker_note_nb: user.lang === 'nb' ? body.note : null, // translated in M3
+        worker_note_lang: lang,
+        worker_note_nb: noteNb,
       },
       { onConflict: 'return_item_id' },
     );
+  } else {
+    noteNb = await ensureNoteNb(item);
   }
 
   const { decision, retakes } = evaluateItem(item);
@@ -49,7 +61,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<'/api/returns/ite
       retakes,
       lateDays: item.lateDays,
       returnWindowDays: item.settings.returnWindowDays,
-      workerNoteNb: body.note && user.lang === 'nb' ? body.note : item.workerNote.nb,
+      workerNoteNb: noteNb,
     },
     [...decision.escalations, 'worker_request'],
   );

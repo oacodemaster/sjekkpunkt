@@ -88,3 +88,29 @@ Demo mode runs the same returns station component on a demo adapter (`lib/demo/s
 
 ## 2026-11-07 Testing live mode with mocked vision
 `VISION_MOCK=fixtures` makes `/api/vision` answer from the demo fixtures; everything else stays real (storage, routes, engine rerun, SQL commit). The local Playwright server sets it, and the code refuses it when `VERCEL_ENV=production`. Local e2e runs reset the hosted dev database to seed first and use one worker; against a deployment the reset (and the live returns spec, with real vision) needs `E2E_RESET_DB=1`. The same spec passed against real Gemini on 2026-11-07.
+
+## 2026-11-07 Voice: one returns agent, built from the repo (M3)
+One ElevenAgents agent per station (addendum section 8 allows this over one agent with workflow nodes): `Sjekkpunkt returns coach`, `ELEVENLABS_AGENT_ID_RETURNS`. Packing (M4) and lead (M5) get their own. The whole agent (prompt, six client tools, language presets, knowledge base, overrides) is data in `lib/voice/agent-config.ts`, and `pnpm voice:setup` creates or updates it by name, so the dashboard is never the source of truth. Client tools are created through `/v1/convai/tools` and attached with `tool_ids` (inline `prompt.tools` is deprecated). Checked against the docs and `@elevenlabs/react` 1.21.1 types on 2026-11-07; the React SDK now needs a `ConversationProvider` and `useConversationClientTool`.
+- Auth is on: only a conversation token from `POST /api/voice/token` starts a session. The token route checks the role per station and returns only the token and the keyterms.
+- The client may override only `agent.language`, `agent.first_message` and `asr.keywords`. It cannot change the prompt, tools or LLM.
+- LLM `gemini-3.5-flash`, temperature 0.2. TTS `eleven_v4_turbo`: the only low-latency model that covers all six languages (Flash v2.5 has no Lithuanian). Norwegian is `no` in ElevenLabs, `nb` in the app (`EL_LANG`).
+- Voice: River (premade). The docs say the premade default voices retire on 2026-12-31 and the replacements are Voice Library voices; the API key has Voices read-only, so they cannot be added from here. **Swap the voice before 2026-12-31** (add a library voice in the dashboard, set `COACH_VOICE_ID`, run `pnpm voice:setup`).
+- Keyterms: the docs field is `asr.keywords` (there is no `keyterms` field). The agent carries a fixed list; each session overrides it with up to 50 terms from the database (location codes first, then product names).
+
+## 2026-11-07 Voice: tool results never contain customer note text
+Client tools answer with short JSON built in `lib/voice/returns-tools.ts`: names, sizes, what the engine decided, what to do next. A customer note reaches the agent only as `{present, contains_instructions}`; its text is never in a tool result, so an injected note cannot reach the LLM at all (LLM01). A unit test checks the 1043 injection note. The agent never confirms: confirm stays a tap, and the agent hears about it as a `[screen]` message.
+
+## 2026-11-07 Voice drives the camera
+`show_step` opens the camera on a photo step. `capture_photo` shoots from the open camera at once; if the camera was not open it opens it and shows a 2-1 countdown first, so a photo is never taken before the worker could aim. The camera exposes this through `CameraControl`; nothing is captured except on the shutter or a worker request to the coach. Taps (photo, condition, confirm, escalate, item switch) are sent to the agent as `[screen]` contextual updates; confirm is sent as a user turn so the coach acknowledges it and moves on. Tool calls use the unwrapped actions, so nothing is reported twice.
+
+## 2026-11-07 Voice: language, captions, notes
+- Start language is `preferred_lang`. The `language_detection` system tool stays on with presets for en, pl, uk, ro, lt (default `no`). Its full tool result (client event `agent_tool_response_full_payload`) carries `{"language":"uk"}`; the app reads it and flips the screen language and the chip. A language picked on the chip restarts the session in that language.
+- Captions: every final worker and agent line, with a NB or EN line under it from `POST /api/translate` (Gemini `gemini-3.5-flash-lite`, about 1.4 s, cached per server instance). Audio tags such as `[slow]` are stripped (`stripAudioTags`). Lines with no letters ("..." from noise) are dropped.
+- Worker notes: `evaluate_return` stores the worker's latest speech-to-text line as the original (not the agent's paraphrase) with the conversation language, and the server translates it to Norwegian. Escalation notes are translated the same way. If translation fails the original is kept and confirm or escalate try again.
+- Translation sends worker speech to Gemini on the free tier: fine for the demo, but the same paid-tier caveat as vision applies before real data.
+
+## 2026-11-07 Voice: push-to-talk and fallbacks
+Push-to-talk is the default: the provider's controlled `isMuted` keeps the mic muted unless the button is held or hands-free is on (remembered per device). The live test plays Norwegian speech into a fake mic with the button up and checks that nothing is heard. Mic denied, a failed token or a connection error leaves tap-only mode with a message; every step keeps its button. Rate limits and spend caps on `/api/voice/token` and `/api/translate` come in M8.
+
+## 2026-11-07 Testing voice
+`tests/e2e/voice.spec.ts` (always): mic denied → tap-only, token role checks and keyterms, note translation with `TRANSLATE_MOCK=echo` (refused in production). `tests/e2e/voice-live.spec.ts` (opt-in, `E2E_VOICE=1`, uses ElevenLabs credits): a real WebRTC session where Chrome's fake mic plays `tests/e2e/fixtures/worker-nb.wav` (made by `scripts/make-voice-fixture.ts` with a different voice) and its fake camera feeds the photo. It checks the language switch, the screen flip, voice-driven photo capture and push-to-talk muting. It depends on model timing, so it is not part of the default run.

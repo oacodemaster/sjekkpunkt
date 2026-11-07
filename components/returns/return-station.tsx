@@ -258,6 +258,8 @@ export function ReturnStationView({
               hint={t(HINT_KEY[activeStep], lang)}
               onCapture={(jpeg) => void actions.capture(activeStep, jpeg)}
               onCancel={actions.closeCamera}
+              controlRef={station.cameraControl}
+              countdown={station.countdown}
             />
           ) : (
             <div className="flex flex-col gap-3">
@@ -489,7 +491,7 @@ export function ReturnStationView({
                   className="btn bg-warn text-white"
                   disabled={busy !== null}
                   onClick={async () => {
-                    const r = await actions.escalate(note.trim() || undefined);
+                    const r = await actions.escalate(note.trim() || undefined, lang);
                     if (r.ok) {
                       setEscalating(false);
                       setNote('');

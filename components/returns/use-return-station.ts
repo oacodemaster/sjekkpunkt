@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { PhotoPurpose, ReturnDecision, WorkerInput } from '@/lib/engine/types';
+import type { Lang, PhotoPurpose, ReturnDecision, WorkerInput } from '@/lib/engine/types';
 import type { StringKey } from '@/lib/i18n/strings';
 import { previewItem } from '@/lib/returns/preview';
-import type { CaptureFailure, ReturnItemState, ReturnsPort, ReturnView } from '@/lib/returns/types';
+import type { CameraControl } from '@/components/camera';
+import type { CaptureFailure, ReturnItemState, ReturnsPort, ReturnView, WorkerNote } from '@/lib/returns/types';
 
 export type Phase = 'overview' | 'photos' | 'findings' | 'decision' | 'done';
 export type Busy = null | 'capture' | 'confirm' | 'escalate';
@@ -42,6 +43,8 @@ export function useReturnStation(initial: ReturnView, port: ReturnsPort, clock: 
   const [notice, setNotice] = useState<Notice | null>(null);
   const evalTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingWorker = useRef<{ id: string; worker: WorkerInput } | null>(null);
+  const cameraControl = useRef<CameraControl | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   const item = view.items[itemIdx];
   const { decision, retakes } = useMemo(() => previewItem(view, item, clock()), [view, item, clock]);
@@ -108,6 +111,28 @@ export function useReturnStation(initial: ReturnView, port: ReturnsPort, clock: 
     [item.id, item.worker, patchItem, port],
   );
 
+  /**
+   * Worker input from the voice coach: applied at once (no debounce) together with an optional
+   * note, and answered with the server's preview so the agent says what the server will commit.
+   */
+  const applyWorker = useCallback(
+    async (patch: Partial<WorkerInput>, note?: WorkerNote) => {
+      if (evalTimer.current) {
+        clearTimeout(evalTimer.current);
+        evalTimer.current = null;
+      }
+      const id = item.id;
+      const base = pendingWorker.current?.id === id ? pendingWorker.current.worker : item.worker;
+      pendingWorker.current = null;
+      const worker = { ...base, ...patch };
+      patchItem(id, (i) => ({ ...i, worker }));
+      const d = await port.evaluate(id, worker, note);
+      if (!d) setNotice({ tone: 'bad', key: 'failed' });
+      return { worker, decision: d };
+    },
+    [item.id, item.worker, patchItem, port],
+  );
+
   const confirm = useCallback(async () => {
     // Flush input the worker just tapped, so the server reruns on the latest values.
     if (evalTimer.current) {
@@ -134,10 +159,10 @@ export function useReturnStation(initial: ReturnView, port: ReturnsPort, clock: 
   }, [item.id, patchItem, port]);
 
   const escalate = useCallback(
-    async (note?: string) => {
+    async (note?: string, lang?: Lang) => {
       setBusy('escalate');
       setNotice(null);
-      const res = await port.escalate(item.id, note);
+      const res = await port.escalate(item.id, note, lang);
       setBusy(null);
       if (!res.ok) {
         setNotice({ tone: 'bad', key: res.error === 'offline' ? 'offline' : 'failed' });
@@ -178,7 +203,11 @@ export function useReturnStation(initial: ReturnView, port: ReturnsPort, clock: 
     notice,
     nextOpenItem,
     port,
+    cameraControl,
+    countdown,
     actions: {
+      applyWorker,
+      setCountdown,
       start,
       selectStep,
       capture,

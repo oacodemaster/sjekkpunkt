@@ -22,7 +22,8 @@ export default defineConfig({
         url: baseURL,
         reuseExistingServer: true,
         timeout: 180_000,
-        // Live mode with mocked vision (addendum section 11). Refused when VERCEL_ENV=production.
-        env: { VISION_MOCK: 'fixtures' },
+        // Live mode with mocked vision and translation (addendum section 11). Both are refused
+        // when VERCEL_ENV=production.
+        env: { VISION_MOCK: 'fixtures', TRANSLATE_MOCK: 'echo' },
       },
 });

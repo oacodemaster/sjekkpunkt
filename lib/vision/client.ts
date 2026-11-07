@@ -1,5 +1,6 @@
 import 'server-only';
-import { GoogleGenAI, MediaResolution, ThinkingLevel } from '@google/genai';
+import { MediaResolution, ThinkingLevel } from '@google/genai';
+import { gemini } from '@/lib/ai/gemini';
 import { VISION_TIMEOUT_MS } from '@/lib/engine/constants';
 import type { PhotoPurpose, ReturnInspection } from '@/lib/engine/types';
 import { RET_1043_FRONT, RET_1043_LABEL, RET_1043_NOTE } from '@/lib/demo/visionFixtures';
@@ -54,13 +55,6 @@ export function visionMockEnabled(): boolean {
     throw new Error('VISION_MOCK must never be enabled in production');
   }
   return true;
-}
-
-let client: GoogleGenAI | null = null;
-function gemini(): GoogleGenAI {
-  if (!process.env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY is not set');
-  client ??= new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  return client;
 }
 
 async function attempt(

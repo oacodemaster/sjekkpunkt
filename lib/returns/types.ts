@@ -3,6 +3,7 @@
 
 import type { EngineSettings } from '@/lib/engine/constants';
 import type {
+  Lang,
   Order,
   PackCheck,
   PhotoPurpose,
@@ -12,6 +13,11 @@ import type {
   ReturnInspection,
   WorkerInput,
 } from '@/lib/engine/types';
+
+export interface WorkerNote {
+  text: string;
+  lang: Lang;
+}
 
 export type ReturnItemStatus = 'pending' | 'inspecting' | 'decided' | 'escalated';
 
@@ -84,8 +90,11 @@ export interface ReturnsPort {
   mode: 'live' | 'demo';
   /** `image` is the downscaled, EXIF-free JPEG; demo mode passes null and uses fixtures */
   capture(itemId: string, purpose: PhotoPurpose, image: Blob | null): Promise<CaptureResult>;
-  /** stores worker input and returns the server's preview (never commits) */
-  evaluate(itemId: string, worker: WorkerInput): Promise<ReturnDecision | null>;
+  /**
+   * Stores worker input and returns the server's preview (never commits). A note is stored as
+   * spoken, in `lang`; the server adds the Norwegian translation.
+   */
+  evaluate(itemId: string, worker: WorkerInput, note?: WorkerNote): Promise<ReturnDecision | null>;
   confirm(itemId: string): Promise<ConfirmResult>;
-  escalate(itemId: string, note?: string): Promise<EscalateResult>;
+  escalate(itemId: string, note?: string, lang?: Lang): Promise<EscalateResult>;
 }
