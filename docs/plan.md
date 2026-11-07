@@ -13,7 +13,7 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | M2 Returns, live | Done 2026-11-07 (see M2 notes below) |
 | M3 Voice on returns | Done 2026-11-07, live (see M3 notes below) |
 | M4 Packing, live | Done 2026-11-07, live (see M4 notes below) |
-| M5 Loop and lead console | Done 2026-11-07, local (see M5 notes below); not deployed yet |
+| M5 Loop and lead console | Done 2026-11-07, live (see M5 notes below) |
 | M6-M9, S1 | Not started |
 
 ## Stack

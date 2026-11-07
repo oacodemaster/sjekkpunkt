@@ -52,7 +52,14 @@ test('voice token: only the station roles get one, with keyterms from the databa
   const packer = await browser.newPage();
   await login(packer, 'packer');
   expect((await packer.request.post('/api/voice/token', { data: { station: 'return' } })).status()).toBe(403);
+  // Each station has its own agent: a missing agent id in the environment would answer 503.
+  expect((await packer.request.post('/api/voice/token', { data: { station: 'pack' } })).status()).toBe(200);
   await packer.close();
+
+  const lead = await browser.newPage();
+  await login(lead, 'lead');
+  expect((await lead.request.post('/api/voice/token', { data: { station: 'lead' } })).status()).toBe(200);
+  await lead.close();
 
   const anon = await browser.newPage();
   expect((await anon.request.post('/api/voice/token', { data: { station: 'return' } })).status()).toBe(401);
