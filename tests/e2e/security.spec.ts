@@ -123,7 +123,7 @@ test('pages carry a nonce CSP and the security headers, and render with no CSP v
 
   // The demo runs scripted (images, audio, director bar) under the same policy.
   await page.goto('/demo');
-  await expect(page.getByTestId('station-pack')).toBeVisible();
+  await expect(page.getByTestId('lang-chip')).toBeVisible(); // on every screen size (the station tabs are projector-only)
   await page.waitForLoadState('networkidle');
 
   for (const [role, path] of [

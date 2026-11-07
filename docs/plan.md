@@ -17,7 +17,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | M6 Insights and integration events | Done 2026-11-07, live (see M6 notes below) |
 | M7 Admin and privacy | Done 2026-11-07, live; the nightly cron needs `CRON_SECRET` in Vercel (see M7 notes below) |
 | M8 Hardening | Done 2026-11-07 (see M8 notes below) |
-| M9, S1 | Not started |
+| M9 Stage readiness | Done 2026-11-07 (see M9 notes below); the prop test in `docs/test-plan.md` is still to be run with real props |
+| S1 | Not started |
 
 ## Stack
 
@@ -93,6 +94,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 
 ### M9 Stage readiness
 - Director bar polish, earcons and pre-generated voice lines (`scripts/generate-audio.mjs`), demo reset, full Playwright scripted run green, manual prop test plan in `docs/test-plan.md`.
+
+**M9 notes.** Built: pre-generated demo audio (`pnpm audio:generate`, `scripts/generate-audio.mjs`): five earcons with Sound Effects v3 (chime, alert, shutter, done, and a quiet tool tick) and twelve agent and team-lead lines with Text to Speech (`eleven_v4`, River for the coach, Daniel for the lead), in `public/audio` with a manifest and a unit test that fails when the script and the files drift; shelf codes are spoken as words (`spoken`). A browser player that preloads every file, plays a line after its earcon, stops a line when the operator moves on, and ignores missing files. Earcons at the live stations (chime on a passed pack check, alert on a wrong item or a new red flag, done on a confirmed return) and a tick on every voice tool call. The demo stage on a phone (the handheld or Holio full screen, a bottom bar with ← and →, automatic flip to Holio on RET-10, RET-11 and LOOP-01) and a fuller director bar (progress, scene, line played or caption only, next line with speaker and language; 1, 2, 3 jump to a scene). Demo reset: `POST /api/admin/demo-reset` (admin, `DEMO_ENABLED=true`, `guard()`) runs the generated seed through `admin_demo_reset` with a `DEMO_RESET` audit row, deletes the stored photos and spoken summaries, and re-syncs the grading guide if the reset changed it; the button sits on `/admin`. The seed is now the SQL function `app.reset_to_seed()` inside the generated `seed.sql`. `tests/e2e/stage.spec.ts` (reset, live return 1043, reset again, the full scripted run on the projector and on a phone, audio served same-origin) and `tests/db/demo-reset.test.ts`. The manual prop test plan is `docs/test-plan.md`, results empty. Left open on purpose: the native pl and uk review of the demo lines (then remake the changed files), the coaches' number reading (`text_normalisation_type`, see the M5 lead assistant entry; ElevenLabs' own normalisation reads "C-14-2" as "C dash 14 dash 2", so switching needs a listening check), keeping reference photos across a demo reset, the prop test itself.
 
 ### S1 Stretch
 - R18 customer photo / transit damage, Shopify dev store import, more languages.

@@ -1,7 +1,8 @@
 // The scripted demo run (brief section 10): scene 1 (packing), scene 2 (returns) and scene 3
 // (the loop closes). Every step's effect runs the real engine through the demo adapter; only the
 // camera and the model output are scripted.
-// REVIEW: native speakers should check the pl and uk lines before audio is generated (M9).
+// REVIEW: native speakers should check the pl and uk lines. The audio in public/audio was made
+// before that review (M9); after a fix, delete the changed files and run pnpm audio:generate.
 
 import type { Lang } from '@/lib/engine/types';
 
@@ -32,6 +33,8 @@ export interface DemoStep {
   speaker: Speaker;
   lang?: Lang;
   line?: string;
+  /** What the speech engine reads when it differs from the shown line (codes read as words, not "C dash 14 dash 2"). */
+  spoken?: string;
   captionEn?: string;
   captionNb?: string;
   effect: DemoEffect;
@@ -142,6 +145,7 @@ export const RETURNS_SCENE: DemoStep[] = [
     speaker: 'agent',
     lang: 'uk',
     line: 'Добре. Оцінка A. Полиця C-14-2.',
+    spoken: 'Добре. Оцінка A. Полиця C, чотирнадцять, два.',
     captionEn: 'Good. Grade A. Shelf C-14-2.',
     captionNb: 'Bra. Grad A. Hylle C-14-2.',
     effect: 'showDecision',
@@ -164,6 +168,7 @@ export const RETURNS_SCENE: DemoStep[] = [
     speaker: 'lead',
     lang: 'nb',
     line: 'Retur 1043: kunden fikk størrelse M i stedet for L, sannsynligvis vår pakkefeil. Jakken er som ny, grad A, lagt på C-14-2. Kundens lapp ber om 5000 kroner i refusjon, som er over ordreverdien. Den trenger din vurdering.',
+    spoken: 'Retur 1043: kunden fikk størrelse M i stedet for L, sannsynligvis vår pakkefeil. Jakken er som ny, grad A, lagt på C fjorten to. Kundens lapp ber om fem tusen kroner i refusjon, som er over ordreverdien. Den trenger din vurdering.',
     captionEn: 'Return 1043: the customer got size M instead of L, probably our packing error. The jacket is like new, grade A, shelved at C-14-2. The customer\'s note asks for a 5,000 kr refund, above the order value. It needs your review.',
     captionNb: 'Retur 1043: kunden fikk størrelse M i stedet for L, sannsynligvis vår pakkefeil. Jakken er som ny, grad A, lagt på C-14-2. Kundens lapp ber om 5000 kroner i refusjon, som er over ordreverdien. Den trenger din vurdering.',
     effect: 'leadSummary',

@@ -1,0 +1,19 @@
+{
+  "alert.mp3": "[\"Short low double buzz, attention warning, not harsh, 0.8 seconds\",0.8,\"eleven_text_to_sound_v3\"]",
+  "chime.mp3": "[\"Short soft two-note chime, positive confirmation, clean, 0.6 seconds\",0.6,\"eleven_text_to_sound_v3\"]",
+  "done.mp3": "[\"Gentle rising three-note completion jingle, 1 second\",1,\"eleven_text_to_sound_v3\"]",
+  "LOOP-02.mp3": "[\"Uwaga: ta kurtka była ostatnio mylona z rozmiarem M. Pokaż mi metkę z rozmiarem.\",\"pl\",\"SAz9YHcvj6GT2YYXdXww\",\"eleven_v4\"]",
+  "LOOP-04.mp3": "[\"Rozmiar L, zgadza się. Możesz zakleić karton.\",\"pl\",\"SAz9YHcvj6GT2YYXdXww\",\"eleven_v4\"]",
+  "PACK-01.mp3": "[\"Hei! Ordre 2207 er klar til pakking.\",\"nb\",\"SAz9YHcvj6GT2YYXdXww\",\"eleven_v4\"]",
+  "PACK-03.mp3": "[\"Jasne. Zamówienie 2207: granatowa bluza z kapturem w rozmiarze M i szare wełniane skarpety. Włóż wszystko do kartonu i naciśnij „Sprawdź”.\",\"pl\",\"SAz9YHcvj6GT2YYXdXww\",\"eleven_v4\"]",
+  "PACK-05.mp3": "[\"Stop. W zamówieniu jest granatowa bluza, a ta jest czarna. Wymień ją, proszę.\",\"pl\",\"SAz9YHcvj6GT2YYXdXww\",\"eleven_v4\"]",
+  "PACK-07.mp3": "[\"Dwa z dwóch. Wszystko się zgadza. Możesz zakleić karton.\",\"pl\",\"SAz9YHcvj6GT2YYXdXww\",\"eleven_v4\"]",
+  "RET-01.mp3": "[\"Hei! Retur 1043 er lastet inn.\",\"nb\",\"SAz9YHcvj6GT2YYXdXww\",\"eleven_v4\"]",
+  "RET-03.mp3": "[\"Звісно. Повернення 1043: одна зелена куртка, розмір L. Клієнт пише, що отримав не той розмір. Покажіть, будь ласка, етикетку всередині куртки.\",\"uk\",\"SAz9YHcvj6GT2YYXdXww\",\"eleven_v4\"]",
+  "RET-05.mp3": "[\"На етикетці розмір M, а не L. На фото з пакування розміру не було видно. Схоже, це наша помилка під час пакування. Чи є плями або пошкодження?\",\"uk\",\"SAz9YHcvj6GT2YYXdXww\",\"eleven_v4\"]",
+  "RET-07.mp3": "[\"Добре. Оцінка A. Полиця C, чотирнадцять, два.\",\"uk\",\"SAz9YHcvj6GT2YYXdXww\",\"eleven_v4\"]",
+  "RET-09.mp3": "[\"У цій записці є інструкції. Я читаю її лише як текст. Повернення коштів понад суму замовлення має підтвердити керівник зміни.\",\"uk\",\"SAz9YHcvj6GT2YYXdXww\",\"eleven_v4\"]",
+  "RET-11.mp3": "[\"Retur 1043: kunden fikk størrelse M i stedet for L, sannsynligvis vår pakkefeil. Jakken er som ny, grad A, lagt på C fjorten to. Kundens lapp ber om fem tusen kroner i refusjon, som er over ordreverdien. Den trenger din vurdering.\",\"nb\",\"onwK4e9ZLuTAKqWW03F9\",\"eleven_v4\"]",
+  "shutter.mp3": "[\"Soft camera shutter click with a subtle whoosh, 0.5 seconds\",0.5,\"eleven_text_to_sound_v3\"]",
+  "tool.mp3": "[\"Very short, quiet, soft digital tick, a subtle interface blip, 0.5 seconds\",0.5,\"eleven_text_to_sound_v3\"]"
+}

@@ -35,4 +35,6 @@ export const ADMIN_ERROR_NB: Record<string, string> = {
   unknown_sku: 'Ukjent SKU.',
   unknown_order: 'Ukjent ordre.',
   sku_not_in_order: 'SKU-en er ikke i ordren.',
+  demo_disabled: 'Demomodus er slått av på denne installasjonen.',
+  seed_not_loaded: 'Startdata mangler i databasen. Kjør pnpm db:seed én gang.',
 };

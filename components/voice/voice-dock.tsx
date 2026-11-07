@@ -13,6 +13,7 @@ import type { Lang } from '@/lib/engine/types';
 import { useLatest } from '@/lib/hooks/use-latest';
 import { LANG_NAMES, LANGS, t } from '@/lib/i18n/strings';
 import { EL_LANG, fromElLang } from '@/lib/voice/agent-config';
+import { playEarcon } from '@/lib/audio/player';
 
 // The voice dock shared by the stations: session start (mic check, token, language override),
 // push-to-talk and hands-free, captions, and the language chip. Each station registers its own
@@ -64,9 +65,13 @@ export async function waitFor<T>(fn: () => T | null | undefined, timeoutMs: numb
   return null;
 }
 
-/** Registers one client tool. Bad input or a crash becomes a short error the agent can say. */
+/**
+ * Registers one client tool. Bad input or a crash becomes a short error the agent can say.
+ * A soft tick tells the worker the coach is doing something on screen (brief appendix C).
+ */
 export function useTool(name: string, run: (params: unknown) => Promise<string> | string) {
   useConversationClientTool(name, async (params: Record<string, unknown>) => {
+    playEarcon('tool');
     try {
       return await run(params);
     } catch (e) {

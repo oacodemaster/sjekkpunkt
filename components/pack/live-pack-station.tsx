@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ConversationProvider } from '@elevenlabs/react';
 import { useVoiceLink, type VoiceLink } from '@/components/voice/voice-dock';
+import { packCaptureEarcon, scanEarcon } from '@/lib/audio/earcons';
+import { playEarcon } from '@/lib/audio/player';
 import type { Lang } from '@/lib/engine/types';
 import { livePackPort } from '@/lib/pack/live-port';
 import type { PackView } from '@/lib/pack/types';
@@ -11,6 +13,31 @@ import { captureResult } from '@/lib/voice/pack-tools';
 import { PackStationView } from './pack-station';
 import { PackVoice } from './pack-voice';
 import { usePackStation, type PackStation } from './use-pack-station';
+
+/**
+ * Earcons for taps and voice tool calls alike: alert when a photo or scan shows a wrong item.
+ * The chime for a passed check plays when the decision turns VERIFIED, whichever way it did.
+ */
+function withEarcons(station: PackStation): PackStation {
+  const { actions } = station;
+  return {
+    ...station,
+    actions: {
+      ...actions,
+      capture: async (target, image) => {
+        const res = await actions.capture(target, image);
+        if (packCaptureEarcon(res) === 'alert') playEarcon('alert');
+        return res;
+      },
+      scan: async (code) => {
+        const res = await actions.scan(code);
+        const e = scanEarcon(res);
+        if (e) playEarcon(e);
+        return res;
+      },
+    },
+  };
+}
 
 /**
  * Taps go to the agent as "[screen]" updates, so the coach knows what happened without asking.
@@ -71,9 +98,16 @@ function StationWithVoice({
 }) {
   const router = useRouter();
   const port = useMemo(() => livePackPort(), []);
-  const station = usePackStation(view, port);
+  const raw = usePackStation(view, port);
+  const station = withEarcons(raw);
   const [uiLang, setUiLang] = useState<Lang>(lang);
   const voice = useVoiceLink();
+  const status = raw.decision.status;
+  const lastStatus = useRef(status);
+  useEffect(() => {
+    if (status === 'VERIFIED' && lastStatus.current !== 'VERIFIED') playEarcon('chime');
+    lastStatus.current = status;
+  }, [status]);
 
   return (
     <>

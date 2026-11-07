@@ -1,3 +1,4 @@
+import { DemoResetButton } from '@/components/admin/demo-reset-button';
 import { RetentionButton } from '@/components/admin/retention-button';
 import { SettingsForm } from '@/components/admin/settings-form';
 import { Card } from '@/components/desk-shell';
@@ -77,6 +78,18 @@ export default async function AdminPage() {
             Grove estimater per kall, ikke en faktura. Når grensen er nådd slår stasjonene av bildeanalyse eller stemme til midnatt og viser det til de ansatte. Grensene endres under Innstillinger. Ingen tall per ansatt.
           </p>
         </Card>
+        {process.env.DEMO_ENABLED === 'true' && (
+          <Card title="Demo">
+            <p className="text-base">
+              Setter alt tilbake til startdata før en demo: ordre 2207 og 2311, retur 1043, historikken bak innsikt og forvekslinger. Saker, beslutninger, bilder, varsler, logg og
+              innstillinger fra testing slettes, og varekatalogen går tilbake til start (endrede varer og referansebilder forsvinner). Brukere og enheter beholdes.
+            </p>
+            <p className="mt-2 text-sm text-muted">Demoen på /demo kjører i nettleseren og trenger ikke dette; den nullstilles med R.</p>
+            <div className="mt-3">
+              <DemoResetButton />
+            </div>
+          </Card>
+        )}
         <Card title="Brukere">
           <table className="w-full text-left text-base">
             <thead className="text-sm text-muted">

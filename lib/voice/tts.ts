@@ -2,6 +2,7 @@ import 'server-only';
 import { createHash } from 'node:crypto';
 import { COST_ORE } from '@/lib/limits/policy';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { LEAD_VOICE_ID, SUMMARY_TTS_MODEL } from './voices';
 
 // Spoken Norwegian lead summaries (addendum sections 6 and 8). Generated on the server with
 // ElevenLabs Text to Speech the first time a lead presses play, cached in the private "audio"
@@ -9,9 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 // summary is never generated twice and a changed summary gets new audio.
 // Checked against GET /v1/models and a live call on 2026-11-07: eleven_v4 speaks Norwegian ("no").
 
-/** Daniel, "Steady Broadcaster" (premade): a different voice from the coaches, as the brief asks. Premade voices retire 2026-12-31: swap with the coach voice. */
-export const LEAD_VOICE_ID = 'onwK4e9ZLuTAKqWW03F9';
-export const SUMMARY_TTS_MODEL = 'eleven_v4';
+export { LEAD_VOICE_ID, SUMMARY_TTS_MODEL };
 const SIGNED_SECONDS = 300;
 
 /** 0.3 s of silence (MP3), for e2e runs with TTS_MOCK=silent. */

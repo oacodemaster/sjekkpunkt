@@ -1,15 +1,34 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ConversationProvider } from '@elevenlabs/react';
-import type { Lang } from '@/lib/engine/types';
+import { confirmEarcon, returnFlagEarcon } from '@/lib/audio/earcons';
+import { playEarcon } from '@/lib/audio/player';
+import type { Lang, ReturnFlag } from '@/lib/engine/types';
 import { livePort } from '@/lib/returns/live-port';
 import type { ReturnView } from '@/lib/returns/types';
 import { capturePhotoResult } from '@/lib/voice/returns-tools';
 import { ReturnStationView } from './return-station';
 import { ReturnVoice, useVoiceLink, type VoiceLink } from './return-voice';
 import { useReturnStation, type ReturnStation } from './use-return-station';
+
+/** Earcons for taps and voice tool calls alike: done when a return item is confirmed. */
+function withEarcons(station: ReturnStation): ReturnStation {
+  const { actions } = station;
+  return {
+    ...station,
+    actions: {
+      ...actions,
+      confirm: async () => {
+        const res = await actions.confirm();
+        const e = confirmEarcon(res);
+        if (e) playEarcon(e);
+        return res;
+      },
+    },
+  };
+}
 
 /**
  * Taps go to the agent as "[screen]" updates, so the coach knows what happened without
@@ -81,9 +100,19 @@ function StationWithVoice({
 }) {
   const router = useRouter();
   const port = useMemo(() => livePort(), []);
-  const station = useReturnStation(view, port);
+  const raw = useReturnStation(view, port);
+  const station = withEarcons(raw);
   const [uiLang, setUiLang] = useState<Lang>(lang);
   const voice = useVoiceLink();
+  // Alert when a photo raises a new red flag on the item in front of the worker.
+  const flags = raw.decision.flags.join(',');
+  const seen = useRef<{ item: string; flags: ReturnFlag[] } | null>(null);
+  useEffect(() => {
+    const now = (flags ? flags.split(',') : []) as ReturnFlag[];
+    const e = seen.current?.item === raw.item.id ? returnFlagEarcon(seen.current.flags, now) : null;
+    if (e) playEarcon(e);
+    seen.current = { item: raw.item.id, flags: now };
+  }, [flags, raw.item.id]);
 
   return (
     <>
