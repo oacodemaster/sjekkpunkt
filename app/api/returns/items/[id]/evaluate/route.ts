@@ -41,7 +41,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<'/api/returns/ite
   const lang = (changed ? body.lang : before.workerNote.lang) ?? body.lang ?? user.lang;
   // The original stays as spoken; the Norwegian line is translated on the server (addendum 8).
   // If translation fails the note is kept and confirm or escalate try again.
-  const noteNb = !note ? null : changed || !before.workerNote.nb ? await noteToNorwegian(note, lang as Lang) : before.workerNote.nb;
+  const noteNb = !note ? null : changed || !before.workerNote.nb ? await noteToNorwegian(note, lang as Lang, user.warehouseId) : before.workerNote.nb;
   const db = createAdminClient();
   const { error } = await db.from('inspections').upsert(
     {

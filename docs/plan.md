@@ -16,7 +16,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | M5 Loop and lead console | Done 2026-11-07, live (see M5 notes below) |
 | M6 Insights and integration events | Done 2026-11-07, live (see M6 notes below) |
 | M7 Admin and privacy | Done 2026-11-07, live; the nightly cron needs `CRON_SECRET` in Vercel (see M7 notes below) |
-| M8-M9, S1 | Not started |
+| M8 Hardening | Done 2026-11-07 (see M8 notes below) |
+| M9, S1 | Not started |
 
 ## Stack
 
@@ -87,6 +88,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 
 ### M8 Hardening
 - Rate limits, daily spend caps with tap-only switch, CSP, secret scan in CI, dependency audit, security tests, `docs/threat-model.md`, `docs/privacy.md`, `docs/architecture.md`.
+
+**M8 notes.** Built: rate limits per user and device on `/api/vision`, `/api/voice/token`, `/api/translate` and `/api/tts/summary`, counted in Postgres (`api_gate`), 429 with `Retry-After`; daily spend caps from settings (`record_spend`, `spend_daily` without person columns, a `SPEND_CAP_REACHED` audit row), with the tap-only switch: a banner on every handheld, `spend_cap` answers, barcode or lead fallback, voice off, and a cost card in admin. CSP with a per-request nonce in `proxy.ts`, security headers on every path, self-hosted voice worklets, zod jitless in the browser. Lint bans raw HTML sinks and eval. CI (`.github/workflows/ci.yml`): typecheck, lint, unit tests, build, client-bundle and git-history secret scans (`scripts/scan-secrets.ts`), gitleaks, dependency audit. ElevenLabs agents: no audio recording, 7-day transcripts, sentiment analysis and topic discovery off, 500 sessions a day. Tests: `tests/e2e/security.spec.ts` (every API route without a session and with the wrong role, CSP and headers with no violations, a 429 burst, the spend-cap switch), `tests/db/hardening.test.ts`, `lib/security/csp.test.ts`, `lib/voice/agent-config.test.ts`, a CSP check in the live packing voice test. Docs for the jury: `docs/threat-model.md`, `docs/privacy.md`, `docs/architecture.md`. Left for later on purpose: Gemini paid tier or Vertex AI in the EU and ElevenLabs EU residency with zero retention (production plan in `docs/privacy.md`), label redaction before upload, the moderate dev-only minimatch advisory (upstream), native review of the pl/uk/ro/lt strings.
 
 ### M9 Stage readiness
 - Director bar polish, earcons and pre-generated voice lines (`scripts/generate-audio.mjs`), demo reset, full Playwright scripted run green, manual prop test plan in `docs/test-plan.md`.

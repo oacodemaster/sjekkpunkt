@@ -1,5 +1,6 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
+import { COST_ORE } from '@/lib/limits/policy';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 // Spoken Norwegian lead summaries (addendum sections 6 and 8). Generated on the server with
@@ -52,9 +53,14 @@ async function synthesize(text: string): Promise<Buffer | null> {
 
 /**
  * Signed URL for the spoken summary of one escalation, generating and caching it on first use.
- * Returns null when the escalation has no summary or speech is unavailable.
+ * Returns null when the escalation has no summary or speech is unavailable. `record` charges the
+ * estimated cost of new audio; null means today's budget is spent, so only cached audio is served.
  */
-export async function summaryAudioUrl(escalationId: string, warehouseId: string): Promise<{ url: string; cached: boolean } | null> {
+export async function summaryAudioUrl(
+  escalationId: string,
+  warehouseId: string,
+  record: ((ore: number) => Promise<void>) | null,
+): Promise<{ url: string; cached: boolean } | null> {
   const db = createAdminClient();
   const { data: esc } = await db
     .from('escalations')
@@ -74,8 +80,10 @@ export async function summaryAudioUrl(escalationId: string, warehouseId: string)
     cached = false; // the row points at a file that is gone: make it again
   }
 
+  if (!record) return null;
   const audio = await synthesize(text);
   if (!audio) return null;
+  if (!mocked()) await record(text.length * COST_ORE.ttsPerChar);
   const { error } = await bucket.upload(path, audio, { contentType: 'audio/mpeg', upsert: true });
   if (error) {
     console.error('[tts] upload failed:', error.message);

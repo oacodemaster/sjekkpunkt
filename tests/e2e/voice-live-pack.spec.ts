@@ -22,6 +22,12 @@ test.use({
 test('the packing coach greets in Polish, switches to Norwegian and checks the box it was asked to', async ({ page }) => {
   test.setTimeout(150_000);
   await page.addInitScript(() => localStorage.setItem('sp_voice_hands_free', '1'));
+  // M8: the CSP must not block WebRTC, LiveKit or the self-hosted audio worklets.
+  await page.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (e) => console.error(`CSP violation: ${e.violatedDirective} ${e.blockedURI}`));
+  });
+  const violations: string[] = [];
+  page.on('console', (m) => /CSP violation|Content Security Policy/.test(m.text()) && violations.push(m.text()));
   await login(page, 'packer');
   await page.getByRole('button', { name: 'device-01' }).click();
   await expect(page).toHaveURL(/\/pack$/);
@@ -56,5 +62,6 @@ test('the packing coach greets in Polish, switches to Norwegian and checks the b
   // The coach never seals: the order is still waiting for the worker's tap.
   const [{ status }] = await sql<{ status: string }>(`select status from orders where ext_id = '2407'`);
   expect(status).toBe('picked');
+  expect(violations).toEqual([]);
   clearInterval(logger);
 });

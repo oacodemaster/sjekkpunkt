@@ -74,7 +74,7 @@ export interface ReturnView {
   lateDays: number | null;
 }
 
-export type CaptureFailure = 'timeout' | 'invalid' | 'unavailable' | 'face' | 'upload' | 'offline' | 'rate_limited';
+export type CaptureFailure = 'timeout' | 'invalid' | 'unavailable' | 'face' | 'upload' | 'offline' | 'rate_limited' | 'spend_cap';
 
 export type CaptureResult =
   | { ok: true; photo: StationPhoto }

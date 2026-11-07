@@ -16,7 +16,11 @@ import type { PackPhoto } from './types';
  * reruns the engine from stored data; a wrong parcel caught here is recorded as a near-miss with
  * its confusion pairs (P1), whatever the client does next.
  */
-export async function packVision(user: CurrentUser, body: { photoId: string; purpose: PackPurpose; sku?: string }) {
+export async function packVision(
+  user: CurrentUser,
+  body: { photoId: string; purpose: PackPurpose; sku?: string },
+  record: (attempts: { model: string }[]) => Promise<void>,
+) {
   const db = createAdminClient();
   const { data: photo } = await db
     .from('photos')
@@ -54,6 +58,7 @@ export async function packVision(user: CurrentUser, body: { photoId: string; pur
   const result: TwoStageResult<{ facePresent: boolean }> =
     body.purpose === 'pack_check' ? await inspectPackPhoto(req) : await readLabelPhoto({ ...req, sku: body.sku! });
 
+  await record(result.attempts);
   const attempts = result.attempts.map(({ model, latencyMs, schemaValid, error }) => ({ model, latencyMs, schemaValid, error }));
   const face = result.ok && result.value.facePresent;
   const output = result.ok

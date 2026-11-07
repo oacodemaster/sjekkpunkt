@@ -22,7 +22,8 @@ const FAILURE_KEY: Record<CaptureFailure | 'already_sealed', StringKey> = {
   face: 'faceInFrame',
   upload: 'uploadFailed',
   offline: 'offline',
-  rate_limited: 'failed',
+  rate_limited: 'rateLimited',
+  spend_cap: 'visionCappedPack',
   already_sealed: 'alreadySealed',
 };
 

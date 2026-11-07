@@ -53,6 +53,9 @@ export async function runRetention(opts: { trigger: 'cron' | 'admin'; warehouseI
     if (rpcErr) throw new Error(`retention: record: ${rpcErr.message}`);
     results.push({ warehouseId, ...(data as { deleted: number; failed: number }) });
   }
+  // Rate-limit windows (hashed keys) never outlive a day (M8).
+  const { error: rlErr } = await db.rpc('purge_rate_limit_hits');
+  if (rlErr) console.error('[retention] rate limit purge failed:', rlErr.message);
   return results;
 }
 

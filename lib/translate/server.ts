@@ -3,6 +3,8 @@ import { ThinkingLevel } from '@google/genai';
 import { z } from 'zod';
 import { gemini } from '@/lib/ai/gemini';
 import type { Lang } from '@/lib/engine/types';
+import { COST_ORE } from '@/lib/limits/policy';
+import { spendGate } from '@/lib/limits/server';
 
 // Server-side translation (addendum sections 6 and 8): worker notes to Norwegian for the
 // record, and caption lines to Norwegian or English. The text is data, never instructions,
@@ -87,9 +89,15 @@ export async function translate(text: string, from: Lang | null, to: 'nb' | 'en'
   }
 }
 
-/** A worker note for the record: the original stays as spoken, the Norwegian line is added. */
-export async function noteToNorwegian(note: string, lang: Lang): Promise<string | null> {
+/**
+ * A worker note for the record: the original stays as spoken, the Norwegian line is added.
+ * Over today's Gemini budget the note stays untranslated (null) and is tried again on confirm.
+ */
+export async function noteToNorwegian(note: string, lang: Lang, warehouseId: string): Promise<string | null> {
   if (lang === 'nb') return note;
+  const gate = await spendGate(warehouseId, 'vision');
+  if (!gate.ok) return null;
   const r = await translate(note, lang, 'nb');
+  if (r.ok && r.model === TRANSLATE_MODEL) await gate.record(COST_ORE.translate);
   return r.ok ? r.text : null;
 }

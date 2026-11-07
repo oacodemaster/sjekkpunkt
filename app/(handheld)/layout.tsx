@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { LimitBanner } from '@/components/limit-banner';
 import { signOut } from '@/lib/auth/actions';
 import { getDeviceLabel, requireRole } from '@/lib/auth/dal';
 import { LANG_NAMES, t } from '@/lib/i18n/strings';
+import { spendStatus } from '@/lib/limits/server';
 
 /** Handheld shell: phone-width, one hand, big targets. */
 export default async function HandheldLayout({ children }: LayoutProps<'/'>) {
@@ -12,6 +14,8 @@ export default async function HandheldLayout({ children }: LayoutProps<'/'>) {
   // First launch: language picker, then the worker information (addendum section 7).
   if (worker && !user.privacyInfoReadAt) redirect('/welcome');
   if (!device && worker) redirect('/device');
+  // Tap-only switch (M8): when today's budget is spent, every station says so up front.
+  const spend = await spendStatus(user.warehouseId);
 
   return (
     <div className="flex flex-1 justify-center bg-frame sm:py-6">
@@ -41,6 +45,7 @@ export default async function HandheldLayout({ children }: LayoutProps<'/'>) {
             </form>
           </div>
         </header>
+        <LimitBanner vision={spend.vision.capped} voice={spend.elevenlabs.capped} lang={user.lang} />
         <main className="flex flex-1 flex-col">{children}</main>
       </div>
     </div>

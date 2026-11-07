@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db": "vitest run --config vitest.db.config.mts",
+    "scan:bundle": "tsx scripts/scan-secrets.ts bundle",
+    "scan:repo": "tsx scripts/scan-secrets.ts repo",
     "db:push": "supabase db push",
     "db:seed:build": "tsx scripts/build-seed.ts",
     "db:seed": "tsx scripts/build-seed.ts && sh -c 'set -a; . ./.env.local; psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql'",

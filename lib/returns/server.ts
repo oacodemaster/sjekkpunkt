@@ -176,7 +176,7 @@ export async function loadItemContext(itemId: string, warehouseId: string): Prom
 export async function ensureNoteNb(ctx: ItemContext): Promise<string | null> {
   const { original, lang, nb } = ctx.workerNote;
   if (nb || !original) return nb;
-  const translated = await noteToNorwegian(original, (lang ?? 'nb') as Lang);
+  const translated = await noteToNorwegian(original, (lang ?? 'nb') as Lang, ctx.warehouseId);
   if (translated) {
     await createAdminClient().from('inspections').update({ worker_note_nb: translated }).eq('return_item_id', ctx.item.id);
   }

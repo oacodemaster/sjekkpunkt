@@ -11,6 +11,7 @@ choice goes in `docs/decisions.md`.
 
 - `pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm lint`
 - `pnpm test` engine unit tests (offline) · `pnpm test:db` RLS/security tests against the hosted dev DB
+- `pnpm scan:bundle` (after `pnpm build`) / `pnpm scan:repo` secret scans of the client bundle and the git history; CI runs both plus gitleaks and `pnpm audit`
 - `npx playwright test` e2e (local prod server on :3100; `E2E_BASE_URL=https://…` for a deployment)
 - `pnpm db:push` apply migrations · `pnpm db:seed` reset data to seed · `pnpm db:users` (re)create role test users
 - `pnpm voice:setup` create/update the ElevenLabs agents (returns, packing, lead) from `lib/voice/agent-config.ts` (never edit them in the dashboard)
@@ -30,6 +31,9 @@ choice goes in `docs/decisions.md`.
 - Voice is optional: every step keeps its button. Agent tool results never contain customer note text.
 - The grading guide lives in settings (`grading_guide`); edit it in `/admin/guide`, which pushes it to the agents. `GRADING_GUIDE` in code is only the default.
 - Admin writes go through one SQL function each (change + audit row), executable only by the service role.
+- Every paid AI call goes through `limitCall` / `spendGate` (`lib/limits/server.ts`): rate limit, daily spend cap, `record` the estimated cost.
+- CSP: scripts only from this origin plus the per-request nonce (`proxy.ts`, `lib/security/csp.ts`). A new external origin goes in `buildCsp` and its test.
+- Voice worklets in `public/elevenlabs/` are copies from `@elevenlabs/client/worklets`; copy them again when the SDK is upgraded (a unit test fails until you do).
 
 ## Environment
 

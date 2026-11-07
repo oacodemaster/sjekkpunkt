@@ -35,6 +35,8 @@ export const ERROR_NB: Record<string, string> = {
   same_sku: 'Velg to ulike varer.',
   unknown_sku: 'Ukjent vare.',
   tts_unavailable: 'Opplesning er ikke tilgjengelig nå.',
+  spend_cap: 'Opplesning er satt på pause til midnatt (dagens kostnadsgrense er nådd).',
+  rate_limited: 'For mange forsøk på kort tid. Vent litt.',
   forbidden: 'Du har ikke tilgang.',
   offline: 'Ingen nettforbindelse. Prøv igjen.',
   failed: 'Noe gikk galt. Prøv igjen.',
@@ -52,7 +54,7 @@ export async function postJson<T = Record<string, unknown>>(url: string, body: u
 
 /** Plays the cached Norwegian summary (generated on the first press). */
 function PlayButton({ id }: { id: string }) {
-  const [state, setState] = useState<'idle' | 'loading' | 'playing' | 'error'>('idle');
+  const [state, setState] = useState<'idle' | 'loading' | 'playing' | 'error' | 'capped'>('idle');
   const audio = useRef<HTMLAudioElement | null>(null);
   const play = async () => {
     if (state === 'playing') {
@@ -62,15 +64,22 @@ function PlayButton({ id }: { id: string }) {
     }
     setState('loading');
     const r = await postJson<{ url: string }>('/api/tts/summary', { escalationId: id });
-    if (!r.ok) return setState('error');
+    if (!r.ok) return setState(r.error === 'spend_cap' ? 'capped' : 'error');
     const a = new Audio(r.url);
     audio.current = a;
     a.onended = () => setState('idle');
     a.play().then(() => setState('playing')).catch(() => setState('error'));
   };
   return (
-    <button onClick={play} className="rounded-full bg-frame px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60" disabled={state === 'loading'} aria-label="Spill av oppsummering" data-testid="play-summary">
-      {state === 'loading' ? 'Lager lyd…' : state === 'playing' ? '■ Stopp' : state === 'error' ? '▶ Prøv igjen' : '▶ Spill av'}
+    <button
+      onClick={play}
+      className="rounded-full bg-frame px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+      disabled={state === 'loading' || state === 'capped'}
+      aria-label="Spill av oppsummering"
+      title={state === 'capped' ? 'Opplesning er satt på pause til midnatt (dagens kostnadsgrense er nådd).' : undefined}
+      data-testid="play-summary"
+    >
+      {state === 'loading' ? 'Lager lyd…' : state === 'playing' ? '■ Stopp' : state === 'error' ? '▶ Prøv igjen' : state === 'capped' ? 'Opplesning på pause' : '▶ Spill av'}
     </button>
   );
 }

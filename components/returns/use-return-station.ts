@@ -21,7 +21,8 @@ const FAILURE_KEY: Record<CaptureFailure, StringKey> = {
   face: 'faceInFrame',
   upload: 'uploadFailed',
   offline: 'offline',
-  rate_limited: 'failed',
+  rate_limited: 'rateLimited',
+  spend_cap: 'visionCappedReturn',
 };
 
 export function stepsFor(decision: ReturnDecision): { purpose: PhotoPurpose; optional: boolean }[] {

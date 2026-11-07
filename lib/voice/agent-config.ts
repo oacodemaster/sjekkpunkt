@@ -24,6 +24,10 @@ export const COACH_VOICE_ID = 'SAz9YHcvj6GT2YYXdXww';
 /** The only low-latency model that covers all six languages (Flash v2.5 has no Lithuanian). */
 export const TTS_MODEL = 'eleven_v4_turbo';
 export const AGENT_LLM = 'gemini-3.5-flash';
+/** ElevenLabs keeps conversation transcripts this long (for debugging a failed session), then deletes them. */
+export const AGENT_RETENTION_DAYS = 7;
+/** Hard ceiling at ElevenLabs, per agent per day. Our own cap (daily_spend_cap_nok) normally stops sooner. */
+export const AGENT_DAILY_SESSION_LIMIT = 500;
 
 export const RETURNS_PROMPT = `You are Sjekkpunkt, a calm voice coach on a warehouse handheld at the returns bench.
 You help one worker at a time inspect return {{return_number}}.
@@ -401,6 +405,14 @@ export function agentBody(kind: AgentKind, toolIds: string[], kb: { id: string; 
     platform_settings: {
       // A conversation token from /api/voice/token is required; the agent id alone is not enough.
       auth: { enable_auth: true },
+      // Privacy (M8, addendum section 10). No audio recordings kept at ElevenLabs, transcripts
+      // deleted after a week, and none of the post-call analysis the platform turns on by default:
+      // sentiment analysis is emotion inference about a worker, which the product never does.
+      privacy: { record_voice: false, retention_days: AGENT_RETENTION_DAYS, delete_audio: true },
+      sentiment_analysis: { enabled: false },
+      topic_discovery: { enabled: false },
+      // A provider-side ceiling on sessions per day per agent, behind our own spend cap.
+      call_limits: { daily_limit: AGENT_DAILY_SESSION_LIMIT },
       overrides: {
         conversation_config_override: {
           agent: { first_message: true, language: true },

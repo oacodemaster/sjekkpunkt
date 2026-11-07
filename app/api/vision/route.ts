@@ -5,7 +5,9 @@ import { packVision } from '@/lib/pack/vision';
 import { evaluateItem, loadItemContext, signedPhotoUrls } from '@/lib/returns/server';
 import type { StationPhoto } from '@/lib/returns/types';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { inspectReturnPhoto } from '@/lib/vision/client';
+import { limitCall, limitResponse } from '@/lib/limits/server';
+import { visionCostOre } from '@/lib/limits/policy';
+import { FAST_MODEL, inspectReturnPhoto, STRONG_MODEL } from '@/lib/vision/client';
 import { downloadImage as download, referenceImages } from '@/lib/vision/images';
 import { isPackPurpose, isReturnPurpose, VISION_PURPOSES } from '@/lib/vision/schemas';
 
@@ -28,11 +30,20 @@ export async function POST(req: Request) {
   const g = await guard(req, [...new Set([...RETURN_ROLES, ...PACK_ROLES])], Body);
   if (!g.ok) return g.res;
   const { user, body } = g;
+  const packing = isPackPurpose(body.purpose);
+  if (!(packing ? PACK_ROLES : RETURN_ROLES).includes(user.role)) return fail('forbidden', 403);
+  if (!packing && !isReturnPurpose(body.purpose)) return fail('unsupported_purpose', 400);
+
+  // Rate limit per user and device, and today's vision budget (M8). Over the budget the station
+  // goes tap-only: barcodes at packing, the lead for returns.
+  const limit = await limitCall(user, 'vision');
+  if (!limit.ok && limit.reason === 'rate_limited') return limitResponse(limit);
+  if (!limit.ok) return NextResponse.json({ ok: false, reason: 'spend_cap' });
+  const record = (attempts: { model: string }[]) => limit.record(visionCostOre(attempts, { fast: FAST_MODEL, strong: STRONG_MODEL }));
+
   if (isPackPurpose(body.purpose)) {
-    if (!PACK_ROLES.includes(user.role)) return fail('forbidden', 403);
-    return packVision(user, { photoId: body.photoId, purpose: body.purpose, sku: body.sku });
+    return packVision(user, { photoId: body.photoId, purpose: body.purpose, sku: body.sku }, record);
   }
-  if (!RETURN_ROLES.includes(user.role)) return fail('forbidden', 403);
   if (!isReturnPurpose(body.purpose)) return fail('unsupported_purpose', 400);
   const db = createAdminClient();
 
@@ -73,6 +84,7 @@ export async function POST(req: Request) {
     },
   });
 
+  await record(result.attempts);
   const attempts = result.attempts.map(({ model, latencyMs, schemaValid, error }) => ({ model, latencyMs, schemaValid, error }));
   await db.from('vision_results').insert({
     warehouse_id: user.warehouseId,

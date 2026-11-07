@@ -19,7 +19,13 @@ import { EL_LANG, fromElLang } from '@/lib/voice/agent-config';
 // client tools next to it (useTool). Voice is an extra: every step still has its button, and mic
 // denial or an unavailable service leaves tap-only mode.
 
-export type VoiceState = 'off' | 'connecting' | 'on' | 'mic_denied' | 'unavailable';
+/** Copied from @elevenlabs/client/worklets; lib/security/csp.test.ts fails if they drift. */
+export const WORKLET_PATHS = {
+  rawAudioProcessor: '/elevenlabs/rawAudioProcessor.js',
+  audioConcatProcessor: '/elevenlabs/audioConcatProcessor.js',
+};
+
+export type VoiceState = 'off' | 'connecting' | 'on' | 'mic_denied' | 'unavailable' | 'capped' | 'rate_limited';
 
 /** What the station screen uses to tell the agent about taps (contextual updates). */
 export interface VoiceLink {
@@ -123,7 +129,7 @@ export function VoiceDock({
   const { status } = useConversationStatus();
   const { isSpeaking } = useConversationMode();
   /** problems before or while connecting; once connected, the SDK status is the truth */
-  const [issue, setIssue] = useState<null | 'connecting' | 'mic_denied' | 'unavailable'>(null);
+  const [issue, setIssue] = useState<null | 'connecting' | 'mic_denied' | 'unavailable' | 'capped' | 'rate_limited'>(null);
   const [showCaptions, setShowCaptions] = useState(true);
   const [target, setTarget] = useState<CaptionTarget>(lang === 'nb' ? 'en' : 'nb');
   const captions = useCaptions(target);
@@ -161,6 +167,8 @@ export function VoiceDock({
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ station }),
         });
+        if (res.status === 429) return setIssue('rate_limited');
+        if (res.status === 503 && ((await res.json().catch(() => ({}))) as { error?: string }).error === 'spend_cap') return setIssue('capped');
         if (!res.ok) throw new Error(String(res.status));
         ({ token, keyterms } = (await res.json()) as { token: string; keyterms: string[] });
       } catch {
@@ -171,6 +179,8 @@ export function VoiceDock({
       startSession({
         conversationToken: token,
         connectionType: 'webrtc',
+        // Self-hosted worklets: the CSP allows scripts from this origin only (no blob: or data:).
+        workletPaths: WORKLET_PATHS,
         stripAudioTags: true,
         overrides: {
           agent: { language: EL_LANG[startLang] as Language, firstMessage: firstRef.current(startLang) },
@@ -244,6 +254,11 @@ export function VoiceDock({
       {state === 'mic_denied' && (
         <p role="alert" className="rounded-xl bg-amber-50 px-3 py-2 text-base text-warn">
           {t('micDenied', lang)}
+        </p>
+      )}
+      {(state === 'capped' || state === 'rate_limited') && (
+        <p role="alert" className="rounded-xl bg-amber-50 px-3 py-2 text-base text-warn" data-testid="voice-limit">
+          {t(state === 'capped' ? 'voiceCapped' : 'rateLimited', lang)}
         </p>
       )}
       {state === 'unavailable' && (
@@ -329,7 +344,7 @@ export function VoiceDock({
         <div className="flex flex-col gap-1">
           <button
             className="btn-secondary min-h-14 text-lg"
-            disabled={state === 'connecting' || status === 'connecting'}
+            disabled={state === 'connecting' || status === 'connecting' || state === 'capped'}
             onClick={() => void start(lang)}
             data-testid="voice-start"
           >

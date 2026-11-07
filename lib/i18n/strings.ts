@@ -5,6 +5,7 @@
 import type { Lang } from '@/lib/engine/types';
 import { PACK_STRINGS } from './pack-strings';
 import { RETURN_STRINGS } from './returns-strings';
+import { LIMIT_STRINGS } from './limit-strings';
 import { VOICE_STRINGS } from './voice-strings';
 
 export const LANGS: Lang[] = ['nb', 'en', 'pl', 'uk', 'ro', 'lt'];
@@ -59,6 +60,7 @@ export const STRINGS = {
   ...RETURN_STRINGS,
   ...PACK_STRINGS,
   ...VOICE_STRINGS,
+  ...LIMIT_STRINGS,
 } satisfies Record<string, Row>;
 
 export type StringKey = keyof typeof STRINGS;

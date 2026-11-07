@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, ctx: RouteContext<'/api/returns/ite
   const lang = body.lang ?? user.lang;
   let noteNb: string | null;
   if (body.note) {
-    noteNb = await noteToNorwegian(body.note, lang);
+    noteNb = await noteToNorwegian(body.note, lang, user.warehouseId);
     await db.from('inspections').upsert(
       {
         warehouse_id: user.warehouseId,
