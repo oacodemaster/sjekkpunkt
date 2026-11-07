@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <rect width="1000" height="1000" fill="#d9c7a7"/>
+  <g stroke="#c4b08e" stroke-width="3" opacity="0.6"><path d="M0 250h1000M0 520h1000M0 790h1000"/></g>
+  <!-- green shell jacket laid flat, box_2d [80,120,920,880] -->
+  <path d="M390 95 L500 140 L610 95 L760 150 L880 470 L800 500 L740 330 L735 905 L265 905 L260 330 L200 500 L120 470 L240 150 Z" fill="#2f6b3a" stroke="#1f4a28" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M390 95 Q500 210 610 95" fill="#24552d" stroke="#1f4a28" stroke-width="6"/>
+  <line x1="500" y1="160" x2="500" y2="900" stroke="#c9d1c9" stroke-width="8"/>
+  <rect x="490" y="160" width="20" height="40" rx="4" fill="#9aa59a"/>
+  <path d="M300 560 h120 M580 560 h120" stroke="#1f4a28" stroke-width="8" stroke-linecap="round"/>
+  <path d="M270 880 h460" stroke="#24552d" stroke-width="14"/>
+</svg>

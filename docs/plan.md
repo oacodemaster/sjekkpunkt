@@ -1,6 +1,6 @@
 # Sjekkpunkt MVP: build plan
 
-Source documents: `sjekkpunkt-demo-brief V1.md` (the brief) and `sjekkpunkt-mvp-addendum.md` (the addendum).
+Source documents: `docs/sjekkpunkt-demo-brief V1.md` (the brief) and `docs/sjekkpunkt-mvp-addendum.md` (the addendum).
 The addendum wins on conflicts. Milestones follow addendum section 12. Choices are logged in `docs/decisions.md`.
 
 Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
@@ -10,7 +10,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | Milestone | State |
 |---|---|
 | M1 Foundation | Done 2026-11-07. Live at https://sjekkpunkt.vercel.app |
-| M2-M9, S1 | Not started |
+| M2 Returns, live | Done 2026-11-07 (see M2 notes below) |
+| M3-M9, S1 | Not started |
 
 ## Stack
 
@@ -51,6 +52,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 - `/api/returns/scan`, `/evaluate`, `/confirm` (server rerun), unknown-return and late-return escalations.
 - Holio mock: return record view.
 - Demo adapter + director bar for scene 2 (RET-01..RET-11) with SVG illustrations.
+
+**M2 notes.** Built: return queue with QR (BarcodeDetector) and number scan, overview with packing evidence, guided photo stepper with retake counter, findings with the tap checklist, decision preview, item switcher, "Send til teamleder", camera pipeline (rear camera, ~1024 px, EXIF dropped, JPEG 0.8, file fallback, wake lock), `/api/photos/upload-url`, `/api/vision` (closed set, two-stage Gemini, zod, face discard, 8 s), `/api/returns/scan`, `/evaluate`, `/confirm` (atomic SQL commit), `/escalate`, the Holio mock return record, and demo scene 2 (RET-01..RET-11). Left for later milestones on purpose: note translation (M3), live pack alerts from confusion events (M5), rate limits and spend caps (M8), reference photo upload (M7; the vision route already sends them when products have them).
 
 ### M3 Voice on returns
 - Check current ElevenLabs docs. Returns agent, client tools calling API routes, token route, language from `preferred_lang` + detection, push-to-talk, captions, `/api/translate`, tap-only fallback when mic denied.

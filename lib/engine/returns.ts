@@ -1,4 +1,4 @@
-import { productMap, siblingBySize } from './catalog';
+import { isSizeVariant, productMap, siblingBySize } from './catalog';
 import { ENGINE_VERSION, SPECIAL_LOCATIONS, withDefaults } from './constants';
 import { computeGrade, mergeCondition } from './grade';
 import { detectInstructions } from './injection';
@@ -62,8 +62,12 @@ function resolveIdentity(
   products: Product[],
 ): { receivedSku: string | null; confidence: number } {
   const pm = productMap(products);
+  const ordered = pm.get(orderedSku);
+  // A size-variant item (shell jacket M/L) can only be identified by a size read. A front
+  // shot that "recognises" the ordered size without reading it is a guess, not evidence.
+  const needsSize = ordered ? isSizeVariant(ordered, products) : false;
   const ranked = inspections
-    .filter((i) => i.identifiedSku || i.sizeRead)
+    .filter((i) => (needsSize ? !!i.sizeRead : i.identifiedSku || i.sizeRead))
     .filter((i) => i.photoPurpose === 'label' || i.photoPurpose === 'front' || i.photoPurpose === 'packaging')
     .sort((a, b) => {
       const pa = a.photoPurpose === 'label' ? 1 : 0;

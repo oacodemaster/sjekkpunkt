@@ -1,0 +1,77 @@
+import { expect, test, type Page } from '@playwright/test';
+
+// The scripted demo, scene 2 (RET-01..RET-11), driven with the director keys on a
+// 1440x900 projector layout. No login, no keys, no database: the demo adapter.
+
+test.use({ viewport: { width: 1440, height: 900 }, isMobile: false, hasTouch: false, deviceScaleFactor: 1 });
+
+const shots = process.env.DEMO_SHOTS; // set to a folder to save a screenshot per step
+
+async function next(page: Page, id: string) {
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByTestId('director-step')).toHaveText(id);
+  if (shots) {
+    await page.waitForTimeout(700); // let smooth scrolling and the caption typewriter settle
+    await page.screenshot({ path: `${shots}/${id}.png` });
+  }
+}
+
+test('scene 2 runs end to end with the director keys, back, and reset', async ({ page }) => {
+  test.skip(process.env.NEXT_PUBLIC_DEMO_ENABLED !== 'true', 'demo disabled');
+  await page.goto('/demo');
+  await page.keyboard.press('d');
+  await expect(page.getByTestId('director-step')).toHaveText('START');
+
+  await next(page, 'RET-01');
+  await expect(page.getByText('Manuelt bekreftet, størrelse ikke lest').first()).toBeVisible();
+  await expect(page.getByTestId('lang-chip')).toHaveText('NB');
+
+  await next(page, 'RET-02');
+  await expect(page.getByTestId('lang-chip')).toHaveText('UK');
+
+  await next(page, 'RET-03');
+  await expect(page.getByRole('button', { name: /^Етикетка/ })).toHaveAttribute('aria-current', 'step');
+
+  await next(page, 'RET-04');
+  await expect(page.getByText('Розмір: M')).toBeVisible();
+
+  await next(page, 'RET-05');
+  await expect(page.getByText('Доставлено не той товар')).toBeVisible();
+  await expect(page.getByText('Імовірна помилка пакування')).toBeVisible();
+
+  await next(page, 'RET-06');
+  await next(page, 'RET-07');
+  await expect(page.getByTestId('grade')).toHaveText('A');
+  await expect(page.getByTestId('shelf')).toHaveText('C-14-2');
+  await expect(page.getByTestId('refund')).toHaveText('1 499 kr');
+
+  await next(page, 'RET-08');
+  await next(page, 'RET-09');
+  await expect(page.getByText('Підозріла записка клієнта')).toBeVisible();
+  await expect(page.getByTestId('refund')).toHaveText('1 499 kr');
+  await expect(page.getByTestId('lead-panel')).toContainText('Mistenkelig kundelapp');
+
+  await next(page, 'RET-10');
+  const record = page.getByTestId('return-record');
+  await expect(record).toContainText('C-14-2');
+  await expect(record).toContainText('1 499 kr');
+  await expect(record).toContainText('Mistenkelig kundelapp');
+  await expect(record).toContainText('JK-SHELL-L +1');
+  await expect(record).toContainText('JK-SHELL-M -1');
+  await expect(page.getByTestId('event-log')).toContainText('Retur 1043 bekreftet');
+  // The third shell-jacket mix-up in 7 days creates the packing alert (the loop).
+  await expect(page.getByTestId('insights')).toContainText('Pakkevarsel aktivt: etikettfoto kreves');
+
+  await next(page, 'RET-11');
+  await expect(page.getByTestId('lead-panel')).toContainText('Kundens lapp ber om 5000 kroner');
+
+  // Back one step replays deterministically; R resets to seed and the run works again.
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByTestId('director-step')).toHaveText('RET-10');
+  await expect(record).toContainText('C-14-2');
+  await page.keyboard.press('r');
+  await expect(page.getByTestId('director-step')).toHaveText('START');
+  await expect(page.getByTestId('event-log')).not.toContainText('bekreftet');
+  await next(page, 'RET-01');
+  await expect(page.getByTestId('lang-chip')).toHaveText('NB');
+});

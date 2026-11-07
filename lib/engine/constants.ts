@@ -1,7 +1,7 @@
 // Engine constants. Admin settings can override the thresholds at runtime
 // (see EngineSettings); these are the defaults from the demo brief section 6.
 
-export const ENGINE_VERSION = '1.0.0';
+export const ENGINE_VERSION = '1.1.0';
 
 export const PACK_CONFIDENCE_MIN = 0.8;
 export const RETURN_CONFIDENCE_MIN = 0.7;

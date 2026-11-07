@@ -344,6 +344,20 @@ describe('returns rules', () => {
     expect(last.escalations).toContain('low_confidence_after_retakes');
   });
 
+  it('R3: a size-variant item is identified only by a size read, never by a front-shot guess', () => {
+    const guess = { ...RET_1043_FRONT, identifiedSku: 'JK-SHELL-L', identityConfidence: 0.9 };
+    const unreadable = inspection({ photoPurpose: 'label', identifiedSku: null, sizeRead: null, identityConfidence: 0 });
+    const d = evalR([guess, unreadable]);
+    expect(d.receivedSku).toBeNull();
+    expect(d.status).toBe('needs_retake');
+    expect(d.canConfirm).toBe(false);
+    // A beanie has no sizes, so its front shot is enough evidence of identity.
+    const r: ReturnCase = { ...ret1043, items: [{ orderedSku: 'CP-BEANIE', qty: 1 }] };
+    const o: Order = { ...order('1043'), lines: [{ sku: 'CP-BEANIE', qty: 1, priceNok: 249 }] };
+    const front = inspection({ identifiedSku: 'CP-BEANIE', identityConfidence: 0.9 });
+    expect(evaluateReturn(r, o, null, { inspections: [front] }, {}, retCtx).receivedSku).toBe('CP-BEANIE');
+  });
+
   it('R12: each item of a multi-item return is decided on its own', () => {
     const o: Order = { id: 'M-1', customerRef: 'Test', status: 'shipped', shippedAt: '2026-11-01T12:00:00+01:00', lines: [
       { sku: 'JK-SHELL-L', qty: 1, priceNok: 1499 },

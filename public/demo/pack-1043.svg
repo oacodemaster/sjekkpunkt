@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <rect width="1000" height="1000" fill="#8a6a43"/>
+  <!-- open cardboard box seen from above -->
+  <rect x="90" y="90" width="820" height="820" fill="#c99a5e" stroke="#a87c45" stroke-width="10"/>
+  <path d="M90 90 L170 170 L830 170 L910 90 M90 910 L170 830 L830 830 L910 910" fill="none" stroke="#a87c45" stroke-width="8"/>
+  <rect x="170" y="170" width="660" height="660" fill="#b88a50"/>
+  <!-- folded green shell jacket, no label visible -->
+  <rect x="230" y="250" width="540" height="500" rx="40" fill="#2f6b3a" stroke="#1f4a28" stroke-width="6"/>
+  <path d="M230 420 h540 M230 590 h540" stroke="#24552d" stroke-width="10"/>
+  <path d="M440 250 Q500 320 560 250" fill="#24552d" stroke="#1f4a28" stroke-width="6"/>
+</svg>

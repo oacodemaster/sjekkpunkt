@@ -1,7 +1,7 @@
 # Sjekkpunkt
 
 Warehouse handheld app: camera + voice check at packing and at the returns bench.
-Specs: `sjekkpunkt-demo-brief V1.md` (product, rules, demo script) and `sjekkpunkt-mvp-addendum.md`
+Specs: `docs/sjekkpunkt-demo-brief V1.md` (product, rules, demo script) and `docs/sjekkpunkt-mvp-addendum.md`
 (MVP scope; wins on conflicts). Build plan and milestone status: `docs/plan.md`. Every non-obvious
 choice goes in `docs/decisions.md`.
 

@@ -75,6 +75,21 @@ describe('no writes through the Data API', () => {
   });
 });
 
+describe('commit functions are server-only (M2)', () => {
+  it('no signed-in role can call commit_return_item or escalate_return_item directly', async () => {
+    const p = { warehouse_id: '00000000-0000-4000-8000-000000000001', return_item_id: '00000000-0000-4000-8000-000000000099' };
+    for (const role of roles) {
+      const commit = await clients[role].rpc('commit_return_item', { p });
+      expect(commit.error, `${role} commit_return_item`).not.toBeNull();
+      expect(commit.error!.message).toMatch(/permission denied|not find|does not exist/i);
+      const esc = await clients[role].rpc('escalate_return_item', { p });
+      expect(esc.error, `${role} escalate_return_item`).not.toBeNull();
+    }
+    const anon = await anonClient().rpc('commit_return_item', { p });
+    expect(anon.error).not.toBeNull();
+  });
+});
+
 describe('audit_events is append-only', () => {
   it('even the service role cannot update or delete audit events', async () => {
     const svc = serviceClient();
