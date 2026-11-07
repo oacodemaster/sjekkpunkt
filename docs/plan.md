@@ -15,7 +15,7 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | M4 Packing, live | Done 2026-11-07, live (see M4 notes below) |
 | M5 Loop and lead console | Done 2026-11-07, live (see M5 notes below) |
 | M6 Insights and integration events | Done 2026-11-07, live (see M6 notes below) |
-| M7 Admin and privacy | Done 2026-11-07 (see M7 notes below) |
+| M7 Admin and privacy | Done 2026-11-07, live; the nightly cron needs `CRON_SECRET` in Vercel (see M7 notes below) |
 | M8-M9, S1 | Not started |
 
 ## Stack
