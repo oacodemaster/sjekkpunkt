@@ -15,7 +15,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | M4 Packing, live | Done 2026-11-07, live (see M4 notes below) |
 | M5 Loop and lead console | Done 2026-11-07, live (see M5 notes below) |
 | M6 Insights and integration events | Done 2026-11-07, live (see M6 notes below) |
-| M7-M9, S1 | Not started |
+| M7 Admin and privacy | Done 2026-11-07 (see M7 notes below) |
+| M8-M9, S1 | Not started |
 
 ## Stack
 
@@ -81,6 +82,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 
 ### M7 Admin and privacy
 - Settings, product editor with reference photos, CSV import, grading guide editor + agent KB sync, audit viewer, retention job (Vercel cron), `/privacy` in all enabled languages with "Jeg har lest dette".
+
+**M7 notes.** Built: admin sections (`/admin`, `/admin/products`, `/admin/import`, `/admin/guide`, `/admin/audit`). Settings form for every threshold plus `return_window_days`, `photo_retention_days`, `wrong_parcel_cost_nok`, enabled languages and spend caps (`PATCH /api/admin/settings`, ranges in `lib/admin/schemas.ts`). Product editor: create and edit (the SKU is fixed once created), a new shelf code becomes a stock location, barcodes stay unique; reference photos (up to four, downscaled and EXIF-free in the browser, JPEG only on the server, never expire). CSV import of products (upsert by SKU), orders and returns (new only): comma or semicolon, a template per kind, a dry run that reports problems by line (file rules shared by browser and server, then database checks), then one all-or-nothing SQL transaction. Grading guide editor: stored as the `grading_guide` setting and pushed to the agents' ElevenLabs knowledge base in place; `pnpm voice:setup` now pushes the stored guide too. Audit viewer with station, type, reference and date filters, payloads and actors. Photo retention: `GET /api/cron/retention` daily from Vercel Cron (`CRON_SECRET`), "Slett utløpte bilder nå" in admin, a status card, a `RETENTION_RUN` audit row per run; a changed retention period moves the expiry of stored photos. Worker first launch: language picker (`/welcome`, enabled languages), then `/privacy` in the worker's language with "Jeg har lest dette" (stored as `privacy_info_read_at`); stations are closed until then. `/privacy` is public, in every enabled language, and linked from the handheld header. Every admin change is one SQL function with its audit row (`actor_user` = the admin), executable only by the service role (tested). Left for later on purpose: spend-cap enforcement and rate limits (M8), the enabled-languages list in the voice dock's language chip (it still offers all six), native review of the pl/uk/ro/lt privacy text.
 
 ### M8 Hardening
 - Rate limits, daily spend caps with tap-only switch, CSP, secret scan in CI, dependency audit, security tests, `docs/threat-model.md`, `docs/privacy.md`, `docs/architecture.md`.

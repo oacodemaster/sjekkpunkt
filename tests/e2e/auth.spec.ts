@@ -65,8 +65,8 @@ test('lead lands on the lead console and sees the audit log and insights', async
 test('admin lands on admin and sees settings and users', async ({ page }) => {
   await login(page, 'admin');
   await expect(page).toHaveURL(/\/admin$/);
-  await expect(page.getByText('return_window_days')).toBeVisible();
-  await expect(page.getByRole('cell', { name: 'Teamleder' })).toBeVisible();
+  await expect(page.getByTestId('settings-form').locator('input[name="return_window_days"]')).toHaveValue('30');
+  await expect(page.getByRole('cell', { name: 'Teamleder' }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Logg ut' }).click();
   await expect(page).toHaveURL(/\/login/);
 });

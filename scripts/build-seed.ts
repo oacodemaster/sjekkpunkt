@@ -5,6 +5,7 @@
 import { writeFileSync } from 'node:fs';
 import { SEED, WAREHOUSE_NAME } from '../lib/demo/seed';
 import { DEFAULT_SETTINGS } from '../lib/engine/constants';
+import { GRADING_GUIDE } from '../lib/voice/agent-config';
 
 const demoNowMs = new Date(SEED.demoNow).getTime();
 const q = (v: string | null | undefined) => (v === null || v === undefined ? 'null' : `'${v.replace(/'/g, "''")}'`);
@@ -106,6 +107,7 @@ const settings: Record<string, unknown> = {
   wrong_parcel_cost_nok: 340,
   enabled_languages: ['nb', 'en', 'pl', 'uk', 'ro', 'lt'],
   daily_spend_cap_nok: { vision: 200, elevenlabs: 300 },
+  grading_guide: GRADING_GUIDE,
 };
 out.push(`insert into public.settings (warehouse_id, key, value) values
 ${Object.entries(settings)

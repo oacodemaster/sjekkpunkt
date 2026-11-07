@@ -4,6 +4,7 @@
 // Prints ELEVENLABS_AGENT_ID_RETURNS, _PACK and _LEAD for .env.local and Vercel.
 // The key stays on this machine.
 
+import { createClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
 import { AGENT_NAMES, AGENT_TOOLS, agentBody, GRADING_GUIDE, KNOWLEDGE_BASE_NAME, type AgentKind } from '../lib/voice/agent-config';
 
@@ -44,17 +45,30 @@ async function upsertTools(defs: readonly { name: string }[]): Promise<string[]>
   return ids;
 }
 
+/** The guide an admin saved (settings.grading_guide), else the default from agent-config. */
+async function currentGuide(): Promise<string> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const secret = process.env.SUPABASE_SECRET_KEY;
+  if (!url || !secret) return GRADING_GUIDE;
+  const db = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data } = await db.from('settings').select('value').eq('key', 'grading_guide').limit(1).maybeSingle();
+  return typeof data?.value === 'string' && data.value.trim().length >= 50 ? data.value : GRADING_GUIDE;
+}
+
 async function upsertKnowledgeBase(): Promise<{ id: string; name: string }> {
+  const text = await currentGuide();
   const list = await api<{ documents: { id: string; name: string }[] }>(
     'GET',
     `/v1/convai/knowledge-base?search=${encodeURIComponent(KNOWLEDGE_BASE_NAME)}`,
   );
   const hit = list.documents?.find((d) => d.name === KNOWLEDGE_BASE_NAME);
   if (hit) {
-    console.log(`knowledge base: reusing ${hit.id}`);
+    // Content is updated in place, so the agents keep their link (same as the admin save).
+    await api('PATCH', `/v1/convai/knowledge-base/${hit.id}`, { content: text });
+    console.log(`knowledge base: updated ${hit.id}`);
     return { id: hit.id, name: hit.name };
   }
-  const doc = await api<{ id: string }>('POST', '/v1/convai/knowledge-base/text', { text: GRADING_GUIDE, name: KNOWLEDGE_BASE_NAME });
+  const doc = await api<{ id: string }>('POST', '/v1/convai/knowledge-base/text', { text, name: KNOWLEDGE_BASE_NAME });
   console.log(`knowledge base: created ${doc.id}`);
   return { id: doc.id, name: KNOWLEDGE_BASE_NAME };
 }

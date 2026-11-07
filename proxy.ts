@@ -1,8 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Paths that work without a session.
-const PUBLIC = [/^\/$/, /^\/login/, /^\/privacy/, /^\/demo/, /^\/api\/health/];
+// Paths that work without a session. /api/cron/ checks CRON_SECRET itself (Vercel Cron has no session).
+const PUBLIC = [/^\/$/, /^\/login/, /^\/privacy/, /^\/demo/, /^\/api\/health/, /^\/api\/cron\//];
 
 /**
  * Refreshes the Supabase session once per navigation (the only place that does)

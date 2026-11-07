@@ -8,21 +8,33 @@ import { LANG_NAMES, t } from '@/lib/i18n/strings';
 export default async function HandheldLayout({ children }: LayoutProps<'/'>) {
   const user = await requireRole(['packer', 'returns', 'lead', 'admin']);
   const device = await getDeviceLabel();
-  if (!device && (user.role === 'packer' || user.role === 'returns')) redirect('/device');
+  const worker = user.role === 'packer' || user.role === 'returns';
+  // First launch: language picker, then the worker information (addendum section 7).
+  if (worker && !user.privacyInfoReadAt) redirect('/welcome');
+  if (!device && worker) redirect('/device');
 
   return (
     <div className="flex flex-1 justify-center bg-frame sm:py-6">
       <div className="flex w-full max-w-md flex-col overflow-hidden bg-white sm:rounded-[2rem] sm:shadow-2xl">
-        <header className="flex items-center justify-between gap-2 border-b px-4 py-3">
+        <header className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
           <Link href="/" className="text-xl font-bold tracking-tight">
             Sjekkpunkt
           </Link>
-          <div className="flex items-center gap-2 text-sm">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2 text-sm">
             <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold" title={LANG_NAMES[user.lang]}>
               {user.lang.toUpperCase()}
             </span>
             <Link href="/device" className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 font-mono" title={t('device', user.lang)}>
               {device ?? '—'}
+            </Link>
+            <Link
+              href="/privacy"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 font-serif text-base font-bold italic"
+              title={t('privacy', user.lang)}
+              aria-label={t('privacy', user.lang)}
+              data-testid="privacy-link"
+            >
+              i
             </Link>
             <form action={signOut}>
               <button className="rounded-full px-3 py-1 text-muted underline">{t('signOut', user.lang)}</button>

@@ -15,7 +15,8 @@ choice goes in `docs/decisions.md`.
 - `pnpm db:push` apply migrations · `pnpm db:seed` reset data to seed · `pnpm db:users` (re)create role test users
 - `pnpm voice:setup` create/update the ElevenLabs agents (returns, packing, lead) from `lib/voice/agent-config.ts` (never edit them in the dashboard)
 - `E2E_VOICE=1 npx playwright test tests/e2e/voice-live*.spec.ts` live voice tests (real WebRTC, uses credits); fixtures from `pnpm tsx scripts/make-voice-fixture.ts [pack|lead]`
-- `PACK_SHOTS=<dir>` / `DEMO_SHOTS=<dir>` / `LEAD_SHOTS=<dir>` / `INSIGHTS_SHOTS=<dir>` save screenshots from the pack / demo / lead / insights e2e specs
+- `PACK_SHOTS=<dir>` / `DEMO_SHOTS=<dir>` / `LEAD_SHOTS=<dir>` / `INSIGHTS_SHOTS=<dir>` / `ADMIN_SHOTS=<dir>` save screenshots from the pack / demo / lead / insights / admin e2e specs
+- `E2E_KB=1` lets the admin spec push the grading guide to the live ElevenLabs knowledge base when run against a deployment (it restores the text)
 
 ## Rules that must not erode
 
@@ -27,6 +28,8 @@ choice goes in `docs/decisions.md`.
 - Seed data lives in `lib/demo/seed.ts`; `supabase/seed.sql` is generated from it. Don't hand-edit the SQL.
 - Demo mode (`/demo`) must keep working at every milestone.
 - Voice is optional: every step keeps its button. Agent tool results never contain customer note text.
+- The grading guide lives in settings (`grading_guide`); edit it in `/admin/guide`, which pushes it to the agents. `GRADING_GUIDE` in code is only the default.
+- Admin writes go through one SQL function each (change + audit row), executable only by the service role.
 
 ## Environment
 
