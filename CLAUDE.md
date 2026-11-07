@@ -15,7 +15,7 @@ choice goes in `docs/decisions.md`.
 - `pnpm db:push` apply migrations · `pnpm db:seed` reset data to seed · `pnpm db:users` (re)create role test users
 - `pnpm voice:setup` create/update the ElevenLabs agents (returns, packing, lead) from `lib/voice/agent-config.ts` (never edit them in the dashboard)
 - `E2E_VOICE=1 npx playwright test tests/e2e/voice-live*.spec.ts` live voice tests (real WebRTC, uses credits); fixtures from `pnpm tsx scripts/make-voice-fixture.ts [pack|lead]`
-- `PACK_SHOTS=<dir>` / `DEMO_SHOTS=<dir>` / `LEAD_SHOTS=<dir>` save screenshots from the pack / demo / lead e2e specs
+- `PACK_SHOTS=<dir>` / `DEMO_SHOTS=<dir>` / `LEAD_SHOTS=<dir>` / `INSIGHTS_SHOTS=<dir>` save screenshots from the pack / demo / lead / insights e2e specs
 
 ## Rules that must not erode
 

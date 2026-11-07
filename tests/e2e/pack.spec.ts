@@ -82,7 +82,7 @@ test('order 2207: wrong hoodie caught, right box verified, seal ignores client f
   expect(audit.map((a) => a.type)).toEqual(['PACK_MISMATCH', 'PACK_VERIFIED']);
   expect(audit[1].actor_user).toBeNull(); // a verified seal is the device's, not the person's
   expect(audit[1].actor_device).not.toBeNull();
-  const [ev] = await sql<{ payload: { ordre: string; status: string; pakkebevis: string | null } }>(`select payload from integration_events where type = 'pack.verified'`);
+  const [ev] = await sql<{ payload: { ordre: string; status: string; pakkebevis: string | null } }>(`select payload from integration_events where type = 'pack.verified' and payload->>'ordre' = '2207'`);
   expect(ev.payload).toMatchObject({ ordre: '2207', status: 'VERIFIED' });
   expect(ev.payload.pakkebevis).toBeTruthy();
 

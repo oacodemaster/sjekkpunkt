@@ -14,7 +14,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | M3 Voice on returns | Done 2026-11-07, live (see M3 notes below) |
 | M4 Packing, live | Done 2026-11-07, live (see M4 notes below) |
 | M5 Loop and lead console | Done 2026-11-07, live (see M5 notes below) |
-| M6-M9, S1 | Not started |
+| M6 Insights and integration events | Done 2026-11-07 (see M6 notes below) |
+| M7-M9, S1 | Not started |
 
 ## Stack
 
@@ -75,6 +76,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 
 ### M6 Insights and integration events
 - Anonymous-view aggregates (7d/30d), value recovered, near-misses with configurable cost, "Ingen statistikk per ansatt" footer. `integration_events` with Holio payload names in the Holio mock.
+
+**M6 notes.** Built: `lib/insights/compute.ts`, a pure aggregation over rows from the anonymous views (unit-tested on the seed), `loadInsights` reading only `insights_*` views, the catalogue and the `wrong_parcel_cost_nok` setting through the caller's RLS client, `GET /api/insights?range=7d|30d` (lead, admin; output parsed with zod), and the insights page (`/insights?range=`): headline tiles, SKU-pair mix-ups with 7- and 30-day counts, where they were found and alert status (active alerts sort first), grade distribution with value resold (A and B), repaired (C) and scrapped (D), likely causes, parcels stopped at packing with the estimated saving (caught × cost per wrong parcel, labelled as an estimate) and how sealed parcels were verified, return reasons per category and per SKU, and the "Ingen statistikk per ansatt" footer. New view `insights_alerts` (no `cleared_by`). Holio mock: `/holio/events` lists the newest 100 integration events with a type filter, a one-line summary, a link to the order or return record and the raw payload. Seed: four near-misses (MISMATCH pack checks, kept out of the demo's packing evidence) and 46 integration events for the seeded history in the live payload shapes. Left for later on purpose: editing `wrong_parcel_cost_nok` (M7 admin settings), an insights panel in demo mode beyond the brief's mix-up list (the demo keeps the brief's four panels).
 
 ### M7 Admin and privacy
 - Settings, product editor with reference photos, CSV import, grading guide editor + agent KB sync, audit viewer, retention job (Vercel cron), `/privacy` in all enabled languages with "Jeg har lest dette".

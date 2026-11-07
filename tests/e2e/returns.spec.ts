@@ -100,7 +100,7 @@ test('return 1043 end to end: photos, preview, server confirm ignoring client fi
   expect(esc[0].summary_nb).toContain('5000 kroner');
   const [{ n }] = await sql<{ n: number }>(`select count(*)::int as n from confusion_events where sku_a = 'JK-SHELL-L' and sku_b = 'JK-SHELL-M'`);
   expect(n).toBe(3);
-  const types = (await sql<{ type: string }>(`select type from integration_events where type like 'return.%' order by created_at`)).map((r) => r.type);
+  const types = (await sql<{ type: string }>(`select type from integration_events where type like 'return.%' and payload->>'retur' = '1043' order by created_at`)).map((r) => r.type);
   expect(types).toEqual(['return.item.decided', 'return.confirmed']);
   const [{ status }] = await sql<{ status: string }>(`select status from returns where ext_id = '1043'`);
   expect(status).toBe('confirmed');

@@ -56,7 +56,7 @@ ${SEED.orders.flatMap((o) => o.lines.map((l) => `  (${W}, ${order(o.id)}, ${q(l.
 `);
 
 out.push(`insert into public.pack_checks (warehouse_id, order_id, status, method, size_verified, confidence, photo_ref, device_id, engine_version, created_at) values
-${SEED.packChecks
+${[...SEED.packChecks, ...SEED.nearMisses]
   .map((c) => `  (${W}, ${order(c.orderId)}, ${q(c.status)}, ${q(c.method ?? 'camera')}, ${c.sizeVerified}, ${c.confidence.toFixed(3)}, ${q(c.photoRef)}, (select id from public.devices where label = ${q(c.deviceId)}), 'seed', ${ts(c.at)})`)
   .join(',\n')};
 `);
@@ -91,6 +91,10 @@ ${SEED.confusionEvents
   .join(',\n')};
 `);
 
+out.push(`insert into public.integration_events (warehouse_id, type, payload, created_at) values
+${SEED.integrationEvents.map((e) => `  (${W}, ${q(e.type)}, ${q(JSON.stringify(e.payload))}::jsonb, ${ts(e.at)})`).join(',\n')};
+`);
+
 const settings: Record<string, unknown> = {
   pack_confidence_min: DEFAULT_SETTINGS.packConfidenceMin,
   return_confidence_min: DEFAULT_SETTINGS.returnConfidenceMin,
@@ -116,4 +120,4 @@ commit;
 `);
 
 writeFileSync(new URL('../supabase/seed.sql', import.meta.url), out.join('\n'));
-console.log(`seed.sql: ${SEED.products.length} products, ${SEED.orders.length} orders, ${SEED.returns.length} returns, ${SEED.pastDecisions.length} past decisions, ${SEED.confusionEvents.length} confusion events`);
+console.log(`seed.sql: ${SEED.products.length} products, ${SEED.orders.length} orders, ${SEED.returns.length} returns, ${SEED.pastDecisions.length} past decisions, ${SEED.confusionEvents.length} confusion events, ${SEED.nearMisses.length} near-misses, ${SEED.integrationEvents.length} integration events`);

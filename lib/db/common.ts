@@ -11,6 +11,8 @@ const SIGNED_URL_SECONDS = 300;
 
 export interface AppSettings extends EngineSettings {
   photoRetentionDays: number;
+  /** Insights: the estimated cost of one wrong parcel (addendum section 7, default 340 kr). */
+  wrongParcelCostNok: number;
 }
 
 const SETTING_KEYS: Record<string, keyof AppSettings> = {
@@ -21,6 +23,7 @@ const SETTING_KEYS: Record<string, keyof AppSettings> = {
   max_retakes: 'maxRetakes',
   return_window_days: 'returnWindowDays',
   photo_retention_days: 'photoRetentionDays',
+  wrong_parcel_cost_nok: 'wrongParcelCostNok',
 };
 
 export async function loadSettings(db: SupabaseClient, warehouseId: string): Promise<AppSettings> {
@@ -30,7 +33,7 @@ export async function loadSettings(db: SupabaseClient, warehouseId: string): Pro
     const k = SETTING_KEYS[row.key];
     if (k && typeof row.value === 'number') s[k] = row.value;
   }
-  return { photoRetentionDays: 30, ...withDefaults(s), ...s } as AppSettings;
+  return { photoRetentionDays: 30, wrongParcelCostNok: 340, ...withDefaults(s), ...s } as AppSettings;
 }
 
 export type Row = Record<string, unknown>;

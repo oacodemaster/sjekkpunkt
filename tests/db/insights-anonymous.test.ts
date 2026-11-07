@@ -15,7 +15,7 @@ describe('insights views are anonymous', () => {
       ).rows,
     );
     const views = new Set(rows.map((r) => r.table_name));
-    expect([...views].sort()).toEqual(['insights_confusion', 'insights_decisions', 'insights_pack_checks', 'insights_returns']);
+    expect([...views].sort()).toEqual(['insights_alerts', 'insights_confusion', 'insights_decisions', 'insights_pack_checks', 'insights_returns']);
     const leaks = rows.filter((r) => FORBIDDEN.includes(r.column_name));
     expect(leaks).toEqual([]);
   });

@@ -29,7 +29,12 @@ export default async function HolioMockPage() {
 
   return (
     <>
-      <h1 className="text-3xl font-bold">Holio WMS (mock)</h1>
+      <div className="flex items-baseline justify-between">
+        <h1 className="text-3xl font-bold">Holio WMS (mock)</h1>
+        <Link href="/holio/events" className="underline">
+          Integrasjonshendelser
+        </Link>
+      </div>
       <Card title="Ordrer til pakking">
         <table className="w-full text-left text-base" data-testid="holio-orders">
           <thead className="text-sm text-muted">

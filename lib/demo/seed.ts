@@ -295,6 +295,77 @@ export const CONFUSION_EVENTS: ConfusionEvent[] = [
   ...PAST_CONFUSION,
 ];
 
+// ---------- Insights history (M6): near-misses and the events Holio would have received ----------
+
+/**
+ * Wrong parcels stopped at packing before they were sealed: one MISMATCH check per order, a few
+ * minutes before its seal (like record_pack_mismatch). Kept out of PACK_CHECKS, which demo mode
+ * reads as packing evidence.
+ */
+export const NEAR_MISSES: PackCheck[] = [3, 10, 17, 26].map((age) => {
+  const seal = PACK_CHECKS.filter((c) => c.id !== 'PC-1043' && c.status === 'VERIFIED')
+    .map((c) => ({ c, d: Math.abs((nowMs - new Date(c.at).getTime()) / DAY - age) }))
+    .sort((a, b) => a.d - b.d)[0].c;
+  return {
+    ...seal,
+    id: `NM-${seal.orderId}`,
+    status: 'MISMATCH',
+    method: 'camera',
+    photoRef: `pack-${seal.orderId}-mismatch.jpg`,
+    sizeVerified: false,
+    at: new Date(new Date(seal.at).getTime() - 4 * 60 * 1000).toISOString(),
+  };
+});
+
+export interface SeedIntegrationEvent {
+  type: 'pack.verified' | 'pack.manual_confirm' | 'return.item.decided' | 'return.confirmed';
+  at: string;
+  payload: Record<string, unknown>;
+}
+
+/** Same payload shapes as the live commits (lib/pack/commit.ts, lib/returns/commit.ts, the SQL functions). */
+export const INTEGRATION_EVENTS: SeedIntegrationEvent[] = [
+  ...PACK_CHECKS.map((c): SeedIntegrationEvent => {
+    const o = ORDERS.find((x) => x.id === c.orderId)!;
+    const manual = c.status === 'MANUAL_CONFIRM';
+    return {
+      type: manual ? 'pack.manual_confirm' : 'pack.verified',
+      at: c.at,
+      payload: {
+        ordre: o.id,
+        kunde: o.customerRef,
+        status: c.status,
+        metode: c.method ?? 'camera',
+        storrelseLest: c.sizeVerified,
+        sikkerhet: Number(c.confidence.toFixed(3)),
+        linjer: o.lines.map((l) => ({ sku: l.sku, antall: l.qty, sett: l.qty, storrelseLest: c.sizeVerified, metode: manual ? 'manual' : (c.method ?? 'camera') })),
+        pakkebevis: null,
+        bilder: [],
+        manuellGrunn: null,
+        motorversjon: 'seed',
+      },
+    };
+  }),
+  ...PAST_DECISIONS.flatMap((d): SeedIntegrationEvent[] => {
+    const r = RETURNS.find((x) => x.id === d.returnId)!;
+    const item = r.items[d.itemIndex];
+    const vare = {
+      bestiltSku: item.orderedSku,
+      mottattSku: d.receivedSku,
+      grad: d.grade,
+      lokasjon: d.locationCode,
+      refusjonNok: d.refundNok,
+      sannsynligAarsak: d.cause,
+      flagg: d.flags,
+    };
+    const head = { retur: r.id, ordre: r.orderId, returaarsak: r.customerReasonNb };
+    return [
+      { type: 'return.item.decided', at: d.decidedAt, payload: { ...head, ...vare, tilstand: null, merknad: null, kundelapp: null, bilder: [], lagerkorreksjon: [], motorversjon: 'seed' } },
+      ...(r.status === 'confirmed' ? [{ type: 'return.confirmed' as const, at: new Date(new Date(d.decidedAt).getTime() + 1000).toISOString(), payload: { ...head, varer: [vare] } }] : []),
+    ];
+  }),
+].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+
 export const SEED = {
   demoNow: DEMO_NOW,
   warehouseId: WAREHOUSE_ID,
@@ -306,5 +377,7 @@ export const SEED = {
   returns: RETURNS,
   pastDecisions: PAST_DECISIONS,
   confusionEvents: CONFUSION_EVENTS,
+  nearMisses: NEAR_MISSES,
+  integrationEvents: INTEGRATION_EVENTS,
   packAlerts: [] as const,
 };
