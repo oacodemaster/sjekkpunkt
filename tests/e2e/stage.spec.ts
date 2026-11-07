@@ -5,7 +5,8 @@ import { confirmReturn1043, login, sql } from './helpers';
 import { openDemo, runScript } from './demo-run';
 
 // M9 stage readiness: an admin resets the data from /admin, the live stage run works after it
-// (return 1043 at the returns bench), a second reset brings it back to the start, and the full
+// (return 1043 at the returns bench), a second reset brings it back to the start (the catalogue and
+// its reference photos stay), and the full
 // scripted demo runs end to end on the projector and on a phone. Against a deployment the live
 // return uses real vision (a few calls), like returns.spec.ts with E2E_RESET_DB=1.
 
@@ -50,8 +51,16 @@ test.describe('stage readiness (M9)', () => {
   test('reset from /admin, a live return, reset again, then the scripted demo on the projector', async ({ browser }) => {
     test.setTimeout(240_000);
 
-    // 1. Reset: back to seed, with the admin on the audit row.
-    await resetFromAdmin(browser);
+    // 1. Reset: back to seed, with the admin on the audit row. A product edit made for a prop
+    // survives it (restored afterwards, so a real edit is never lost).
+    const [{ name_nb: before }] = await sql<{ name_nb: string }>(`select name_nb from products where sku = 'HD-NAVY-M'`);
+    await sql(`update products set name_nb = $1 where sku = 'HD-NAVY-M'`, [`${before} (stage spec)`]);
+    try {
+      await resetFromAdmin(browser);
+      expect(await sql(`select name_nb from products where sku = 'HD-NAVY-M'`)).toEqual([{ name_nb: `${before} (stage spec)` }]);
+    } finally {
+      await sql(`update products set name_nb = $1 where sku = 'HD-NAVY-M'`, [before]);
+    }
     expect(await lastReset()).toEqual([
       { type: 'SEED_LOADED', actor: null },
       { type: 'DEMO_RESET', actor: 'admin@sjekkpunkt.test' },
@@ -69,7 +78,8 @@ test.describe('stage readiness (M9)', () => {
     expect((await sql<{ status: string }>(`select status from returns where ext_id = '1043'`))[0].status).toBe('pending');
     expect((await sql<{ n: number }>(`select count(*)::int as n from pack_alerts`))[0].n).toBe(0);
     expect((await sql<{ n: number }>(`select count(*)::int as n from escalations`))[0].n).toBe(0);
-    expect((await sql<{ n: number }>(`select count(*)::int as n from photos`))[0].n).toBe(0);
+    // Only product reference photos survive a reset (the catalogue is kept).
+    expect((await sql<{ n: number }>(`select count(*)::int as n from photos where purpose <> 'reference'`))[0].n).toBe(0);
     const again = await browser.newContext();
     const bench = await again.newPage();
     await login(bench, 'returns');

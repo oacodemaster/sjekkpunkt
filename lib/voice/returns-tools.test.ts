@@ -43,7 +43,7 @@ describe('returns agent tools', () => {
     expect(r.after.wrong_item_received).toBe(true);
     expect(r.after.likely_cause).toBe('likely_warehouse_error');
     expect(r.after.grade).toBe('A');
-    expect(r.after.shelf).toBe('C-14-2');
+    expect(r.after.shelf).toBe('C 14 2'); // spoken form: a dash would be read aloud
     expect(r.after.can_confirm).toBe(true);
   });
 
@@ -82,7 +82,7 @@ describe('returns agent tools', () => {
     view = withWorker(view, id, { stains: 'minor' });
     const d = decisionSummary(view, previewItem(view, view.items[0], now).decision);
     expect(d.grade).toBe('B');
-    expect(d.shelf).toBe('B-OUT-1');
+    expect(d.shelf).toBe('B OUT 1');
   });
 
   it('rejects tool calls with unknown values', () => {

@@ -40,8 +40,8 @@ in Result you did not see on the phone.
    Order 9001 has two pairs of socks, 9002 one glossy item and 9003 one bagged item.
 3. Optional, for better recognition: at `/admin/products/<sku>`, upload 2–4 reference photos of
    each prop and adjust the name and colour so they describe the real prop (the model compares the
-   photo with the catalogue text and the reference photos). Do this **after** the last reset: a
-   reset brings the catalogue back to seed and deletes reference photos.
+   photo with the catalogue text and the reference photos). A reset from `/admin` keeps them (and
+   so does `pnpm db:seed`); only `pnpm db:seed:full` puts the catalogue back to seed.
 4. Check today's cost card on `/admin`: the vision and voice caps must have room for about
    100 photos and 10 voice sessions. The defaults (200 and 300 kr) do.
 
@@ -134,6 +134,6 @@ The stage fallback, no network calls except loading the page and its audio.
 
 ## After the test
 
-- Reset from `/admin` again so the stage starts from seed. Re-add reference photos afterwards if
-  you used them (step 3 above).
+- Reset from `/admin` again so the stage starts from seed. Reference photos and product edits stay.
+  If you changed a seed product's shelf or price, change it back: the reset keeps your edit.
 - Note anything that failed in `docs/decisions.md` or as an issue, with the lighting setup.

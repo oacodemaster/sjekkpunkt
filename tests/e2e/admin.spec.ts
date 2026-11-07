@@ -8,9 +8,22 @@ import { login, resetDb, sql } from './helpers';
 test.skip(!!process.env.E2E_BASE_URL && process.env.E2E_RESET_DB !== '1', 'set E2E_RESET_DB=1 to run against a deployment');
 const shots = process.env.ADMIN_SHOTS; // set to a folder to save screenshots
 test.describe.configure({ mode: 'serial' });
-test.beforeAll(resetDb);
+/**
+ * The reset keeps the catalogue (admin edits and reference photos survive it, M9), so the product
+ * this spec creates is removed by hand, before (a failed earlier run) and after.
+ */
+async function removeTestProduct() {
+  await sql(`delete from photos where entity_type = 'product' and entity_id in (select id from products where sku = 'TS-WHITE-XL')`);
+  await sql(`delete from products where sku = 'TS-WHITE-XL'`);
+  await sql(`delete from locations l where code = 'E-18-2' and not exists (select 1 from products p where p.location_code = l.code)`);
+}
+test.beforeAll(async () => {
+  await resetDb();
+  await removeTestProduct();
+});
 test.afterAll(async () => {
   await resetDb();
+  await removeTestProduct();
   await sql(
     `update profiles p set preferred_lang = 'pl', privacy_info_read_at = coalesce(privacy_info_read_at, now())
        from auth.users u where u.id = p.user_id and u.email = 'packer@sjekkpunkt.test'`,
@@ -96,7 +109,9 @@ test.describe('admin', () => {
     await page.getByTestId('reference-photos').getByRole('button', { name: 'Fjern' }).click();
     await expect(page.getByTestId('reference-photos').getByRole('img')).toHaveCount(0);
     expect(await sql(`select reference_photo_paths as paths from products where sku = 'TS-WHITE-XL'`)).toEqual([{ paths: [] }]);
-    expect(await sql(`select storage_path from photos where purpose = 'reference'`)).toEqual([{ storage_path: null }]);
+    expect(
+      await sql(`select storage_path from photos where purpose = 'reference' and entity_id = (select id from products where sku = 'TS-WHITE-XL')`),
+    ).toEqual([{ storage_path: null }]);
   });
 
   test('CSV import: errors by line and nothing written, then a clean file imports', async ({ page }) => {

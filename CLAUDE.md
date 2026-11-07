@@ -13,7 +13,7 @@ choice goes in `docs/decisions.md`.
 - `pnpm test` engine unit tests (offline) · `pnpm test:db` RLS/security tests against the hosted dev DB
 - `pnpm scan:bundle` (after `pnpm build`) / `pnpm scan:repo` secret scans of the client bundle and the git history; CI runs both plus gitleaks and `pnpm audit`
 - `npx playwright test` e2e (local prod server on :3100; `E2E_BASE_URL=https://…` for a deployment)
-- `pnpm db:push` apply migrations · `pnpm db:seed` reset data to seed · `pnpm db:users` (re)create role test users
+- `pnpm db:push` apply migrations · `pnpm db:seed` reset data to seed, keeping the catalogue (product edits, reference photos) · `pnpm db:seed:full` also put the catalogue back to seed · `pnpm db:users` (re)create role test users
 - `pnpm voice:setup` create/update the ElevenLabs agents (returns, packing, lead) from `lib/voice/agent-config.ts` (never edit them in the dashboard)
 - `pnpm audio:generate` make missing demo audio in `public/audio` (earcons and scripted lines, ElevenLabs, once per file; delete a file to remake it; `--check` lists missing and stale files)
 - `E2E_VOICE=1 npx playwright test tests/e2e/voice-live*.spec.ts` live voice tests (real WebRTC, uses credits); fixtures from `pnpm tsx scripts/make-voice-fixture.ts [pack|lead]`

@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import type { PhotoPurpose, ReturnDecision, WorkerInput } from '@/lib/engine/types';
 import { previewItem } from '@/lib/returns/preview';
+import { spokenCode } from './agent-config';
 import type { CaptureResult, ReturnItemState, ReturnView, StationPhoto } from '@/lib/returns/types';
 
 export const PHOTO_PURPOSES = ['front', 'label', 'damage', 'customer_note', 'packaging'] as const satisfies readonly PhotoPurpose[];
@@ -60,7 +61,7 @@ export function decisionSummary(view: ReturnView, d: ReturnDecision) {
     likely_cause: d.cause,
     condition: d.condition,
     grade: d.grade,
-    shelf: d.locationCode,
+    shelf: spokenCode(d.locationCode),
     refund_nok: d.refundNok,
     refund_decided_by_team_lead: d.grade !== null && d.refundNok === null,
     stock_correction: d.stockProposals.map((s) => ({ sku: s.sku, delta: s.delta })),

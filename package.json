@@ -16,6 +16,7 @@
     "db:push": "supabase db push",
     "db:seed:build": "tsx scripts/build-seed.ts",
     "db:seed": "tsx scripts/build-seed.ts && sh -c 'set -a; . ./.env.local; psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql'",
+    "db:seed:full": "tsx scripts/build-seed.ts && sh -c 'set -a; . ./.env.local; PGOPTIONS=\"-c sjekkpunkt.seed_full=on\" psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -q -f supabase/seed.sql'",
     "db:users": "tsx scripts/seed-users.ts",
     "voice:setup": "tsx scripts/setup-voice-agents.ts",
     "audio:generate": "tsx scripts/generate-audio.mjs"

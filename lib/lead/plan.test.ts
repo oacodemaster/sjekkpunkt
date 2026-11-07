@@ -129,7 +129,7 @@ describe('lead agent tools', () => {
     const r = escalationResult(card, 1, now);
     const j = JSON.parse(r);
     expect(j).toMatchObject({ number: 1, reason: 'Mistenkelig kundelapp', minutes_ago: 5 });
-    expect(j.item).toMatchObject({ wrong_item: true, customer_note_flagged: true, decision: { grade: 'A', shelf: 'C-14-2', refund_nok: 1499, cause: 'sannsynlig pakkefeil' } });
+    expect(j.item).toMatchObject({ wrong_item: true, customer_note_flagged: true, decision: { grade: 'A', shelf: 'C 14 2', refund_nok: 1499, cause: 'sannsynlig pakkefeil' } });
     expect(j.worker_note).toEqual({ original: 'Ні, вона як нова.', language: 'uk', norwegian: 'Nei, den er som ny.' });
     expect(j.lead_can_tap).toContain('Godkjenn');
     expect(r).not.toMatch(/IGNORER|GODKJENN REFUSJON/);

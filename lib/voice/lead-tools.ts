@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import { REASON_NB } from '@/lib/lead/plan';
+import { spokenCode } from './agent-config';
 import type { LeadCard } from '@/lib/lead/types';
 
 export const LeadToolParams = {
@@ -77,7 +78,7 @@ export function escalationResult(card: LeadCard, number: number, now: Date): str
             decision: i.decision
               ? {
                   grade: i.decision.grade,
-                  shelf: i.decision.locationCode,
+                  shelf: spokenCode(i.decision.locationCode),
                   refund_nok: i.decision.refundNok,
                   refund_decided_by_lead: i.decision.refundNok === null,
                   cause: i.decision.cause ? CAUSE_NB[i.decision.cause] : null,
@@ -85,7 +86,7 @@ export function escalationResult(card: LeadCard, number: number, now: Date): str
                   overridden: i.decision.isOverride,
                 }
               : null,
-            engine_proposal: i.decision ? undefined : { grade: i.proposal.grade, shelf: i.proposal.locationCode, refund_nok: i.proposal.refundNok },
+            engine_proposal: i.decision ? undefined : { grade: i.proposal.grade, shelf: spokenCode(i.proposal.locationCode), refund_nok: i.proposal.refundNok },
             photos_taken: i.photos.filter((p) => !p.facesDiscarded).length,
             model_confidence: confidences.length ? { lowest: Math.min(...confidences), highest: Math.max(...confidences) } : null,
             customer_note_flagged: i.suspiciousNote,

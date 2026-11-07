@@ -1,8 +1,9 @@
 // The scripted demo run (brief section 10): scene 1 (packing), scene 2 (returns) and scene 3
 // (the loop closes). Every step's effect runs the real engine through the demo adapter; only the
 // camera and the model output are scripted.
-// REVIEW: native speakers should check the pl and uk lines. The audio in public/audio was made
-// before that review (M9); after a fix, delete the changed files and run pnpm audio:generate.
+// The audio in public/audio is made from these lines with the newest model in each line's own
+// language (no separate native review, docs/decisions.md). After changing a line, delete its file
+// and run pnpm audio:generate.
 
 import type { Lang } from '@/lib/engine/types';
 

@@ -82,7 +82,7 @@ export default async function AdminPage() {
           <Card title="Demo">
             <p className="text-base">
               Setter alt tilbake til startdata før en demo: ordre 2207 og 2311, retur 1043, historikken bak innsikt og forvekslinger. Saker, beslutninger, bilder, varsler, logg og
-              innstillinger fra testing slettes, og varekatalogen går tilbake til start (endrede varer og referansebilder forsvinner). Brukere og enheter beholdes.
+              innstillinger fra testing slettes. Varekatalogen beholdes: varer og hyller du har lagt til eller endret, og referansebilder av rekvisitter, blir stående. Brukere og enheter beholdes.
             </p>
             <p className="mt-2 text-sm text-muted">Demoen på /demo kjører i nettleseren og trenger ikke dette; den nullstilles med R.</p>
             <div className="mt-3">

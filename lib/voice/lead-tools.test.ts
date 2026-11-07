@@ -23,6 +23,7 @@ describe('lead assistant config', () => {
 
   it('keeps amounts as digits (the voice reads them; the LLM never spells them out)', () => {
     expect(agentBody('lead', [], null).conversation_config.tts).toMatchObject({ text_normalisation_type: 'elevenlabs' });
-    expect(agentBody('pack', [], null).conversation_config.tts).not.toHaveProperty('text_normalisation_type');
+    expect(agentBody('pack', [], null).conversation_config.tts).toMatchObject({ text_normalisation_type: 'elevenlabs' });
+    expect(agentBody('return', [], null).conversation_config.tts).toMatchObject({ text_normalisation_type: 'elevenlabs' });
   });
 });
