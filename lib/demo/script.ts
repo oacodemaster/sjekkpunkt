@@ -1,6 +1,6 @@
-// The scripted demo run (brief section 10): scene 1 (packing, M4) and scene 2 (returns, M2);
-// scene 3 (the loop) arrives in M5. Every step's effect runs the real engine through the demo
-// adapter; only the camera and the model output are scripted.
+// The scripted demo run (brief section 10): scene 1 (packing), scene 2 (returns) and scene 3
+// (the loop closes). Every step's effect runs the real engine through the demo adapter; only the
+// camera and the model output are scripted.
 // REVIEW: native speakers should check the pl and uk lines before audio is generated (M9).
 
 import type { Lang } from '@/lib/engine/types';
@@ -22,7 +22,10 @@ export type DemoEffect =
   | 'captureNote'
   | 'flagNote'
   | 'confirm'
-  | 'leadSummary';
+  | 'leadSummary'
+  | 'loopAlert'
+  | 'loadAlertOrder'
+  | 'capturePackLabel';
 
 export interface DemoStep {
   id: string;
@@ -167,4 +170,29 @@ export const RETURNS_SCENE: DemoStep[] = [
   },
 ];
 
-export const DEMO_SCRIPT: DemoStep[] = [...PACK_SCENE, ...RETURNS_SCENE];
+export const LOOP_SCENE: DemoStep[] = [
+  // The third shell-jacket mix-up (RET-10) opened the alert; the back office highlights it.
+  { id: 'LOOP-01', speaker: 'system', effect: 'loopAlert', earcon: 'alert' },
+  {
+    id: 'LOOP-02',
+    speaker: 'agent',
+    lang: 'pl',
+    line: 'Uwaga: ta kurtka była ostatnio mylona z rozmiarem M. Pokaż mi metkę z rozmiarem.',
+    captionEn: 'Heads up: this jacket has recently been mixed up with size M. Show me the size label.',
+    captionNb: 'Obs: denne jakken har nylig blitt forvekslet med størrelse M. Vis meg størrelsesetiketten.',
+    effect: 'loadAlertOrder',
+  },
+  { id: 'LOOP-03', speaker: 'system', effect: 'capturePackLabel', earcon: 'shutter' },
+  {
+    id: 'LOOP-04',
+    speaker: 'agent',
+    lang: 'pl',
+    line: 'Rozmiar L, zgadza się. Możesz zakleić karton.',
+    captionEn: 'Size L, correct. You can seal the box.',
+    captionNb: 'Størrelse L, det stemmer. Du kan forsegle esken.',
+    effect: 'showPackResult',
+    earcon: 'chime',
+  },
+];
+
+export const DEMO_SCRIPT: DemoStep[] = [...PACK_SCENE, ...RETURNS_SCENE, ...LOOP_SCENE];

@@ -102,8 +102,9 @@ export function VoiceDock({
   setTalk,
   handsFree,
   setHandsFree,
+  languages = LANGS,
 }: {
-  station: 'return' | 'pack';
+  station: 'return' | 'pack' | 'lead';
   dynamicVariables: Record<string, string>;
   firstMessage: (lang: Lang) => string;
   /** the worker's current language: starts from preferred_lang, flips when the agent switches */
@@ -115,6 +116,8 @@ export function VoiceDock({
   setTalk: (v: boolean) => void;
   handsFree: boolean;
   setHandsFree: (v: boolean) => void;
+  /** languages offered on the chip (the lead assistant speaks Norwegian only) */
+  languages?: readonly Lang[];
 }) {
   const { startSession, endSession } = useConversationControls();
   const { status } = useConversationStatus();
@@ -262,7 +265,7 @@ export function VoiceDock({
           className="min-h-12 rounded-full bg-slate-100 px-3 text-base font-semibold"
           data-testid="voice-lang"
         >
-          {LANGS.map((l) => (
+          {languages.map((l) => (
             <option key={l} value={l}>
               {l.toUpperCase()} · {LANG_NAMES[l]}
             </option>

@@ -43,3 +43,9 @@ export async function currentDeviceId(warehouseId: string): Promise<string | nul
 
 export const RETURN_ROLES: AppRole[] = ['returns', 'lead', 'admin'];
 export const PACK_ROLES: AppRole[] = ['packer', 'lead', 'admin'];
+export const LEAD_ROLES: AppRole[] = ['lead', 'admin'];
+
+/** Maps a raised SQL exception (`raise exception 'already_resolved'`) to its code, or null. */
+export function sqlError(message: string | undefined, codes: string[]): string | null {
+  return codes.find((c) => message?.includes(c)) ?? null;
+}

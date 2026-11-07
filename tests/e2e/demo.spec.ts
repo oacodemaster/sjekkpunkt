@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The scripted demo, scene 1 (PACK-01..PACK-07) and scene 2 (RET-01..RET-11), driven with the
-// director keys on a 1440x900 projector layout. No login, no keys, no database: the demo adapters.
+// The scripted demo, scene 1 (PACK-01..PACK-07), scene 2 (RET-01..RET-11) and scene 3
+// (LOOP-01..LOOP-04), driven with the director keys on a 1440x900 projector layout. No login, no keys, no database: the demo adapters.
 
 test.use({ viewport: { width: 1440, height: 900 }, isMobile: false, hasTouch: false, deviceScaleFactor: 1 });
 
@@ -16,7 +16,7 @@ async function next(page: Page, id: string) {
   }
 }
 
-test('scenes 1 and 2 run end to end with the director keys, back, and reset', async ({ page }) => {
+test('scenes 1, 2 and 3 run end to end with the director keys, back, and reset', async ({ page }) => {
   test.skip(process.env.NEXT_PUBLIC_DEMO_ENABLED !== 'true', 'demo disabled');
   await page.goto('/demo');
   await page.keyboard.press('d');
@@ -94,9 +94,25 @@ test('scenes 1 and 2 run end to end with the director keys, back, and reset', as
   await next(page, 'RET-11');
   await expect(page.getByTestId('lead-panel')).toContainText('Kundens lapp ber om 5000 kroner');
 
+  // Scene 3: the loop closes. The next shell jacket at packing needs its size label.
+  await next(page, 'LOOP-01');
+  await expect(page.getByTestId('event-log')).toContainText('Pakkevarsel: Skalljakke M/L forvekslet 3 ganger siste 7 dager');
+  await next(page, 'LOOP-02');
+  await expect(page.getByTestId('station-pack')).toHaveAttribute('aria-current', 'true');
+  await expect(page.getByTestId('lang-chip')).toHaveText('PL');
+  await expect(page.getByRole('heading', { name: /#2311/ })).toBeVisible();
+  await expect(page.getByTestId('alert-banner')).toBeVisible();
+  await expect(page.getByTestId('verdict')).toHaveAttribute('data-status', 'NEEDS_LABEL_PHOTO');
+  await next(page, 'LOOP-03');
+  await expect(page.getByTestId('verdict')).toHaveAttribute('data-status', 'VERIFIED');
+  await expect(page.locator('[data-testid=pack-photo] [data-tone=ok]')).toHaveCount(1);
+  await next(page, 'LOOP-04');
+  await expect(page.getByTestId('event-log')).toContainText('Ordre 2311 verifisert med kamera, 1 av 1 varer');
+
   // Back one step replays deterministically; R resets to seed and the run works again.
   await page.keyboard.press('ArrowLeft');
-  await expect(page.getByTestId('director-step')).toHaveText('RET-10');
+  await expect(page.getByTestId('director-step')).toHaveText('LOOP-03');
+  await expect(page.getByTestId('verdict')).toHaveAttribute('data-status', 'VERIFIED');
   await expect(record).toContainText('C-14-2');
   await page.keyboard.press('r');
   await expect(page.getByTestId('director-step')).toHaveText('START');

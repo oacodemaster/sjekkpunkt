@@ -12,8 +12,9 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | M1 Foundation | Done 2026-11-07. Live at https://sjekkpunkt.vercel.app |
 | M2 Returns, live | Done 2026-11-07 (see M2 notes below) |
 | M3 Voice on returns | Done 2026-11-07, live (see M3 notes below) |
-| M4 Packing, live | Done 2026-11-07, local (see M4 notes below); not deployed yet |
-| M5-M9, S1 | Not started |
+| M4 Packing, live | Done 2026-11-07, live (see M4 notes below) |
+| M5 Loop and lead console | Done 2026-11-07, local (see M5 notes below); not deployed yet |
+| M6-M9, S1 | Not started |
 
 ## Stack
 
@@ -69,6 +70,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 
 ### M5 Loop and lead console
 - Confusion events from both stations, auto alerts, alert enforcement at packing, escalation queue with override (reason required, refund capped), stock adjustment approvals, manual alerts, Norwegian TTS summaries cached in Storage, lead agent (explains, cannot resolve), Realtime live feed. Demo scene 3.
+
+**M5 notes.** Built: auto pack alerts in the database (a trigger on `confusion_events` counts the pair inside the window from settings and opens one alert, same text as the engine's `recordConfusion`), so mix-ups from both stations close the loop in the same transaction. Lead console (`/lead`): escalation cards with photos, model and confidence, worker note in the original language and Norwegian, packing evidence, the engine's decision or proposal, a play button for the spoken summary, and approve / override (grade, shelf, refund with a reason, capped) / reject; stock correction approvals; pack alerts with origin and count, clear, and manual alerts for a SKU pair; a live feed over Supabase Realtime (private channel per warehouse, leads and admins only) that also refreshes the console. Routes: `GET /api/lead/escalations`, `POST /api/lead/escalations/:id/resolve`, `POST /api/lead/stock-adjustments/:id/decide`, `POST /api/lead/alerts`, `POST /api/lead/alerts/:id/clear`, `POST /api/tts/summary`, each backed by an atomic SQL function with an audit row. Norwegian spoken summaries (ElevenLabs `eleven_v4`, a different voice from the coaches) generated on first play and cached in Storage. Lead assistant (`ELEVENLABS_AGENT_ID_LEAD`, Norwegian, three read-only tools), verified with a live WebRTC test (`tests/e2e/voice-live-lead.spec.ts`). Demo scene 3 (LOOP-01..LOOP-04). Left for later on purpose: insights panels and the integration events list (M6), rate limits on the TTS route (M8), earcons and pre-generated demo audio (M9).
 
 ### M6 Insights and integration events
 - Anonymous-view aggregates (7d/30d), value recovered, near-misses with configurable cost, "Ingen statistikk per ansatt" footer. `integration_events` with Holio payload names in the Holio mock.

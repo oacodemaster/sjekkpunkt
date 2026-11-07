@@ -46,7 +46,8 @@ export function pairLabelNb(pair: [string, string], products: Product[]): string
   if (baseName(a) === baseName(b)) {
     if (a.size && b.size && a.size !== b.size) {
       const [s1, s2] = [a.size, b.size].sort((x, y) => sizeRank(x) - sizeRank(y));
-      return `${baseName(a)} ${s1}/${s2}`;
+      // "Jeans 30/32 / 32/32": sizes that already contain a slash get a spaced separator.
+      return `${baseName(a)} ${s1}${s1.includes('/') || s2.includes('/') ? ' / ' : '/'}${s2}`;
     }
     const colorA = a.nameNb.split(',')[1]?.trim() ?? a.color;
     const colorB = b.nameNb.split(',')[1]?.trim() ?? b.color;

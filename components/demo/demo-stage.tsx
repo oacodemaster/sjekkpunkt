@@ -84,6 +84,8 @@ export function DemoStage() {
   const [muted, setMuted] = useState(false);
   const [running, setRunning] = useState(false);
   const [leadPlaying, setLeadPlaying] = useState(false);
+  /** LOOP-01: the insights panel pulses on the new alert */
+  const [loopHighlight, setLoopHighlight] = useState(false);
   const busy = useRef(false);
 
   /** Back to seed: both stations, the back office, the language and the lead panel. */
@@ -95,6 +97,7 @@ export function DemoStage() {
     setStationKind('pack');
     setLang('nb');
     setLeadPlaying(false);
+    setLoopHighlight(false);
   }, [store]);
 
   const apply = useCallback(
@@ -169,6 +172,26 @@ export function DemoStage() {
           break;
         case 'leadSummary':
           setLeadPlaying(true);
+          break;
+        case 'loopAlert':
+          setLoopHighlight(true);
+          break;
+        case 'loadAlertOrder':
+          // Order 2311 with the alert the loop opened. The overview shot is quiet (like RET-03's
+          // front shot): the jacket is there, the size is not visible, so the banner asks for the label.
+          store.loadPackOrder('2311');
+          await tick();
+          packRef.current.actions.reset(store.getState().packView);
+          setStationKind('pack');
+          setLang('pl');
+          setLoopHighlight(false);
+          await tick();
+          await packRef.current.actions.capture({ purpose: 'pack_check' }, null);
+          break;
+        case 'capturePackLabel':
+          store.setCaptureDelay(live ? 1500 : 0);
+          await packRef.current.actions.capture({ purpose: 'label_closeup', sku: 'JK-SHELL-L' }, null);
+          store.setCaptureDelay(0);
           break;
       }
       await tick();
@@ -373,7 +396,7 @@ export function DemoStage() {
               </dl>
             </Panel>
 
-            <Panel title="Forvekslinger siste 7 dager">
+            <Panel title="Forvekslinger siste 7 dager" className={loopHighlight ? 'animate-pulse ring-4 ring-warn' : ''}>
               <ul className="flex flex-col gap-2 text-base" data-testid="insights">
                 {pairs.map(({ pair, count }) => {
                   const alert = state.alerts.find((a) => a.active && pairKey(a.skuPair) === pairKey(pair));

@@ -3,6 +3,7 @@
 // laid on a timeline with silence while the coach talks.
 //   pnpm tsx scripts/make-voice-fixture.ts          -> tests/e2e/fixtures/worker-nb.wav (returns)
 //   pnpm tsx scripts/make-voice-fixture.ts pack     -> tests/e2e/fixtures/packer-nb.wav (packing)
+//   pnpm tsx scripts/make-voice-fixture.ts lead     -> tests/e2e/fixtures/lead-nb.wav (lead console)
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -30,6 +31,14 @@ const TIMELINES: Record<string, { out: string; lines: [number, string][] }> = {
       [8, 'Hei. Kan du snakke norsk? Hva skal jeg pakke?'],
       [18, 'Alt ligger i esken nå. Sjekk esken.'],
       [14, 'Jeg er klar. Sjekk esken nå.'],
+    ],
+  },
+  lead: {
+    out: 'tests/e2e/fixtures/lead-nb.wav',
+    lines: [
+      [9, 'Hei. Hvorfor ble denne saken flagget?'],
+      [16, 'Hva sa medarbeideren om varen?'],
+      [14, 'Kan du godkjenne saken for meg?'],
     ],
   },
 };

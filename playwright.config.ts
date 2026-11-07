@@ -24,6 +24,6 @@ export default defineConfig({
         timeout: 180_000,
         // Live mode with mocked vision and translation (addendum section 11). Both are refused
         // when VERCEL_ENV=production.
-        env: { VISION_MOCK: 'fixtures', TRANSLATE_MOCK: 'echo' },
+        env: { VISION_MOCK: 'fixtures', TRANSLATE_MOCK: 'echo', TTS_MOCK: 'silent' },
       },
 });

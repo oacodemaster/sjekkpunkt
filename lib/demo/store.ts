@@ -105,8 +105,10 @@ export function demoPackView(orderId: string = DEMO_ORDER, alerts: PackAlert[] =
 }
 
 /** Illustrations that match the scripted pack fixtures (boxes line up with the drawings). */
-function packIllustration(orderId: string, vision: PackPhoto['vision']): string | null {
-  if (orderId === '2207') return vision === PACK_2207_WRONG ? '/demo/pack-2207-wrong.svg' : vision === PACK_2207_RIGHT ? '/demo/pack-2207-right.svg' : null;
+function packIllustration(orderId: string, purpose: PackPhoto['purpose'], vision: PackPhoto['vision']): string | null {
+  if (orderId === '2207' && purpose === 'pack_check') return vision === PACK_2207_WRONG ? '/demo/pack-2207-wrong.svg' : vision === PACK_2207_RIGHT ? '/demo/pack-2207-right.svg' : null;
+  // Order 2311 (scene 3): the folded jacket with no label visible, then the label close-up.
+  if (orderId === '2311') return purpose === 'pack_check' ? '/demo/pack-1043.svg' : '/demo/pack-2311-label.svg';
   return null;
 }
 
@@ -149,6 +151,7 @@ export function createDemoStore() {
   /** SKU pairs already counted for an order: each pair once per order, as on the server. */
   const countedPairs = new Set<string>();
   const nearMiss = new Set<string>();
+  const verifiedLogged = new Set<string>();
   const patchPack = (fn: (v: PackView) => PackView) => set((s) => ({ ...s, packView: fn(s.packView) }));
 
   /** After every photo or scan: a caught wrong parcel is logged and counted, like record_pack_mismatch. */
@@ -199,7 +202,7 @@ export function createDemoStore() {
         photoId: `demo-${purpose}-${tick}`,
         purpose,
         sku: sku ?? null,
-        url: purpose === 'pack_check' ? packIllustration(v.order.id, vision) : null,
+        url: packIllustration(v.order.id, purpose, vision),
         takenAt: stamp(),
         vision,
         label,
@@ -209,7 +212,9 @@ export function createDemoStore() {
       patchPack((pv) => ({ ...pv, photos: [...pv.photos, photo] }));
       afterPackChange();
       const { decision } = evaluateOrder(state.packView, now());
-      if (purpose === 'pack_check' && decision.status === 'VERIFIED') {
+      // Logged once per order, when a photo (overview or label close-up) verifies the box.
+      if (decision.status === 'VERIFIED' && !verifiedLogged.has(v.order.id)) {
+        verifiedLogged.add(v.order.id);
         const text = sealLines(orderKey, decision, null, true);
         log({ station: 'pack', type: 'PACK_CHECK_VERIFIED', refId: orderKey, summaryNb: text.nb, summaryEn: text.en });
       }
@@ -371,6 +376,10 @@ export function createDemoStore() {
       return () => listeners.delete(l);
     },
     log,
+    /** Scene 3: another order on the packing station, with the alerts the loop has opened (P4). */
+    loadPackOrder(orderId: string) {
+      set((s) => ({ ...s, packView: demoPackView(orderId, s.alerts) }));
+    },
     /** Lead card shown at RET-09, before confirm, as in the brief's scripted run. */
     addLeadCard(reason: string, summaryNb: string) {
       if (state.leadCards.some((c) => c.reason === reason)) return;
@@ -381,6 +390,7 @@ export function createDemoStore() {
       tick = 0;
       countedPairs.clear();
       nearMiss.clear();
+      verifiedLogged.clear();
       emit();
     },
   };

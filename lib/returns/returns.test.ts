@@ -117,8 +117,8 @@ describe('demo adapter mirrors the server', () => {
     expect(escalationSummaryNb('late_return', { returnId: '1061', decision, products: PRODUCTS, lateDays: 40, returnWindowDays: 30 })).toContain('40 dager etter sending');
   });
 
-  it('the script covers scene 1 then scene 2, in order', () => {
-    expect(DEMO_SCRIPT.map((s) => s.id)).toEqual(['PACK-01', 'PACK-02', 'PACK-03', 'PACK-04', 'PACK-05', 'PACK-06', 'PACK-07', 'RET-01', 'RET-02', 'RET-03', 'RET-04', 'RET-05', 'RET-06', 'RET-07', 'RET-08', 'RET-09', 'RET-10', 'RET-11']);
+  it('the script covers scenes 1, 2 and 3, in order', () => {
+    expect(DEMO_SCRIPT.map((s) => s.id)).toEqual(['PACK-01', 'PACK-02', 'PACK-03', 'PACK-04', 'PACK-05', 'PACK-06', 'PACK-07', 'RET-01', 'RET-02', 'RET-03', 'RET-04', 'RET-05', 'RET-06', 'RET-07', 'RET-08', 'RET-09', 'RET-10', 'RET-11', 'LOOP-01', 'LOOP-02', 'LOOP-03', 'LOOP-04']);
     expect(DEMO_SCRIPT.filter((s) => s.line).every((s) => s.captionEn && s.captionNb)).toBe(true);
   });
 });

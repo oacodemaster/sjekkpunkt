@@ -1,7 +1,7 @@
-// Creates or updates the ElevenAgents coaches (returns, packing) from lib/voice/agent-config.ts.
+// Creates or updates the ElevenAgents agents (returns coach, packing coach, lead assistant) from lib/voice/agent-config.ts.
 //   pnpm voice:setup
 // Idempotent: tools, the knowledge base text and the agents are found by name and updated.
-// Prints ELEVENLABS_AGENT_ID_RETURNS and ELEVENLABS_AGENT_ID_PACK for .env.local and Vercel.
+// Prints ELEVENLABS_AGENT_ID_RETURNS, _PACK and _LEAD for .env.local and Vercel.
 // The key stays on this machine.
 
 import { config } from 'dotenv';
@@ -59,7 +59,7 @@ async function upsertKnowledgeBase(): Promise<{ id: string; name: string }> {
   return { id: doc.id, name: KNOWLEDGE_BASE_NAME };
 }
 
-const ENV: Record<AgentKind, string> = { return: 'ELEVENLABS_AGENT_ID_RETURNS', pack: 'ELEVENLABS_AGENT_ID_PACK' };
+const ENV: Record<AgentKind, string> = { return: 'ELEVENLABS_AGENT_ID_RETURNS', pack: 'ELEVENLABS_AGENT_ID_PACK', lead: 'ELEVENLABS_AGENT_ID_LEAD' };
 
 async function upsertAgent(kind: AgentKind, kb: { id: string; name: string } | null): Promise<string> {
   const toolIds = await upsertTools(AGENT_TOOLS[kind]);
@@ -81,11 +81,11 @@ async function upsertAgent(kind: AgentKind, kb: { id: string; name: string } | n
 }
 
 async function main() {
-  // The grading guide is the returns coach's knowledge base; the packing coach needs none.
+  // The grading guide is the knowledge base of the returns coach and the lead assistant.
   const kb = await upsertKnowledgeBase();
-  const ids = { return: await upsertAgent('return', kb), pack: await upsertAgent('pack', null) };
+  const ids = { return: await upsertAgent('return', kb), pack: await upsertAgent('pack', null), lead: await upsertAgent('lead', kb) };
   console.log('');
-  for (const k of ['return', 'pack'] as const) console.log(`${ENV[k]}=${ids[k]}`);
+  for (const k of ['return', 'pack', 'lead'] as const) console.log(`${ENV[k]}=${ids[k]}`);
 }
 
 main().catch((e) => {
