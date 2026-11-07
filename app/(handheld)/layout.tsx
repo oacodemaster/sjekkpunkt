@@ -21,7 +21,7 @@ export default async function HandheldLayout({ children }: LayoutProps<'/'>) {
             <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold" title={LANG_NAMES[user.lang]}>
               {user.lang.toUpperCase()}
             </span>
-            <Link href="/device" className="rounded-full bg-slate-100 px-3 py-1 font-mono" title={t('device', user.lang)}>
+            <Link href="/device" className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 font-mono" title={t('device', user.lang)}>
               {device ?? '—'}
             </Link>
             <form action={signOut}>

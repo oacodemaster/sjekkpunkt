@@ -1,9 +1,12 @@
+import Link from 'next/link';
+import { OrderForm } from '@/components/pack/order-form';
 import { requireRole } from '@/lib/auth/dal';
 import { t } from '@/lib/i18n/strings';
 import { createClient } from '@/lib/supabase/server';
 
-export default async function PackQueuePage() {
+export default async function PackQueuePage({ searchParams }: PageProps<'/pack'>) {
   const user = await requireRole(['packer', 'lead', 'admin']);
+  const { missing } = await searchParams;
   const supabase = await createClient();
   const [{ data: orders }, { data: alerts }] = await Promise.all([
     supabase
@@ -17,6 +20,12 @@ export default async function PackQueuePage() {
 
   return (
     <section className="flex flex-1 flex-col gap-4 p-4">
+      <OrderForm lang={user.lang} />
+      {missing && (
+        <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-lg font-semibold text-warn">
+          {t('noOrder', user.lang)} ({String(missing).slice(0, 20)})
+        </p>
+      )}
       <h1 className="text-2xl font-bold">{t('ordersToPack', user.lang)}</h1>
       <ul className="flex flex-col gap-3">
         {(orders ?? []).map((o) => {
@@ -24,32 +33,31 @@ export default async function PackQueuePage() {
           const units = lines.reduce((n, l) => n + l.qty, 0);
           const alerted = lines.some((l) => alertSkus.has(l.sku));
           return (
-            <li key={o.ext_id} className="rounded-2xl border-2 border-gray-200 p-4">
-              <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-bold">#{o.ext_id}</span>
-                <span className="text-muted">
-                  {units} {t('items', user.lang)}
-                </span>
-              </div>
-              <ul className="mt-2 text-base text-gray-700">
-                {lines.map((l) => {
-                  const p = Array.isArray(l.products) ? l.products[0] : l.products;
-                  return (
-                    <li key={l.sku}>
-                      {l.qty > 1 && <strong>{l.qty} × </strong>}
-                      {user.lang === 'nb' ? p?.name_nb : p?.name_en}
-                    </li>
-                  );
-                })}
-              </ul>
-              {alerted && (
-                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-1 font-semibold text-warn">{t('showLabel', user.lang)}</p>
-              )}
+            <li key={o.ext_id}>
+              <Link href={`/pack/${o.ext_id}`} className="block rounded-2xl border-2 border-gray-200 p-4 active:bg-slate-50">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-2xl font-bold">#{o.ext_id}</span>
+                  <span className="text-muted">
+                    {units} {t('items', user.lang)}
+                  </span>
+                </div>
+                <ul className="mt-2 text-base text-gray-700">
+                  {lines.map((l) => {
+                    const p = Array.isArray(l.products) ? l.products[0] : l.products;
+                    return (
+                      <li key={l.sku}>
+                        {l.qty > 1 && <strong>{l.qty} × </strong>}
+                        {user.lang === 'nb' ? p?.name_nb : p?.name_en}
+                      </li>
+                    );
+                  })}
+                </ul>
+                {alerted && <p className="mt-2 rounded-lg bg-amber-50 px-3 py-1 font-semibold text-warn">⚠ {t('showLabel', user.lang)}</p>}
+              </Link>
             </li>
           );
         })}
       </ul>
-      <p className="mt-auto text-center text-sm text-muted">{t('comingNext', user.lang)}: kamera · camera check (M4)</p>
     </section>
   );
 }

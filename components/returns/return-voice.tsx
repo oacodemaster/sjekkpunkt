@@ -1,19 +1,10 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  useConversationClientTool,
-  useConversationControls,
-  useConversationMode,
-  useConversationStatus,
-  type Language,
-} from '@elevenlabs/react';
-import { CaptionList, useCaptions, type CaptionTarget } from '@/components/voice/captions';
+import { useRef } from 'react';
 import type { Lang } from '@/lib/engine/types';
 import { useLatest } from '@/lib/hooks/use-latest';
-import { LANG_NAMES, LANGS, t } from '@/lib/i18n/strings';
 import { previewItem } from '@/lib/returns/preview';
-import { EL_LANG, FIRST_MESSAGES, fromElLang } from '@/lib/voice/agent-config';
+import { FIRST_MESSAGES } from '@/lib/voice/agent-config';
 import {
   cameraProblem,
   capturePhotoResult,
@@ -24,77 +15,11 @@ import {
   ToolParams,
   withWorker,
   workerPatch,
-  type ToolName,
 } from '@/lib/voice/returns-tools';
+import { sleep, useTool, VoiceDock, waitFor } from '@/components/voice/voice-dock';
 import type { ReturnStation } from './use-return-station';
 
-export type VoiceState = 'off' | 'connecting' | 'on' | 'mic_denied' | 'unavailable';
-
-/** What the station screen uses to tell the agent about taps (contextual updates). */
-export interface VoiceLink {
-  /** silent context; the agent does not answer */
-  context: (text: string) => void;
-  /** a turn the agent answers (used after confirm, so it moves on) */
-  say: (text: string) => void;
-}
-
-/** The link for tap updates. Does nothing unless a conversation is connected. */
-export function useVoiceLink(): VoiceLink {
-  const { sendContextualUpdate, sendUserMessage } = useConversationControls();
-  const { status } = useConversationStatus();
-  const connected = useLatest(status === 'connected');
-  return useMemo(
-    () => ({
-      context: (text: string) => {
-        if (connected.current) sendContextualUpdate(text);
-      },
-      say: (text: string) => {
-        if (connected.current) sendUserMessage(text);
-      },
-    }),
-    [connected, sendContextualUpdate, sendUserMessage],
-  );
-}
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-async function waitFor<T>(fn: () => T | null | undefined, timeoutMs: number): Promise<T | null> {
-  const end = Date.now() + timeoutMs;
-  while (Date.now() < end) {
-    const v = fn();
-    if (v) return v;
-    await sleep(100);
-  }
-  return null;
-}
-
-/** Registers one client tool. Bad input or a crash becomes a short error the agent can say. */
-function useTool(name: ToolName, run: (params: unknown) => Promise<string> | string) {
-  useConversationClientTool(name, async (params: Record<string, unknown>) => {
-    try {
-      return await run(params);
-    } catch (e) {
-      console.error(`[voice] tool ${name} failed`, e);
-      return toolError('failed', 'Something went wrong. Ask the worker to use the buttons.');
-    }
-  });
-}
-
-const HANDS_FREE_KEY = 'sp_voice_hands_free';
-const CAPTION_TARGET_KEY = 'sp_caption_target';
-const readPref = (key: string) => {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-};
-const writePref = (key: string, value: string) => {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    /* private mode: the preference is just not remembered */
-  }
-};
+export { useVoiceLink, type VoiceLink, type VoiceState } from '@/components/voice/voice-dock';
 
 /**
  * Voice coach for the returns station. Must sit inside a ConversationProvider. Voice is an extra:
@@ -118,18 +43,7 @@ export function ReturnVoice({
   handsFree: boolean;
   setHandsFree: (v: boolean) => void;
 }) {
-  const { startSession, endSession } = useConversationControls();
-  const { status } = useConversationStatus();
-  const { isSpeaking } = useConversationMode();
-  /** problems before or while connecting; once connected, the SDK status is the truth */
-  const [issue, setIssue] = useState<null | 'connecting' | 'mic_denied' | 'unavailable'>(null);
-  const [showCaptions, setShowCaptions] = useState(true);
-  const [target, setTarget] = useState<CaptionTarget>(lang === 'nb' ? 'en' : 'nb');
-  const captions = useCaptions(target);
-  const connected = status === 'connected';
-  const state: VoiceState = connected ? 'on' : status === 'error' ? 'unavailable' : (issue ?? 'off');
-
-  // Latest values for async tool handlers and session callbacks.
+  // Latest values for async tool handlers.
   const stationRef = useLatest(station);
   const langRef = useLatest(lang);
   const lastWorkerLine = useRef<string | null>(null);
@@ -232,221 +146,18 @@ export function ReturnVoice({
     return res.ok ? JSON.stringify({ sent_to_team_lead: true }) : toolError(res.error, 'It was not sent. Ask the worker to press "Send til teamleder".');
   });
 
-  // ---------- session ----------
-
-  const start = useCallback(
-    async (startLang: Lang) => {
-      setIssue('connecting');
-      // Remembered per device: hands-free and the caption language.
-      const hf = readPref(HANDS_FREE_KEY);
-      if (hf !== null) setHandsFree(hf === '1');
-      const ct = readPref(CAPTION_TARGET_KEY);
-      if (ct === 'nb' || ct === 'en') setTarget(ct);
-      // Ask for the mic first, so a denial lands in tap-only mode with a clear message.
-      try {
-        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-        s.getTracks().forEach((tr) => tr.stop());
-      } catch (e) {
-        const name = (e as DOMException)?.name;
-        setIssue(name === 'NotAllowedError' || name === 'SecurityError' ? 'mic_denied' : 'unavailable');
-        return;
-      }
-      let token: string;
-      let keyterms: string[] = [];
-      try {
-        const res = await fetch('/api/voice/token', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ station: 'return' }),
-        });
-        if (!res.ok) throw new Error(String(res.status));
-        ({ token, keyterms } = (await res.json()) as { token: string; keyterms: string[] });
-      } catch {
-        setIssue('unavailable');
-        return;
-      }
-      const returnNumber = stationRef.current.view.ret.id;
-      captions.clear();
-      startSession({
-        conversationToken: token,
-        connectionType: 'webrtc',
-        stripAudioTags: true,
-        overrides: {
-          agent: { language: EL_LANG[startLang] as Language, firstMessage: FIRST_MESSAGES[startLang].replace('{{return_number}}', returnNumber) },
-          asr: { keywords: keyterms },
-        },
-        dynamicVariables: { return_number: returnNumber },
-        onMessage: ({ message, role }) => {
-          if (role === 'user') {
-            if (message.startsWith('[screen]')) return;
-            lastWorkerLine.current = message;
-            captions.add('worker', message, null);
-          } else {
-            captions.add('agent', message, langRef.current);
-          }
-        },
-        onAgentToolResponse: (r) => {
-          // The language detection tool's full result carries the new language ({"language":"uk"}).
-          if (r.tool_name !== 'language_detection' || !('full_tool_result' in r)) return;
-          try {
-            const next = fromElLang((JSON.parse(r.full_tool_result) as { language?: string }).language);
-            if (next && next !== langRef.current) {
-              langRef.current = next;
-              onLangChange(next);
-            }
-          } catch {
-            /* not JSON: keep the current language */
-          }
-        },
-        onConnect: () => setIssue(null),
-        onError: (message) => {
-          console.error('[voice]', message);
-          setIssue('unavailable');
-        },
-      });
-    },
-    [captions, langRef, onLangChange, setHandsFree, startSession, stationRef],
-  );
-
-  const stop = useCallback(() => {
-    endSession();
-    setTalk(false);
-    setIssue(null);
-  }, [endSession, setTalk]);
-
-  // A language picked by hand restarts the conversation in that language.
-  const pickLang = (l: Lang) => {
-    if (l === lang) return;
-    onLangChange(l);
-    if (connected) {
-      endSession();
-      setTimeout(() => void start(l), 300);
-    }
-  };
-
-  const toggleHandsFree = () => {
-    const v = !handsFree;
-    setHandsFree(v);
-    writePref(HANDS_FREE_KEY, v ? '1' : '0');
-  };
-  const toggleTarget = () => {
-    const v: CaptionTarget = target === 'nb' ? 'en' : 'nb';
-    setTarget(v);
-    writePref(CAPTION_TARGET_KEY, v);
-  };
-
-  const listening = connected && (handsFree || talk);
-  const statusText = !connected ? null : isSpeaking ? t('voiceSpeaking', lang) : listening ? t('voiceListening', lang) : t('voiceReady', lang);
-
   return (
-    <div className="sticky bottom-0 z-10 flex flex-col gap-2 border-t bg-white/95 p-3 backdrop-blur" data-testid="voice-dock" data-voice={state}>
-      {state === 'mic_denied' && (
-        <p role="alert" className="rounded-xl bg-amber-50 px-3 py-2 text-base text-warn">
-          {t('micDenied', lang)}
-        </p>
-      )}
-      {state === 'unavailable' && (
-        <p role="alert" className="rounded-xl bg-amber-50 px-3 py-2 text-base text-warn">
-          {t('voiceUnavailable', lang)}
-        </p>
-      )}
-
-      {connected && showCaptions && <CaptionList lines={captions.lines} lang={lang} />}
-
-      <div className="flex items-center gap-2">
-        <label className="sr-only" htmlFor="voice-lang">
-          {t('language', lang)}
-        </label>
-        <select
-          id="voice-lang"
-          value={lang}
-          onChange={(e) => pickLang(e.target.value as Lang)}
-          className="min-h-12 rounded-full bg-slate-100 px-3 text-base font-semibold"
-          data-testid="voice-lang"
-        >
-          {LANGS.map((l) => (
-            <option key={l} value={l}>
-              {l.toUpperCase()} · {LANG_NAMES[l]}
-            </option>
-          ))}
-        </select>
-        {connected && (
-          <>
-            <button
-              onClick={() => setShowCaptions((v) => !v)}
-              aria-pressed={showCaptions}
-              className={`min-h-12 rounded-full px-3 text-sm font-semibold ${showCaptions ? 'bg-slate-800 text-white' : 'bg-slate-100'}`}
-            >
-              {t('captions', lang)}
-            </button>
-            <button onClick={toggleTarget} className="min-h-12 rounded-full bg-slate-100 px-3 text-sm font-semibold" aria-label={t('captions', lang)}>
-              {target.toUpperCase()}
-            </button>
-            <button
-              onClick={toggleHandsFree}
-              aria-pressed={handsFree}
-              className={`min-h-12 rounded-full px-3 text-sm font-semibold ${handsFree ? 'bg-accent text-white' : 'bg-slate-100'}`}
-            >
-              {t('handsFree', lang)}
-            </button>
-          </>
-        )}
-      </div>
-
-      {connected ? (
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          {handsFree ? (
-            <div className={`flex min-h-16 items-center justify-center gap-3 rounded-2xl text-lg font-semibold ${isSpeaking ? 'bg-slate-100' : 'bg-blue-50 text-accent'}`}>
-              <Orb active={isSpeaking || listening} speaking={isSpeaking} />
-              {statusText}
-            </div>
-          ) : (
-            <button
-              className={`flex min-h-16 touch-none select-none items-center justify-center gap-3 rounded-2xl text-xl font-bold ${talk ? 'bg-accent text-white' : 'bg-blue-50 text-accent'}`}
-              onPointerDown={(e) => {
-                e.currentTarget.setPointerCapture(e.pointerId);
-                setTalk(true);
-              }}
-              onPointerUp={() => setTalk(false)}
-              onPointerCancel={() => setTalk(false)}
-              onLostPointerCapture={() => setTalk(false)}
-              onKeyDown={(e) => (e.key === ' ' || e.key === 'Enter') && !e.repeat && setTalk(true)}
-              onKeyUp={(e) => (e.key === ' ' || e.key === 'Enter') && setTalk(false)}
-              onContextMenu={(e) => e.preventDefault()}
-              aria-pressed={talk}
-              data-testid="push-to-talk"
-            >
-              <Orb active={isSpeaking || talk} speaking={isSpeaking} />
-              {talk ? t('voiceListening', lang) : isSpeaking ? t('voiceSpeaking', lang) : t('pushToTalk', lang)}
-            </button>
-          )}
-          <button className="btn-secondary min-h-16 px-4 text-base" onClick={stop}>
-            {t('voiceStop', lang)}
-          </button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-1">
-          <button
-            className="btn-secondary min-h-14 text-lg"
-            disabled={state === 'connecting' || status === 'connecting'}
-            onClick={() => void start(lang)}
-            data-testid="voice-start"
-          >
-            🎙 {state === 'connecting' || status === 'connecting' ? t('voiceConnecting', lang) : t('voiceStart', lang)}
-          </button>
-          <p className="text-center text-sm text-muted">{t('tapOnlyHint', lang)}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Agent state at a glance: pulses while listening, solid while the agent speaks. */
-function Orb({ active, speaking }: { active: boolean; speaking: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={`inline-block h-5 w-5 rounded-full ${speaking ? 'bg-ok' : active ? 'animate-pulse bg-white ring-4 ring-blue-300' : 'bg-blue-300'}`}
+    <VoiceDock
+      station="return"
+      dynamicVariables={{ return_number: station.view.ret.id }}
+      firstMessage={(l) => FIRST_MESSAGES[l].replace('{{return_number}}', station.view.ret.id)}
+      lang={lang}
+      onLangChange={onLangChange}
+      onWorkerLine={(text) => (lastWorkerLine.current = text)}
+      talk={talk}
+      setTalk={setTalk}
+      handsFree={handsFree}
+      setHandsFree={setHandsFree}
     />
   );
 }

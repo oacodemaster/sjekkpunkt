@@ -1,7 +1,8 @@
-// Builds tests/e2e/fixtures/worker-nb.wav: a Norwegian "worker" for Chrome's fake microphone in
-// the opt-in live voice test (E2E_VOICE=1). Speech from ElevenLabs Text to Speech in a voice
-// that is not the coach's, laid on a timeline with silence while the coach talks.
-//   pnpm tsx scripts/make-voice-fixture.ts
+// Builds the Norwegian "worker" tracks for Chrome's fake microphone in the opt-in live voice
+// tests (E2E_VOICE=1). Speech from ElevenLabs Text to Speech in a voice that is not the coach's,
+// laid on a timeline with silence while the coach talks.
+//   pnpm tsx scripts/make-voice-fixture.ts          -> tests/e2e/fixtures/worker-nb.wav (returns)
+//   pnpm tsx scripts/make-voice-fixture.ts pack     -> tests/e2e/fixtures/packer-nb.wav (packing)
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -13,12 +14,28 @@ const KEY = process.env.ELEVENLABS_API_KEY!;
 const WORKER_VOICE = 'JBFqnCBsd6RMkjVDRZzb'; // George (the coach is River)
 
 // [seconds of silence before the line, line]
-const TIMELINE: [number, string][] = [
-  [8, 'Hei. Kan du snakke norsk? Hva er denne returen, og hva skal jeg gjøre?'],
-  [18, 'Ja, jeg er klar. Ta bildet nå.'],
-  // Said again in case the first one landed while the coach was still talking.
-  [14, 'Jeg er klar. Ta bildet av forsiden nå.'],
-];
+const TIMELINES: Record<string, { out: string; lines: [number, string][] }> = {
+  return: {
+    out: 'tests/e2e/fixtures/worker-nb.wav',
+    lines: [
+      [8, 'Hei. Kan du snakke norsk? Hva er denne returen, og hva skal jeg gjøre?'],
+      [18, 'Ja, jeg er klar. Ta bildet nå.'],
+      // Said again in case the first one landed while the coach was still talking.
+      [14, 'Jeg er klar. Ta bildet av forsiden nå.'],
+    ],
+  },
+  pack: {
+    out: 'tests/e2e/fixtures/packer-nb.wav',
+    lines: [
+      [8, 'Hei. Kan du snakke norsk? Hva skal jeg pakke?'],
+      [18, 'Alt ligger i esken nå. Sjekk esken.'],
+      [14, 'Jeg er klar. Sjekk esken nå.'],
+    ],
+  },
+};
+const variant = TIMELINES[process.argv[2] ?? 'return'];
+if (!variant) throw new Error(`unknown variant ${process.argv[2]}`);
+const TIMELINE = variant.lines;
 const TAIL_SILENCE = 20;
 
 async function tts(text: string, out: string) {
@@ -51,8 +68,8 @@ async function main() {
   parts.push(silence(TAIL_SILENCE, 'tail'));
   const list = join(dir, 'list.txt');
   writeFileSync(list, parts.map((p) => `file '${p}'`).join('\n'));
-  ff('-f', 'concat', '-safe', '0', '-i', list, '-c:a', 'pcm_s16le', 'tests/e2e/fixtures/worker-nb.wav');
-  console.log('wrote tests/e2e/fixtures/worker-nb.wav');
+  ff('-f', 'concat', '-safe', '0', '-i', list, '-c:a', 'pcm_s16le', variant.out);
+  console.log(`wrote ${variant.out}`);
 }
 
 main().catch((e) => {

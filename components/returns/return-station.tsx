@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Camera } from '@/components/camera';
+import { PhotoWithBoxes } from '@/components/photo-boxes';
 import { productMap } from '@/lib/engine/catalog';
 import type { Box2d, Grade, Lang, PhotoPurpose, Product, Severity } from '@/lib/engine/types';
 import { t, type StringKey } from '@/lib/i18n/strings';
@@ -38,24 +39,9 @@ const GRADE_TONE: Record<Grade, string> = {
 const nok = (n: number) => `${n.toLocaleString('nb-NO').replace(/ /g, ' ')} kr`;
 export const productName = (p: Product | undefined, sku: string, lang: Lang) => (p ? (lang === 'nb' ? p.nameNb : p.nameEn) : sku);
 
-/** A photo with the model's box drawn on it (normalized [ymin, xmin, ymax, xmax] in 0-1000). */
+/** A photo with one box (returns). */
 export function PhotoWithBox({ url, box, tone = 'ok', alt, onLoad }: { url: string | null; box?: Box2d; tone?: 'ok' | 'bad' | 'warn'; alt: string; onLoad?: () => void }) {
-  if (!url) return null;
-  const color = tone === 'ok' ? 'border-ok' : tone === 'bad' ? 'border-bad' : 'border-warn';
-  const show = box && box[2] > box[0] && box[3] > box[1];
-  // The wrapper shrink-wraps the image, so the percentage box always lines up with it.
-  return (
-    <div className="relative mx-auto w-fit max-w-full overflow-hidden rounded-xl bg-slate-100">
-      {/* eslint-disable-next-line @next/next/no-img-element -- signed URLs and local illustrations */}
-      <img src={url} alt={alt} className="block max-h-64 w-auto max-w-full" onLoad={onLoad} />
-      {show && (
-        <div
-          className={`absolute rounded-md border-4 ${color}`}
-          style={{ top: `${box[0] / 10}%`, left: `${box[1] / 10}%`, height: `${(box[2] - box[0]) / 10}%`, width: `${(box[3] - box[1]) / 10}%` }}
-        />
-      )}
-    </div>
-  );
+  return <PhotoWithBoxes url={url} boxes={box ? [{ box, tone }] : []} alt={alt} onLoad={onLoad} />;
 }
 
 function NoticeBar({ station, lang }: { station: ReturnStation; lang: Lang }) {

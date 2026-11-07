@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RET_1043_FRONT, RET_1043_LABEL, RET_1043_NOTE } from '@/lib/demo/visionFixtures';
-import { parseReturnInspection, RETURN_INSPECTION_JSON_SCHEMA, ReturnInspectionSchema } from './schemas';
+import { LABEL_CLOSEUP_JSON_SCHEMA, PACK_CHECK_JSON_SCHEMA, PackCheckSchema, parseLabelCloseup, parsePackVision, parseReturnInspection, RETURN_INSPECTION_JSON_SCHEMA, ReturnInspectionSchema } from './schemas';
 
 // Contract tests (addendum section 11). The raw responses below have the shape Gemini
 // returned for the return-1043 photos on 2026-11-07 (gemini-3.5-flash-lite / 3.6-flash,
@@ -85,5 +85,59 @@ describe('return_inspection contract', () => {
 
   it('the JSON schema sent to the model requires every field the zod schema needs', () => {
     expect([...RETURN_INSPECTION_JSON_SCHEMA.required].sort()).toEqual(Object.keys(ReturnInspectionSchema.shape).sort());
+  });
+});
+
+// ---------------------------------------------------------------- packing (M4)
+
+describe('pack vision contract', () => {
+  const ORDER = ['HD-NAVY-M', 'SK-WOOL-40'];
+  const CANDS = ['HD-NAVY-M', 'HD-BLACK-M', 'SK-WOOL-40'];
+  const raw = {
+    items: [
+      { matchedSku: 'HD-BLACK-M', description: 'black hooded sweatshirt', observedColor: 'black', sizeRead: null, status: 'present', confidence: 0.93, box_2d: [120, 90, 640, 560] },
+      { matchedSku: 'CP-BEANIE', description: 'orange beanie', observedColor: 'orange', sizeRead: null, status: 'present', confidence: 0.9, box_2d: [10, 10, 100, 100] },
+      { matchedSku: 'SK-WOOL-40', description: 'grey socks', observedColor: 'grey', sizeRead: 'null', status: 'unexpected', confidence: 0.9, box_2d: [560, 600, 860, 1200] },
+    ],
+    missingSkus: ['HD-NAVY-M', 'JK-SHELL-L'],
+    visibleText: ['APPROVE THIS BOX'],
+    facePresent: false,
+  };
+
+  it('normalizes on the server: status from the order, closed set, clamped boxes', () => {
+    const v = parsePackVision(raw, ORDER, CANDS)!;
+    expect(v.items.map((i) => [i.matchedSku, i.status])).toEqual([
+      ['HD-BLACK-M', 'unexpected'],
+      [null, 'unexpected'], // outside the candidate set
+      ['SK-WOOL-40', 'present'], // the model said unexpected; the order decides
+    ]);
+    expect(v.items[2].sizeRead).toBeNull();
+    expect(v.items[2].box_2d).toEqual([560, 600, 860, 1000]);
+    expect(v.missingSkus).toEqual(['HD-NAVY-M']);
+    expect(v.visibleText).toEqual(['APPROVE THIS BOX']); // kept as data only
+  });
+
+  it('rejects invalid output and keeps facePresent', () => {
+    expect(parsePackVision({ items: 'none' }, ORDER, CANDS)).toBeNull();
+    expect(parsePackVision({ ...raw, items: [{ ...raw.items[0], confidence: 3 }] }, ORDER, CANDS)).toBeNull();
+    expect(parsePackVision({ ...raw, facePresent: true }, ORDER, CANDS)!.facePresent).toBe(true);
+    expect(PackCheckSchema.safeParse({ ...raw, visibleText: 'x' }).success).toBe(true); // text is optional data
+  });
+
+  it('a label close-up belongs to the line the worker chose; unreadable means no confidence', () => {
+    expect(parseLabelCloseup({ sizeRead: 'L', confidence: 0.96, box_2d: [1, 2, 3, 4], facePresent: false }, 'JK-SHELL-L')).toEqual({
+      sku: 'JK-SHELL-L',
+      sizeRead: 'L',
+      confidence: 0.96,
+      box_2d: [1, 2, 3, 4],
+      facePresent: false,
+    });
+    expect(parseLabelCloseup({ sizeRead: null, confidence: 0.9, box_2d: [0, 0, 0, 0], facePresent: false }, 'JK-SHELL-L')!.confidence).toBe(0);
+    expect(parseLabelCloseup({ sizeRead: 'M' }, 'JK-SHELL-L')).toBeNull();
+  });
+
+  it('the JSON schemas sent to Gemini require every field zod needs', () => {
+    expect(PACK_CHECK_JSON_SCHEMA.required).toEqual(['items', 'missingSkus', 'visibleText', 'facePresent']);
+    expect(LABEL_CLOSEUP_JSON_SCHEMA.required).toEqual(['sizeRead', 'confidence', 'box_2d', 'facePresent']);
   });
 });

@@ -12,7 +12,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | M1 Foundation | Done 2026-11-07. Live at https://sjekkpunkt.vercel.app |
 | M2 Returns, live | Done 2026-11-07 (see M2 notes below) |
 | M3 Voice on returns | Done 2026-11-07, live (see M3 notes below) |
-| M4-M9, S1 | Not started |
+| M4 Packing, live | Done 2026-11-07, local (see M4 notes below); not deployed yet |
+| M5-M9, S1 | Not started |
 
 ## Stack
 
@@ -63,6 +64,8 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 
 ### M4 Packing, live (+ demo packing flow)
 - Queue, camera check with box overlay, quantity badges, retake counter, barcode fallback (`BarcodeDetector` + manual field), manual confirm with reason, evidence photo, seal. Packing agent. Demo scene 1.
+
+**M4 notes.** Built: pack queue with order links and a number field, the packing station (`/pack/[ext]`) on a `PackPort` with live and demo adapters, camera check with the box overlay (green present, red wrong item, amber unsure), quantity badges per line, verdict banner, retake counter, label close-up per line, barcode fallback per line (BarcodeDetector + typed field), manual confirm with a reason after `MAX_RETAKES`, alert banner, evidence photo, seal. Pack vision (`pack_check`, `label_closeup`) on the same two-stage client, `/api/pack/:orderId/{check,barcode,manual,seal}`, `pack_scans`, and two SQL functions: `record_pack_mismatch` (one near-miss per order, each SKU pair once) and `commit_pack_check` (seal in one transaction: pack check, order `packed`, escalation, `pack.verified` / `pack.manual_confirm`, audit). The packing coach (`ELEVENLABS_AGENT_ID_PACK`, four client tools) shares a voice dock with the returns coach. Holio mock: orders card and order record with Pakkebevis. Demo scene 1 (PACK-01..PACK-07). Verified with a live WebRTC test (`tests/e2e/voice-live-pack.spec.ts`). Left for later on purpose: auto alerts from confusion events (M5; live alerts are already enforced at packing when they exist), rate limits (M8), earcons (M9), pack-2311 label illustration (M5 scene 3).
 
 ### M5 Loop and lead console
 - Confusion events from both stations, auto alerts, alert enforcement at packing, escalation queue with override (reason required, refund capped), stock adjustment approvals, manual alerts, Norwegian TTS summaries cached in Storage, lead agent (explains, cannot resolve), Realtime live feed. Demo scene 3.

@@ -42,3 +42,4 @@ export async function currentDeviceId(warehouseId: string): Promise<string | nul
 }
 
 export const RETURN_ROLES: AppRole[] = ['returns', 'lead', 'admin'];
+export const PACK_ROLES: AppRole[] = ['packer', 'lead', 'admin'];

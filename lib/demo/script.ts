@@ -1,13 +1,17 @@
-// The scripted demo run (brief section 10). M2 covers scene 2 (returns); scene 1 (packing)
-// arrives in M4 and scene 3 (the loop) in M5. Every step's effect runs the real engine
-// through the demo adapter; only the camera and the model output are scripted.
-// REVIEW: native speakers should check the uk lines before audio is generated (M9).
+// The scripted demo run (brief section 10): scene 1 (packing, M4) and scene 2 (returns, M2);
+// scene 3 (the loop) arrives in M5. Every step's effect runs the real engine through the demo
+// adapter; only the camera and the model output are scripted.
+// REVIEW: native speakers should check the pl and uk lines before audio is generated (M9).
 
 import type { Lang } from '@/lib/engine/types';
 
 export type Speaker = 'agent' | 'worker' | 'system' | 'lead';
 export type Earcon = 'chime' | 'alert' | 'shutter' | 'done';
 export type DemoEffect =
+  | 'loadOrder'
+  | 'showOrder'
+  | 'capturePack'
+  | 'showPackResult'
   | 'loadReturn'
   | 'switchLang'
   | 'askLabel'
@@ -30,6 +34,58 @@ export interface DemoStep {
   effect: DemoEffect;
   earcon?: Earcon;
 }
+
+export const PACK_SCENE: DemoStep[] = [
+  {
+    id: 'PACK-01',
+    speaker: 'agent',
+    lang: 'nb',
+    line: 'Hei! Ordre 2207 er klar til pakking.',
+    captionEn: 'Hi! Order 2207 is ready to pack.',
+    captionNb: 'Hei! Ordre 2207 er klar til pakking.',
+    effect: 'loadOrder',
+  },
+  {
+    id: 'PACK-02',
+    speaker: 'worker',
+    lang: 'pl',
+    line: 'Cześć, mówię po polsku.',
+    captionEn: 'Hi, I speak Polish.',
+    captionNb: 'Hei, jeg snakker polsk.',
+    effect: 'switchLang',
+  },
+  {
+    id: 'PACK-03',
+    speaker: 'agent',
+    lang: 'pl',
+    line: 'Jasne. Zamówienie 2207: granatowa bluza z kapturem w rozmiarze M i szare wełniane skarpety. Włóż wszystko do kartonu i naciśnij „Sprawdź”.',
+    captionEn: 'Sure. Order 2207: a navy hoodie, size M, and grey wool socks. Put everything in the box and press Check.',
+    captionNb: 'Selvsagt. Ordre 2207: en marineblå hettegenser i størrelse M og grå ullsokker. Legg alt i esken og trykk «Sjekk».',
+    effect: 'showOrder',
+  },
+  { id: 'PACK-04', speaker: 'system', effect: 'capturePack', earcon: 'shutter' },
+  {
+    id: 'PACK-05',
+    speaker: 'agent',
+    lang: 'pl',
+    line: 'Stop. W zamówieniu jest granatowa bluza, a ta jest czarna. Wymień ją, proszę.',
+    captionEn: 'Stop. The order says a navy hoodie, and this one is black. Please swap it.',
+    captionNb: 'Stopp. Ordren sier marineblå hettegenser, og denne er sort. Bytt den, er du snill.',
+    effect: 'showPackResult',
+    earcon: 'alert',
+  },
+  { id: 'PACK-06', speaker: 'system', effect: 'capturePack', earcon: 'shutter' },
+  {
+    id: 'PACK-07',
+    speaker: 'agent',
+    lang: 'pl',
+    line: 'Dwa z dwóch. Wszystko się zgadza. Możesz zakleić karton.',
+    captionEn: 'Two of two. Everything matches. You can seal the box.',
+    captionNb: 'To av to. Alt stemmer. Du kan forsegle esken.',
+    effect: 'showPackResult',
+    earcon: 'chime',
+  },
+];
 
 export const RETURNS_SCENE: DemoStep[] = [
   {
@@ -111,4 +167,4 @@ export const RETURNS_SCENE: DemoStep[] = [
   },
 ];
 
-export const DEMO_SCRIPT: DemoStep[] = [...RETURNS_SCENE];
+export const DEMO_SCRIPT: DemoStep[] = [...PACK_SCENE, ...RETURNS_SCENE];

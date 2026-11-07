@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <rect width="1000" height="1000" fill="#8a6a43"/>
+  <!-- open cardboard box seen from above -->
+  <rect x="40" y="40" width="920" height="920" fill="#c99a5e" stroke="#a87c45" stroke-width="10"/>
+  <path d="M40 40 L80 80 L920 80 L960 40 M40 960 L80 920 L920 920 L960 960" fill="none" stroke="#a87c45" stroke-width="8"/>
+  <rect x="80" y="80" width="840" height="840" fill="#b88a50"/>
+  <!-- folded hooded sweatshirt (box_2d [120, 90, 640, 560]) -->
+  <rect x="110" y="150" width="430" height="470" rx="36" fill="#22325c" stroke="#15203f" stroke-width="6"/>
+  <path d="M235 150 Q325 250 415 150" fill="#2c3e6e" stroke="#15203f" stroke-width="6"/>
+  <path d="M300 205 L300 300 M350 205 L350 300" stroke="#d1d5db" stroke-width="5" stroke-linecap="round"/>
+  <rect x="200" y="420" width="250" height="120" rx="20" fill="#2c3e6e" stroke="#15203f" stroke-width="5"/>
+  <path d="M110 330 h430" stroke="#15203f" stroke-width="6"/>
+  <!-- grey wool socks, a pair (box_2d [560, 600, 860, 900]) -->
+  <path d="M630 590 h90 v170 q0 60 -60 60 h-20 q-30 0 -30 -30 z" fill="#9ca3af" stroke="#6b7280" stroke-width="6"/>
+  <path d="M760 580 h90 v170 q0 60 -60 60 h-20 q-30 0 -30 -30 z" fill="#a8afb9" stroke="#6b7280" stroke-width="6"/>
+  <path d="M630 620 h90 M760 610 h90" stroke="#6b7280" stroke-width="5"/>
+</svg>

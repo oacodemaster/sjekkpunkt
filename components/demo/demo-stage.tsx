@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { PackStationView } from '@/components/pack/pack-station';
+import { usePackStation } from '@/components/pack/use-pack-station';
 import { ReturnStationView } from '@/components/returns/return-station';
 import { useReturnStation } from '@/components/returns/use-return-station';
 import { countInWindow, pairKey, pairLabelNb } from '@/lib/engine';
@@ -58,8 +60,8 @@ function Panel({ title, children, className = '' }: { title: string; children: R
 }
 
 /**
- * The scripted demo: phone frame (the real returns station on the demo adapter), the mock
- * back office, captions and the director bar. Keys: → / Space next, ← back, R reset,
+ * The scripted demo: phone frame (the real packing and returns stations on the demo adapters),
+ * the mock back office, captions and the director bar. Keys: → / Space next, ← back, R reset,
  * D director bar, C captions EN/NB, M mute.
  */
 export function DemoStage() {
@@ -67,9 +69,13 @@ export function DemoStage() {
   const state = useSyncExternalStore<DemoState>(store.subscribe, store.getState, store.getState);
   const station = useReturnStation(state.view, store.port, store.now);
   const stationRef = useRef(station);
+  const pack = usePackStation(state.packView, store.packPort, store.now);
+  const packRef = useRef(pack);
   useEffect(() => {
     stationRef.current = station;
+    packRef.current = pack;
   });
+  const [stationKind, setStationKind] = useState<'pack' | 'return'>('pack');
 
   const [step, setStep] = useState(-1);
   const [lang, setLang] = useState<Lang>('nb');
@@ -80,15 +86,37 @@ export function DemoStage() {
   const [leadPlaying, setLeadPlaying] = useState(false);
   const busy = useRef(false);
 
+  /** Back to seed: both stations, the back office, the language and the lead panel. */
+  const resetAll = useCallback(async () => {
+    store.reset();
+    await tick();
+    stationRef.current.actions.reset(store.getState().view);
+    packRef.current.actions.reset(store.getState().packView);
+    setStationKind('pack');
+    setLang('nb');
+    setLeadPlaying(false);
+  }, [store]);
+
   const apply = useCallback(
     async (s: DemoStep, live: boolean) => {
       const st = () => stationRef.current;
       if (live && s.earcon) play(`/audio/${s.earcon}.mp3`, muted);
       if (live && s.line && s.speaker !== 'worker') play(`/audio/${s.id}.mp3`, muted);
       switch (s.effect) {
+        case 'loadOrder':
+          await resetAll();
+          break;
+        case 'showOrder':
+        case 'showPackResult':
+          break;
+        case 'capturePack':
+          // "Sjekker…" for 1.5 s on stage (brief PACK-04); instant when replaying.
+          store.setCaptureDelay(live ? 1500 : 0);
+          await packRef.current.actions.capture({ purpose: 'pack_check' }, null);
+          store.setCaptureDelay(0);
+          break;
         case 'loadReturn':
-          store.reset();
-          await tick();
+          setStationKind('return');
           st().actions.reset(store.getState().view);
           setLang('nb');
           setLeadPlaying(false);
@@ -145,7 +173,7 @@ export function DemoStage() {
       }
       await tick();
     },
-    [muted, store],
+    [muted, resetAll, store],
   );
 
   // Presses that arrive while a step is still running are queued, never dropped: the
@@ -167,11 +195,7 @@ export function DemoStage() {
         const from = stepRef.current;
         if (to < from || from < 0) {
           // Back and reset replay from seed, so every step is reproducible.
-          store.reset();
-          await tick();
-          stationRef.current.actions.reset(store.getState().view);
-          setLang('nb');
-          setLeadPlaying(false);
+          await resetAll();
           for (let k = 0; k < to; k++) await applyRef.current(DEMO_SCRIPT[k], false);
         } else {
           for (let k = from + 1; k < to; k++) await applyRef.current(DEMO_SCRIPT[k], false);
@@ -185,7 +209,7 @@ export function DemoStage() {
       busy.current = false;
       setRunning(false);
     }
-  }, [store]);
+  }, [resetAll]);
 
   /** Go to a step (absolute) or move by a delta from wherever the queue will be. */
   const go = useCallback(
@@ -237,10 +261,11 @@ export function DemoStage() {
       <header className="flex items-center gap-4 px-6 py-3">
         <span className="text-2xl font-bold tracking-tight">Sjekkpunkt</span>
         <div className="flex rounded-xl bg-white/10 p-1 text-base">
-          <span className="rounded-lg px-4 py-1 text-slate-400" title="M4">
-            Pakking
-          </span>
-          <span className="rounded-lg bg-white px-4 py-1 font-semibold text-frame">Retur</span>
+          {(['pack', 'return'] as const).map((k) => (
+            <span key={k} className={`rounded-lg px-4 py-1 ${stationKind === k ? 'bg-white font-semibold text-frame' : 'text-slate-400'}`} data-testid={`station-${k}`} aria-current={stationKind === k}>
+              {k === 'pack' ? 'Pakking' : 'Retur'}
+            </span>
+          ))}
         </div>
         <span className="rounded-md bg-warn px-2 py-0.5 text-sm font-bold">DEMO</span>
         <span className="rounded-full bg-white/15 px-3 py-1 font-semibold" aria-label="worker language" data-testid="lang-chip">
@@ -263,7 +288,11 @@ export function DemoStage() {
         <div className="flex w-[420px] shrink-0 flex-col gap-3">
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2.2rem] border-[10px] border-slate-800 bg-white text-foreground shadow-2xl">
             <div className="min-h-0 flex-1 overflow-y-auto">
-              <ReturnStationView station={station} lang={lang} captureMode="fixture" />
+              {stationKind === 'pack' ? (
+                <PackStationView station={pack} lang={lang} captureMode="fixture" />
+              ) : (
+                <ReturnStationView station={station} lang={lang} captureMode="fixture" />
+              )}
             </div>
           </div>
           <div className="flex min-h-[150px] flex-col justify-end gap-2" aria-live="polite" data-testid="captions">

@@ -1,10 +1,11 @@
-// Creates or updates the ElevenAgents returns coach from lib/voice/agent-config.ts.
+// Creates or updates the ElevenAgents coaches (returns, packing) from lib/voice/agent-config.ts.
 //   pnpm voice:setup
-// Idempotent: tools, the knowledge base text and the agent are found by name and updated.
-// Prints ELEVENLABS_AGENT_ID_RETURNS for .env.local and Vercel. The key stays on this machine.
+// Idempotent: tools, the knowledge base text and the agents are found by name and updated.
+// Prints ELEVENLABS_AGENT_ID_RETURNS and ELEVENLABS_AGENT_ID_PACK for .env.local and Vercel.
+// The key stays on this machine.
 
 import { config } from 'dotenv';
-import { AGENT_NAMES, GRADING_GUIDE, KNOWLEDGE_BASE_NAME, RETURNS_TOOLS, returnsAgentBody } from '../lib/voice/agent-config';
+import { AGENT_NAMES, AGENT_TOOLS, agentBody, GRADING_GUIDE, KNOWLEDGE_BASE_NAME, type AgentKind } from '../lib/voice/agent-config';
 
 config({ path: '.env.local' });
 const KEY = process.env.ELEVENLABS_API_KEY;
@@ -24,10 +25,10 @@ async function api<T>(method: string, path: string, body?: unknown): Promise<T> 
 
 type ToolRow = { id: string; tool_config: { name: string; type: string } };
 
-async function upsertTools(): Promise<string[]> {
+async function upsertTools(defs: readonly { name: string }[]): Promise<string[]> {
   const { tools } = await api<{ tools: ToolRow[] }>('GET', '/v1/convai/tools');
   const ids: string[] = [];
-  for (const t of RETURNS_TOOLS) {
+  for (const t of defs) {
     const tool_config = { type: 'client', expects_response: true, ...t };
     const existing = tools.find((x) => x.tool_config?.type === 'client' && x.tool_config?.name === t.name);
     if (existing) {
@@ -58,25 +59,33 @@ async function upsertKnowledgeBase(): Promise<{ id: string; name: string }> {
   return { id: doc.id, name: KNOWLEDGE_BASE_NAME };
 }
 
-async function main() {
-  const toolIds = await upsertTools();
-  const kb = await upsertKnowledgeBase();
-  const body = returnsAgentBody(toolIds, kb);
+const ENV: Record<AgentKind, string> = { return: 'ELEVENLABS_AGENT_ID_RETURNS', pack: 'ELEVENLABS_AGENT_ID_PACK' };
 
-  let agentId = process.env.ELEVENLABS_AGENT_ID_RETURNS;
+async function upsertAgent(kind: AgentKind, kb: { id: string; name: string } | null): Promise<string> {
+  const toolIds = await upsertTools(AGENT_TOOLS[kind]);
+  const body = agentBody(kind, toolIds, kb);
+  let agentId = process.env[ENV[kind]];
   if (!agentId) {
-    const list = await api<{ agents: { agent_id: string; name: string }[] }>('GET', `/v1/convai/agents?search=${encodeURIComponent(AGENT_NAMES.return)}`);
-    agentId = list.agents?.find((a) => a.name === AGENT_NAMES.return)?.agent_id;
+    const list = await api<{ agents: { agent_id: string; name: string }[] }>('GET', `/v1/convai/agents?search=${encodeURIComponent(AGENT_NAMES[kind])}`);
+    agentId = list.agents?.find((a) => a.name === AGENT_NAMES[kind])?.agent_id;
   }
   if (agentId) {
     await api('PATCH', `/v1/convai/agents/${agentId}`, body);
-    console.log(`agent: updated ${agentId}`);
+    console.log(`agent ${kind}: updated ${agentId}`);
   } else {
     const created = await api<{ agent_id: string }>('POST', '/v1/convai/agents/create', body);
     agentId = created.agent_id;
-    console.log(`agent: created ${agentId}`);
+    console.log(`agent ${kind}: created ${agentId}`);
   }
-  console.log(`\nELEVENLABS_AGENT_ID_RETURNS=${agentId}`);
+  return agentId;
+}
+
+async function main() {
+  // The grading guide is the returns coach's knowledge base; the packing coach needs none.
+  const kb = await upsertKnowledgeBase();
+  const ids = { return: await upsertAgent('return', kb), pack: await upsertAgent('pack', null) };
+  console.log('');
+  for (const k of ['return', 'pack'] as const) console.log(`${ENV[k]}=${ids[k]}`);
 }
 
 main().catch((e) => {

@@ -3,6 +3,7 @@
 // (ro and lt were not in the brief and are first drafts).
 
 import type { Lang } from '@/lib/engine/types';
+import { PACK_STRINGS } from './pack-strings';
 import { RETURN_STRINGS } from './returns-strings';
 import { VOICE_STRINGS } from './voice-strings';
 
@@ -56,6 +57,7 @@ export const STRINGS = {
   comingNext: { nb: 'Kommer i neste milepæl', en: 'Coming in the next milestone', pl: 'W następnym etapie', uk: 'У наступному етапі', ro: 'În următoarea etapă', lt: 'Kitame etape' },
   privacy: { nb: 'Personvern', en: 'Privacy', pl: 'Prywatność', uk: 'Конфіденційність', ro: 'Confidențialitate', lt: 'Privatumas' },
   ...RETURN_STRINGS,
+  ...PACK_STRINGS,
   ...VOICE_STRINGS,
 } satisfies Record<string, Row>;
 

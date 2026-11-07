@@ -1,6 +1,5 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { withDefaults, type EngineSettings } from '@/lib/engine/constants';
 import { evaluateReturn } from '@/lib/engine/returns';
 import type {
   Lang,
@@ -13,81 +12,20 @@ import type {
   ReturnInspection,
   WorkerInput,
 } from '@/lib/engine/types';
+import { loadCandidates, loadSettings, signedPhotoUrls, toOrder, type AppSettings } from '@/lib/db/common';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { noteToNorwegian } from '@/lib/translate/server';
 import { buildFindings, type PhotoRecord } from './findings';
 import { lateDays } from './preview';
 
 export { lateDays };
+export { loadCandidates, loadSettings, signedPhotoUrls, type AppSettings };
 import type { CommittedDecision, ReturnItemState, ReturnView, StationPhoto } from './types';
 
 // Loads returns data with the service client and maps it to engine types. Callers have
 // already checked the user's role; every query is also scoped to the user's warehouse.
 
-const SIGNED_URL_SECONDS = 300;
-
-export interface AppSettings extends EngineSettings {
-  photoRetentionDays: number;
-}
-
-const SETTING_KEYS: Record<string, keyof AppSettings> = {
-  pack_confidence_min: 'packConfidenceMin',
-  return_confidence_min: 'returnConfidenceMin',
-  confusion_threshold: 'confusionThreshold',
-  confusion_window_days: 'confusionWindowDays',
-  max_retakes: 'maxRetakes',
-  return_window_days: 'returnWindowDays',
-  photo_retention_days: 'photoRetentionDays',
-};
-
-export async function loadSettings(db: SupabaseClient, warehouseId: string): Promise<AppSettings> {
-  const { data } = await db.from('settings').select('key, value').eq('warehouse_id', warehouseId);
-  const s: Partial<AppSettings> = {};
-  for (const row of data ?? []) {
-    const k = SETTING_KEYS[row.key];
-    if (k && typeof row.value === 'number') s[k] = row.value;
-  }
-  return { photoRetentionDays: 30, ...withDefaults(s), ...s } as AppSettings;
-}
-
 type Row = Record<string, unknown>;
-
-function toProduct(p: Row): Product {
-  return {
-    sku: p.sku as string,
-    nameNb: p.name_nb as string,
-    nameEn: p.name_en as string,
-    category: p.category as Product['category'],
-    color: p.color as string,
-    size: (p.size as string | null) ?? undefined,
-    priceNok: p.price_nok as number,
-    location: p.location_code as string,
-    variantGroup: (p.variant_group as string | null) ?? undefined,
-    barcode: (p.barcode as string | null) ?? undefined,
-  };
-}
-
-/** Ordered SKUs plus every product in their variant groups (the closed set for vision). */
-export async function loadCandidates(db: SupabaseClient, warehouseId: string, skus: string[]): Promise<(Product & { referencePhotoPaths: string[] })[]> {
-  const { data: base } = await db.from('products').select('*').eq('warehouse_id', warehouseId).in('sku', skus);
-  const groups = [...new Set((base ?? []).map((p) => p.variant_group).filter(Boolean))] as string[];
-  const { data: siblings } = groups.length
-    ? await db.from('products').select('*').eq('warehouse_id', warehouseId).in('variant_group', groups)
-    : { data: [] };
-  const all = new Map<string, Row>();
-  for (const p of [...(base ?? []), ...(siblings ?? [])]) all.set(p.sku, p);
-  return [...all.values()].map((p) => ({ ...toProduct(p), referencePhotoPaths: (p.reference_photo_paths as string[]) ?? [] }));
-}
-
-function toOrder(o: Row, lines: Row[]): Order {
-  return {
-    id: o.ext_id as string,
-    customerRef: o.customer_ref as string,
-    status: o.status as Order['status'],
-    shippedAt: (o.shipped_at as string | null) ?? undefined,
-    lines: lines.map((l) => ({ sku: l.sku as string, qty: l.qty as number, priceNok: l.price_nok as number })),
-  };
-}
 
 /** Latest committed packing evidence for the order (VERIFIED or MANUAL_CONFIRM). */
 async function loadPackEvidence(db: SupabaseClient, orderId: string, orderExt: string): Promise<{ check: PackCheck; photoPath: string | null } | null> {
@@ -149,15 +87,6 @@ async function loadItemPhotos(db: SupabaseClient, itemIds: string[]): Promise<Ma
     out.set(p.entity_id, list);
   }
   return out;
-}
-
-export async function signedPhotoUrls(paths: (string | null)[]): Promise<Map<string, string>> {
-  const real = [...new Set(paths.filter((p): p is string => !!p))];
-  const map = new Map<string, string>();
-  if (!real.length) return map;
-  const { data } = await createAdminClient().storage.from('photos').createSignedUrls(real, SIGNED_URL_SECONDS);
-  for (const s of data ?? []) if (s.path && s.signedUrl) map.set(s.path, s.signedUrl);
-  return map;
 }
 
 function workerFrom(condition: unknown): WorkerInput {

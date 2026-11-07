@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// The scripted demo, scene 2 (RET-01..RET-11), driven with the director keys on a
-// 1440x900 projector layout. No login, no keys, no database: the demo adapter.
+// The scripted demo, scene 1 (PACK-01..PACK-07) and scene 2 (RET-01..RET-11), driven with the
+// director keys on a 1440x900 projector layout. No login, no keys, no database: the demo adapters.
 
 test.use({ viewport: { width: 1440, height: 900 }, isMobile: false, hasTouch: false, deviceScaleFactor: 1 });
 
@@ -16,13 +16,42 @@ async function next(page: Page, id: string) {
   }
 }
 
-test('scene 2 runs end to end with the director keys, back, and reset', async ({ page }) => {
+test('scenes 1 and 2 run end to end with the director keys, back, and reset', async ({ page }) => {
   test.skip(process.env.NEXT_PUBLIC_DEMO_ENABLED !== 'true', 'demo disabled');
   await page.goto('/demo');
   await page.keyboard.press('d');
   await expect(page.getByTestId('director-step')).toHaveText('START');
 
+  // Scene 1: packing in Polish. The black hoodie is caught, then the right box verifies.
+  await next(page, 'PACK-01');
+  await expect(page.getByTestId('station-pack')).toHaveAttribute('aria-current', 'true');
+  await expect(page.getByRole('heading', { name: 'Ordre #2207' })).toBeVisible();
+  const hoodies = page.getByTestId('insights').locator('li', { hasText: 'Hettegenser' });
+  await expect(hoodies).toContainText('1');
+
+  await next(page, 'PACK-02');
+  await expect(page.getByTestId('lang-chip')).toHaveText('PL');
+  await next(page, 'PACK-03');
+  await expect(page.getByRole('button', { name: 'Sprawdź', exact: true })).toBeVisible();
+
+  await next(page, 'PACK-04');
+  await expect(page.getByTestId('verdict')).toHaveAttribute('data-status', 'MISMATCH');
+  await expect(page.getByTestId('verdict')).toContainText('Zły towar');
+  await expect(page.locator('[data-testid=pack-photo] [data-tone=bad]')).toHaveCount(1);
+  await expect(page.getByTestId('event-log')).toContainText('Ordre 2207: feil stoppet før forsegling');
+  await expect(hoodies).toContainText('2'); // caught_at_packing counted for the pair
+
+  await next(page, 'PACK-05');
+  await next(page, 'PACK-06');
+  await expect(page.getByTestId('verdict')).toHaveAttribute('data-status', 'VERIFIED');
+  await next(page, 'PACK-07');
+  await expect(page.getByTestId('verdict')).toContainText('2 z 2');
+  await expect(page.getByText('Zdjęcie dowodowe zapisane')).toBeVisible();
+  await expect(page.getByTestId('event-log')).toContainText('Ordre 2207 verifisert med kamera, 2 av 2 varer');
+
+  // Scene 2: returns in Ukrainian.
   await next(page, 'RET-01');
+  await expect(page.getByTestId('station-return')).toHaveAttribute('aria-current', 'true');
   await expect(page.getByText('Manuelt bekreftet, størrelse ikke lest').first()).toBeVisible();
   await expect(page.getByTestId('lang-chip')).toHaveText('NB');
 
@@ -72,6 +101,9 @@ test('scene 2 runs end to end with the director keys, back, and reset', async ({
   await page.keyboard.press('r');
   await expect(page.getByTestId('director-step')).toHaveText('START');
   await expect(page.getByTestId('event-log')).not.toContainText('bekreftet');
-  await next(page, 'RET-01');
+  await expect(page.getByTestId('event-log')).not.toContainText('2207');
+  await next(page, 'PACK-01');
   await expect(page.getByTestId('lang-chip')).toHaveText('NB');
+  await expect(page.getByTestId('station-pack')).toHaveAttribute('aria-current', 'true');
+  await expect(hoodies).toContainText('1');
 });

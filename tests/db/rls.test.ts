@@ -106,3 +106,45 @@ describe('audit_events is append-only', () => {
     });
   });
 });
+
+describe('packing (M4)', () => {
+  it('pack scans are readable by the packing roles only, and nobody writes them with a user token', async () => {
+    const svc = serviceClient();
+    const { data: order } = await svc.from('orders').select('id, warehouse_id').eq('ext_id', '2207').single();
+    const { data: row, error } = await svc
+      .from('pack_scans')
+      .insert({ warehouse_id: order!.warehouse_id, order_id: order!.id, code: 'TEST', sku: 'SK-WOOL-40' })
+      .select('id')
+      .single();
+    expect(error).toBeNull();
+    try {
+      expect(await visible(clients.packer, 'pack_scans')).toBeGreaterThan(0);
+      expect(await visible(clients.lead, 'pack_scans')).toBeGreaterThan(0);
+      expect(await visible(clients.admin, 'pack_scans')).toBeGreaterThan(0);
+      expect(await visible(clients.returns, 'pack_scans')).toBeLessThanOrEqual(0);
+      expect(await visible(anonClient(), 'pack_scans')).toBeLessThanOrEqual(0);
+      const ins = await clients.packer.from('pack_scans').insert({ warehouse_id: order!.warehouse_id, order_id: order!.id, code: 'X', sku: 'SK-WOOL-40' });
+      expect(ins.error).not.toBeNull();
+    } finally {
+      await svc.from('pack_scans').delete().eq('id', row!.id);
+    }
+  });
+
+  it('no signed-in role can call record_pack_mismatch or commit_pack_check directly', async () => {
+    const p = { warehouse_id: '00000000-0000-4000-8000-000000000001', order_id: '00000000-0000-4000-8000-000000000099', status: 'VERIFIED' };
+    for (const role of roles) {
+      for (const fn of ['record_pack_mismatch', 'commit_pack_check']) {
+        const r = await clients[role].rpc(fn, { p });
+        expect(r.error, `${role} ${fn}`).not.toBeNull();
+        expect(r.error!.message).toMatch(/permission denied|not find|does not exist/i);
+      }
+    }
+    expect((await anonClient().rpc('commit_pack_check', { p })).error).not.toBeNull();
+  });
+
+  it('commit_pack_check refuses a status that is not sealable, even from the server', async () => {
+    const { data: order } = await serviceClient().from('orders').select('id, warehouse_id').eq('ext_id', '2207').single();
+    const r = await serviceClient().rpc('commit_pack_check', { p: { warehouse_id: order!.warehouse_id, order_id: order!.id, status: 'MISMATCH', method: 'camera' } });
+    expect(r.error?.message).toMatch(/not_sealable/);
+  });
+});

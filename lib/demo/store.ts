@@ -1,16 +1,19 @@
 // In-memory store for demo mode: the back office (event log, return record, insights,
-// team lead) and the demo adapter of the returns station. Loaded from the same seed as
-// the database; the same engine makes every decision.
+// team lead) and the demo adapters of the packing and returns stations. Loaded from the same
+// seed as the database; the same engine makes every decision.
 
-import { pairLabelNb, productMap } from '@/lib/engine/catalog';
+import { pairKey, pairLabelNb, productMap, sortedPair } from '@/lib/engine/catalog';
 import { DEFAULT_SETTINGS } from '@/lib/engine/constants';
 import { recordConfusion } from '@/lib/engine/loop';
 import type { ConfusionEvent, PackAlert, PhotoPurpose, ReturnDecision, ReturnInspection, WorkerInput } from '@/lib/engine/types';
+import { mismatchLines, sealLines } from '@/lib/pack/commit';
+import { evaluateOrder } from '@/lib/pack/inputs';
+import type { PackPhoto, PackPort, PackView, ScanResult } from '@/lib/pack/types';
 import { lateDays, previewItem } from '@/lib/returns/preview';
 import { decidedAuditLines, escalationSummaryNb } from '@/lib/returns/summary';
 import type { CaptureResult, CommittedDecision, ConfirmResult, EscalateResult, ReturnsPort, ReturnView, StationPhoto } from '@/lib/returns/types';
 import { DEMO_NOW, ORDERS, PACK_CHECKS, PRODUCTS, RETURNS, CONFUSION_EVENTS } from './seed';
-import { RET_1043_FRONT, RET_1043_LABEL, RET_1043_NOTE } from './visionFixtures';
+import { packMockLabel, packMockVision, PACK_2207_RIGHT, PACK_2207_WRONG, RET_1043_FRONT, RET_1043_LABEL, RET_1043_NOTE } from './visionFixtures';
 
 export interface DemoEvent {
   id: number;
@@ -32,6 +35,8 @@ export interface DemoLeadCard {
 }
 
 export interface DemoState {
+  /** the packing station (scene 1) */
+  packView: PackView;
   view: ReturnView;
   events: DemoEvent[];
   confusion: ConfusionEvent[];
@@ -43,6 +48,9 @@ export interface DemoState {
 
 export const DEMO_DEVICE = 'device-07';
 const DEMO_RETURN = '1043';
+export const DEMO_ORDER = '2207';
+
+const pairKeyOf = (p: [string, string]) => pairKey(sortedPair(p[0], p[1]));
 
 const FIXTURES: Partial<Record<PhotoPurpose, { inspection: ReturnInspection; url: string }>> = {
   front: { inspection: RET_1043_FRONT, url: '/demo/ret-1043-front.svg' },
@@ -78,8 +86,33 @@ export function demoReturnView(): ReturnView {
   };
 }
 
+/** An order on the packing station, with the active alerts that touch it (P4). */
+export function demoPackView(orderId: string = DEMO_ORDER, alerts: PackAlert[] = []): PackView {
+  const order = structuredClone(ORDERS.find((o) => o.id === orderId)!);
+  const pm = productMap(PRODUCTS);
+  const groups = new Set(order.lines.map((l) => pm.get(l.sku)?.variantGroup).filter(Boolean));
+  const skus = new Set(order.lines.map((l) => l.sku));
+  return {
+    order,
+    orderKey: order.id,
+    products: PRODUCTS.filter((p) => skus.has(p.sku) || (p.variantGroup && groups.has(p.variantGroup))),
+    settings: DEFAULT_SETTINGS,
+    alerts: alerts.filter((a) => a.active && (skus.has(a.skuPair[0]) || skus.has(a.skuPair[1]))),
+    photos: [],
+    scans: [],
+    committed: null,
+  };
+}
+
+/** Illustrations that match the scripted pack fixtures (boxes line up with the drawings). */
+function packIllustration(orderId: string, vision: PackPhoto['vision']): string | null {
+  if (orderId === '2207') return vision === PACK_2207_WRONG ? '/demo/pack-2207-wrong.svg' : vision === PACK_2207_RIGHT ? '/demo/pack-2207-right.svg' : null;
+  return null;
+}
+
 function initialState(): DemoState {
   return {
+    packView: demoPackView(),
     view: demoReturnView(),
     events: [
       { id: 0, at: DEMO_NOW, station: 'system', type: 'DEMO_READY', refId: '', summaryNb: 'Demodata lastet inn', summaryEn: 'Demo data loaded', actor: 'system' },
@@ -109,6 +142,119 @@ export function createDemoStore() {
   };
   const log = (e: Omit<DemoEvent, 'id' | 'at' | 'actor'>) =>
     set((s) => ({ ...s, events: [{ ...e, id: s.events.length, at: stamp(), actor: DEMO_DEVICE }, ...s.events] }));
+
+  // ---------- packing station (scene 1) ----------
+
+  let captureDelayMs = 0;
+  /** SKU pairs already counted for an order: each pair once per order, as on the server. */
+  const countedPairs = new Set<string>();
+  const nearMiss = new Set<string>();
+  const patchPack = (fn: (v: PackView) => PackView) => set((s) => ({ ...s, packView: fn(s.packView) }));
+
+  /** After every photo or scan: a caught wrong parcel is logged and counted, like record_pack_mismatch. */
+  const afterPackChange = (wrongScanSku?: string) => {
+    const v = state.packView;
+    const { decision } = evaluateOrder(v, now());
+    let confusion = state.confusion;
+    let alerts = state.alerts;
+    const newPairs: ConfusionEvent[] = [];
+    const extra: ConfusionEvent[] = [];
+    if (wrongScanSku) {
+      const wrong = PRODUCTS.find((p) => p.sku === wrongScanSku);
+      for (const l of v.order.lines) {
+        const lp = PRODUCTS.find((p) => p.sku === l.sku);
+        if (wrong?.variantGroup && lp?.variantGroup === wrong.variantGroup) {
+          extra.push({ skuPair: [l.sku, wrong.sku].sort() as [string, string], kind: 'caught_at_packing', at: now().toISOString() });
+        }
+      }
+    }
+    if (decision.status !== 'MISMATCH' && !wrongScanSku) return;
+    for (const e of [...decision.confusionEvents, ...extra]) {
+      const key = `${v.order.id}|${pairKeyOf(e.skuPair)}`;
+      if (countedPairs.has(key)) continue;
+      countedPairs.add(key);
+      const r = recordConfusion(confusion, alerts, e, now(), PRODUCTS, DEFAULT_SETTINGS);
+      confusion = r.events;
+      alerts = r.alerts;
+      newPairs.push(e);
+    }
+    const first = !nearMiss.has(v.order.id);
+    nearMiss.add(v.order.id);
+    if (newPairs.length || first) {
+      set((s) => ({ ...s, confusion, alerts }));
+      const text = mismatchLines(v.order.id, decision, PRODUCTS, wrongScanSku);
+      log({ station: 'pack', type: 'PACK_MISMATCH', refId: v.order.id, summaryNb: text.nb, summaryEn: text.en });
+    }
+  };
+
+  const packPort: PackPort = {
+    mode: 'demo',
+    async capture(orderKey, purpose, _image, sku) {
+      if (captureDelayMs) await new Promise((r) => setTimeout(r, captureDelayMs));
+      const v = state.packView;
+      const nth = v.photos.filter((p) => p.purpose === 'pack_check').length;
+      const vision = purpose === 'pack_check' ? packMockVision(v.order.id, nth, v.order.lines, v.products) : null;
+      const label = purpose === 'label_closeup' && sku ? packMockLabel(sku, v.products) : null;
+      const photo: PackPhoto = {
+        photoId: `demo-${purpose}-${tick}`,
+        purpose,
+        sku: sku ?? null,
+        url: purpose === 'pack_check' ? packIllustration(v.order.id, vision) : null,
+        takenAt: stamp(),
+        vision,
+        label,
+        facesDiscarded: false,
+        model: 'fixture',
+      };
+      patchPack((pv) => ({ ...pv, photos: [...pv.photos, photo] }));
+      afterPackChange();
+      const { decision } = evaluateOrder(state.packView, now());
+      if (purpose === 'pack_check' && decision.status === 'VERIFIED') {
+        const text = sealLines(orderKey, decision, null, true);
+        log({ station: 'pack', type: 'PACK_CHECK_VERIFIED', refId: orderKey, summaryNb: text.nb, summaryEn: text.en });
+      }
+      return { ok: true, photo, decision };
+    },
+    async scan(_orderKey, code): Promise<ScanResult> {
+      const v = state.packView;
+      const c = code.trim().toUpperCase();
+      const product = PRODUCTS.find((p) => p.barcode === c || p.sku === c);
+      if (!product) return { kind: 'unknown_code' };
+      const line = v.order.lines.find((l) => l.sku === product.sku);
+      if (!line) {
+        afterPackChange(product.sku);
+        return { kind: 'not_in_order', sku: product.sku };
+      }
+      if (v.scans.filter((s) => s === product.sku).length >= line.qty) return { kind: 'already_counted', sku: product.sku };
+      patchPack((pv) => ({ ...pv, scans: [...pv.scans, product.sku] }));
+      return { kind: 'counted', sku: product.sku };
+    },
+    async manual(_orderKey, reason) {
+      return evaluateOrder(state.packView, now(), reason).decision;
+    },
+    async seal(orderKey, manualReason) {
+      // Same as the server: rerun the engine from stored state, ignore anything else.
+      const v = state.packView;
+      if (v.committed) return { ok: false, error: 'already_sealed' };
+      const { decision, inputs } = evaluateOrder(v, now(), manualReason);
+      if (!decision.canSeal) return { ok: false, error: 'not_ready', decision };
+      const evidence = inputs.overview?.vision ? inputs.overview.photoId : null;
+      const committed = {
+        status: decision.status as 'VERIFIED' | 'MANUAL_CONFIRM',
+        method: decision.method,
+        sizeVerified: decision.sizeVerified,
+        manualReason: decision.status === 'MANUAL_CONFIRM' ? (manualReason ?? null) : null,
+        evidencePhotoId: evidence,
+        sealedAt: stamp(),
+      };
+      patchPack((pv) => ({ ...pv, committed, order: { ...pv.order, status: 'packed' } }));
+      const text = sealLines(orderKey, decision, manualReason ?? null, !!evidence);
+      log({ station: 'pack', type: decision.status === 'VERIFIED' ? 'PACK_VERIFIED' : 'PACK_MANUAL_CONFIRM', refId: orderKey, summaryNb: text.nb, summaryEn: text.en });
+      return { ok: true, decision, committed };
+    },
+  };
+
+  // ---------- returns station (scene 2) ----------
 
   const itemOf = (id: string) => state.view.items.find((i) => i.id === id)!;
   const patchItem = (id: string, fn: (i: ReturnView['items'][number]) => ReturnView['items'][number]) =>
@@ -213,6 +359,11 @@ export function createDemoStore() {
 
   return {
     port,
+    packPort,
+    /** "Sjekker…" for a moment on stage; 0 when replaying steps. */
+    setCaptureDelay(ms: number) {
+      captureDelayMs = ms;
+    },
     now,
     getState: () => state,
     subscribe(l: () => void) {
@@ -228,6 +379,8 @@ export function createDemoStore() {
     reset() {
       state = initialState();
       tick = 0;
+      countedPairs.clear();
+      nearMiss.clear();
       emit();
     },
   };

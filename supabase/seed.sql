@@ -4,7 +4,7 @@ begin;
 select set_config('sjekkpunkt.allow_audit_purge', 'on', true);
 truncate public.integration_events, public.audit_events, public.pack_alerts, public.confusion_events,
   public.escalations, public.stock_adjustments, public.decisions, public.inspections, public.return_items,
-  public.returns, public.pack_checks, public.vision_results, public.photos, public.order_lines,
+  public.returns, public.pack_scans, public.pack_checks, public.vision_results, public.photos, public.order_lines,
   public.orders, public.products, public.locations, public.settings;
 select set_config('sjekkpunkt.allow_audit_purge', 'off', true);
 

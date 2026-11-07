@@ -1,33 +1,23 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { fail, guard, RETURN_ROLES } from '@/lib/api/http';
+import { fail, guard, PACK_ROLES, RETURN_ROLES } from '@/lib/api/http';
+import { packVision } from '@/lib/pack/vision';
 import { evaluateItem, loadItemContext, signedPhotoUrls } from '@/lib/returns/server';
 import type { StationPhoto } from '@/lib/returns/types';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { inspectReturnPhoto, type VisionImage } from '@/lib/vision/client';
-import { isReturnPurpose, VISION_PURPOSES } from '@/lib/vision/schemas';
+import { inspectReturnPhoto } from '@/lib/vision/client';
+import { downloadImage as download, referenceImages } from '@/lib/vision/images';
+import { isPackPurpose, isReturnPurpose, VISION_PURPOSES } from '@/lib/vision/schemas';
 
 // Two model calls plus storage reads stay well under this; vision itself is capped at 8 s.
 export const maxDuration = 20;
 
-const Body = z.object({ photoId: z.uuid(), purpose: z.enum(VISION_PURPOSES) });
-
-const MAX_BYTES = 5 * 1024 * 1024;
-const MAX_REFERENCES = 4;
-
-function isImage(b: Buffer): string | null {
-  if (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
-  if (b.length > 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
-  return null;
-}
-
-async function download(path: string): Promise<VisionImage | null> {
-  const { data } = await createAdminClient().storage.from('photos').download(path);
-  if (!data) return null;
-  const buf = Buffer.from(await data.arrayBuffer());
-  const mimeType = isImage(buf);
-  return mimeType && buf.length <= MAX_BYTES ? { data: buf, mimeType } : null;
-}
+const Body = z.object({
+  photoId: z.uuid(),
+  purpose: z.enum(VISION_PURPOSES),
+  /** label_closeup only: the order line whose size label is in the photo */
+  sku: z.string().trim().min(1).max(64).optional(),
+});
 
 /**
  * Runs vision on an uploaded photo: closed set of candidate SKUs, zod-validated output,
@@ -35,10 +25,15 @@ async function download(path: string): Promise<VisionImage | null> {
  * the event is kept (addendum section 9).
  */
 export async function POST(req: Request) {
-  const g = await guard(req, RETURN_ROLES, Body);
+  const g = await guard(req, [...new Set([...RETURN_ROLES, ...PACK_ROLES])], Body);
   if (!g.ok) return g.res;
   const { user, body } = g;
-  if (!isReturnPurpose(body.purpose)) return fail('unsupported_purpose', 400); // packing purposes: M4
+  if (isPackPurpose(body.purpose)) {
+    if (!PACK_ROLES.includes(user.role)) return fail('forbidden', 403);
+    return packVision(user, { photoId: body.photoId, purpose: body.purpose, sku: body.sku });
+  }
+  if (!RETURN_ROLES.includes(user.role)) return fail('forbidden', 403);
+  if (!isReturnPurpose(body.purpose)) return fail('unsupported_purpose', 400);
   const db = createAdminClient();
 
   const { data: photo } = await db
@@ -60,13 +55,9 @@ export async function POST(req: Request) {
   if (!image) return NextResponse.json({ ok: false, reason: 'upload' satisfies string });
 
   // Up to 4 reference photos of the candidate SKUs (closed set). The ordered SKU first.
-  const refPaths = ctx.products
-    .sort((a, b) => (a.sku === ctx.item.orderedSku ? -1 : b.sku === ctx.item.orderedSku ? 1 : 0))
-    .flatMap((p) => p.referencePhotoPaths.slice(0, 1).map((path) => ({ sku: p.sku, path })))
-    .slice(0, MAX_REFERENCES);
-  const references = (
-    await Promise.all(refPaths.map(async (r) => ({ sku: r.sku, image: await download(r.path) })))
-  ).filter((r): r is { sku: string; image: VisionImage } => !!r.image);
+  const references = await referenceImages(
+    [...ctx.products].sort((a, b) => (a.sku === ctx.item.orderedSku ? -1 : b.sku === ctx.item.orderedSku ? 1 : 0)),
+  );
 
   const result = await inspectReturnPhoto({
     purpose: body.purpose,

@@ -13,8 +13,9 @@ choice goes in `docs/decisions.md`.
 - `pnpm test` engine unit tests (offline) · `pnpm test:db` RLS/security tests against the hosted dev DB
 - `npx playwright test` e2e (local prod server on :3100; `E2E_BASE_URL=https://…` for a deployment)
 - `pnpm db:push` apply migrations · `pnpm db:seed` reset data to seed · `pnpm db:users` (re)create role test users
-- `pnpm voice:setup` create/update the ElevenLabs agent from `lib/voice/agent-config.ts` (never edit it in the dashboard)
-- `E2E_VOICE=1 npx playwright test tests/e2e/voice-live.spec.ts` live voice test (real WebRTC, uses credits)
+- `pnpm voice:setup` create/update both ElevenLabs agents (returns, packing) from `lib/voice/agent-config.ts` (never edit them in the dashboard)
+- `E2E_VOICE=1 npx playwright test tests/e2e/voice-live.spec.ts tests/e2e/voice-live-pack.spec.ts` live voice tests (real WebRTC, uses credits)
+- `PACK_SHOTS=<dir>` / `DEMO_SHOTS=<dir>` save screenshots from the pack / demo e2e specs
 
 ## Rules that must not erode
 

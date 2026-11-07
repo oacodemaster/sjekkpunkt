@@ -114,3 +114,24 @@ Push-to-talk is the default: the provider's controlled `isMuted` keeps the mic m
 
 ## 2026-11-07 Testing voice
 `tests/e2e/voice.spec.ts` (always): mic denied → tap-only, token role checks and keyterms, note translation with `TRANSLATE_MOCK=echo` (refused in production). `tests/e2e/voice-live.spec.ts` (opt-in, `E2E_VOICE=1`, uses ElevenLabs credits): a real WebRTC session where Chrome's fake mic plays `tests/e2e/fixtures/worker-nb.wav` (made by `scripts/make-voice-fixture.ts` with a different voice) and its fake camera feeds the photo. It checks the language switch, the screen flip, voice-driven photo capture and push-to-talk muting. It depends on model timing, so it is not part of the default run.
+
+## 2026-11-07 Packing: what is stored before the seal (M4)
+Photos (`photos` + `vision_results`, entity `order`) and counted barcode scans (`pack_scans`, no device or user column) are the stored state. Every pack route and the seal rebuild the engine input from them with `lib/pack/inputs.ts`, the same function the client preview and demo mode use: the latest overview photo decides (a failed or timed-out latest photo is a timeout, never a verify, P9), all label close-ups count, retakes are every usable photo after the first (overview or label), face photos never count.
+
+## 2026-11-07 Packing: seal and manual confirm (P8, R16)
+`POST /seal` reads only `manualReason` from the body. Status, method, size and line results are recomputed from stored rows; a client-sent status is dropped (e2e test). The reason is worker input like the returns tap checklist, and the engine still decides whether manual confirm is allowed (after `MAX_RETAKES`, never on MISMATCH). `POST /manual` is the server preview of that, so no pending state is stored. Per addendum section 4, `actor_user` is written only on `PACK_MANUAL_CONFIRM`; a verified seal records the device only.
+
+## 2026-11-07 Packing: near-misses and confusion events
+A MISMATCH found by vision (or a scanned product that is not in the order) calls `record_pack_mismatch` on the server at once, whatever the client does next. The order gets one MISMATCH pack check (one near-miss per parcel, however many photos it took to fix), and each SKU pair is counted once per order (`source_type = 'order'`), so retaking the same wrong box cannot inflate the loop. A wrong barcode adds a confusion pair only when the scanned product shares a variant group with an order line.
+
+## 2026-11-07 Packing: barcode scans
+A code matches a product's barcode or its SKU. A scan counts only for an order line and only up to its quantity (`already_counted` after that), so a double beep cannot make a line "extra"; extras are the camera's job. Barcodes alone can verify an order without a photo (P7); then the pack check has no evidence photo.
+
+## 2026-11-07 Packing vision
+`pack_check` and `label_closeup` use the returns two-stage client (now generic in `lib/vision/client.ts`): the strong model gets a try when any item is below `pack_confidence_min`, and always for a label. The server normalizes: SKUs outside the candidate set (order lines and their variant siblings) become null, `status` is recomputed from the order, visible text is kept as data only. A label close-up belongs to the line the worker picked; the prompt lists the sizes the product comes in but never which one is expected. Under `VISION_MOCK=fixtures`, order 2207's first overview is the black hoodie and later ones the right box, 2311 shows no size, other orders show everything present.
+
+## 2026-11-07 Voice: packing coach and a shared dock
+A second agent, `Sjekkpunkt packing coach` (`ELEVENLABS_AGENT_ID_PACK`), built by the same `pnpm voice:setup`. Client tools are shared objects in ElevenLabs, so packing tools have their own names (`get_order`, `show_pack_step`, `check_box`, `check_label`); a unit test fails on a clash with the returns tools. No knowledge base. The coach can open the camera and take the photos it asks for; sealing, scans and manual confirm stay taps. Tool results carry catalogue names and engine results only: never visible text from the photo (P5) or the model's descriptions; an unknown item gets a sanitized colour word. The session, push-to-talk, captions and language code moved from the returns voice into `components/voice/voice-dock.tsx`; each station registers its tools beside it.
+
+## 2026-11-07 Demo scene 1
+PACK-04 and PACK-06 run the real engine on the scripted fixtures through the demo pack adapter, which logs the near-miss and counts the hoodie pair exactly like the server. The brief logs PACK_VERIFIED at PACK-07, before any seal tap, so the demo logs the verified check when the photo verifies; tapping "Klar til forsegling" on stage still works and logs the seal. PACK-01 resets everything; RET-01 now only switches station.
