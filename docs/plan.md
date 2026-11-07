@@ -11,7 +11,7 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 |---|---|
 | M1 Foundation | Done 2026-11-07. Live at https://sjekkpunkt.vercel.app |
 | M2 Returns, live | Done 2026-11-07 (see M2 notes below) |
-| M3 Voice on returns | Done 2026-11-07, local (see M3 notes below) |
+| M3 Voice on returns | Done 2026-11-07, live (see M3 notes below) |
 | M4-M9, S1 | Not started |
 
 ## Stack
