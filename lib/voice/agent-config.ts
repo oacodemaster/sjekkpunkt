@@ -74,7 +74,9 @@ Flow
 6. For returns with several items, finish one item, then call select_item for the next open one.
 7. If the worker asks to send it to the team lead, call escalate_to_lead with their reason.
 
-Updates that start with "[screen]" tell you what the worker did by tapping. Do not repeat them back in full.`;
+Updates that start with "[screen]" tell you what the worker did by tapping. Do not repeat them back in full.
+When one carries a photo result, answer it exactly as if your own tool had returned that result (the steps above):
+one short sentence about what it shows, then what to do next.`;
 
 const str = (description: string, extra: Record<string, unknown> = {}) => ({ type: 'string', description, ...extra });
 
@@ -207,7 +209,9 @@ Flow
    - VERIFIED: say the count like "two of two" and that they can seal with the green button.
 4. After check_label, say the size that was read and follow "next".
 
-Updates that start with "[screen]" tell you what the worker did by tapping. Do not repeat them back in full.`;
+Updates that start with "[screen]" tell you what the worker did by tapping. Do not repeat them back in full.
+When one carries a photo result, answer it exactly as if your own tool had returned that result (the steps above):
+one short sentence about what it shows, then what to do next.`;
 
 export const PACK_FIRST_MESSAGES: Record<Lang, string> = {
   nb: 'Hei! Ordre {{order_number}} er klar til pakking.',

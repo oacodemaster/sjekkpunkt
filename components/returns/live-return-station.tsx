@@ -43,7 +43,8 @@ function withTapUpdates(station: ReturnStation, voice: VoiceLink): ReturnStation
       ...actions,
       capture: async (purpose, image) => {
         const res = await actions.capture(purpose, image);
-        voice.context(`[screen] The worker took the ${purpose} photo of item ${n} by tapping. Result: ${capturePhotoResult(view, item.id, purpose, res, new Date())}`);
+        // A turn the coach answers: it says what the photo showed and asks for the next one (brief RET-05).
+        voice.say(`[screen] The worker took the ${purpose} photo of item ${n} by tapping. Result: ${capturePhotoResult(view, item.id, purpose, res, new Date())}`);
         return res;
       },
       setWorker: (patch) => {

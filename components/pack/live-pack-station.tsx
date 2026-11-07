@@ -41,7 +41,8 @@ function withEarcons(station: PackStation): PackStation {
 
 /**
  * Taps go to the agent as "[screen]" updates, so the coach knows what happened without asking.
- * Tool calls use the unwrapped actions, so nothing is reported twice.
+ * Photo results and the seal are turns the coach answers; scans and the manual reason are
+ * silent context. Tool calls use the unwrapped actions, so nothing is reported twice.
  */
 function withTapUpdates(station: PackStation, voice: VoiceLink): PackStation {
   const { actions, view } = station;
@@ -52,7 +53,8 @@ function withTapUpdates(station: PackStation, voice: VoiceLink): PackStation {
       capture: async (target, image) => {
         const res = await actions.capture(target, image);
         const kind = target.purpose === 'pack_check' ? 'box' : 'label';
-        voice.context(`[screen] The worker took the ${kind} photo by tapping. Result: ${captureResult(view, kind, res, new Date())}`);
+        // A turn the coach answers: a check result is what the worker needs to hear (brief PACK-05).
+        voice.say(`[screen] The worker took the ${kind} photo by tapping. Result: ${captureResult(view, kind, res, new Date())}`);
         return res;
       },
       scan: async (code) => {

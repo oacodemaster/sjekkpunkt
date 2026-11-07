@@ -79,7 +79,7 @@ export function CaptionList({ lines, lang, max = 3 }: { lines: Caption[]; lang: 
   return (
     <ol className="flex flex-col gap-2" aria-live="polite" data-testid="captions">
       {shown.map((l) => (
-        <li key={l.id} className={`rounded-xl px-3 py-2 ${l.role === 'agent' ? 'bg-slate-100' : 'ml-6 bg-blue-50'}`}>
+        <li key={l.id} data-role={l.role} className={`rounded-xl px-3 py-2 ${l.role === 'agent' ? 'bg-slate-100' : 'ml-6 bg-blue-50'}`}>
           <p className="text-base leading-snug">{l.text}</p>
           {l.pending ? (
             <p className="text-sm italic text-muted">{t('translating', lang)}</p>
