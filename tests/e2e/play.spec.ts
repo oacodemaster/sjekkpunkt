@@ -88,6 +88,14 @@ test('the guide and the practice demo need no login and load their sample photos
   }
 });
 
+test('the front page opens a sample parcel straight from its photo, without a login', async ({ page }) => {
+  await page.goto('/?lang=en');
+  await expect(page.getByTestId('try-parcel')).toHaveCount(5);
+  await page.locator('[data-testid=try-parcel][href="/play?parcel=4102"]').click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Order #4102');
+  await expect(bench(page)).toHaveAttribute('data-status', 'START');
+});
+
 test('a worker switches language in the handheld header; it becomes their language', async ({ page }) => {
   const { login, sql } = await import('./helpers');
   const lang = async () =>

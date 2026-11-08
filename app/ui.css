@@ -367,6 +367,75 @@
     .fp-node:first-child { background: var(--brand-wash); border-color: var(--brand); }
   }
 
+  /* Language picker (P1): the language chip made tappable. A native select lies over the chip, so
+     a handheld opens its own big picker; the focus ring sits on the chip. */
+  .sp-langpick { position: relative; }
+  .sp-langpick select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+  .sp-langpick:has(select:focus-visible) { outline: 3px solid var(--focus); outline-offset: -3px; }
+  .sp-dark .sp-langpick:has(select:focus-visible) { outline-color: var(--focus-on-dark); }
+  .sp-langpick .sp-lang { display: inline-flex; align-items: center; gap: 7px; }
+  .sp-langpick .sp-lang::after { content: ""; border-inline: 5px solid transparent; border-top: 6px solid currentColor; }
+  .sp-dark .sp-langpick .sp-lang { border-color: var(--ink-on-dark); color: var(--ink-on-dark); }
+  .sp-langpick[aria-busy="true"] .sp-lang { opacity: 0.6; }
+
+  /* Public pages (guide, practice demo): a light top bar like the handheld's, at desk width. */
+  .sp-pub-header { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 2px solid var(--line); }
+  .sp-pub-header__in { max-width: 72rem; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: 64px; padding: 4px 12px; }
+  .sp-pub-nav { display: flex; flex-wrap: wrap; gap: 4px; }
+  @media (max-width: 459px) { .sp-pub-header .sp-wordmark > span { display: none; } .sp-pub-nav a { padding: 0 8px; } }
+  .sp-pub-nav a { display: inline-flex; align-items: center; min-height: var(--target-desk); padding: 0 12px; border-radius: var(--radius-md); font-size: 16px; font-weight: 650; color: var(--ink); text-decoration: none; }
+  .sp-pub-nav a:hover { background: var(--surface-2); }
+  .sp-pub-nav a[aria-current="page"] { background: var(--ink); color: var(--surface); }
+  .sp-pub-nav a:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+
+  /* Practice demo (/play). Product photos on surface-2 tiles. The box is a photo, so it sits on the
+     stage and its units carry the verdict like bounding boxes: box-present / box-unexpected rings
+     with an icon; the words are the chips under the box. */
+  .play-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; height: 100%; padding: 8px; border: 2px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); color: var(--ink); font: inherit; text-align: center; cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+  .play-tile:hover { border-color: var(--ink-2); }
+  .play-tile:active { transform: scale(0.97); }
+  .play-tile:disabled { opacity: 0.5; cursor: default; }
+  .play-tile:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .play-tile img { width: 100%; aspect-ratio: 1; object-fit: contain; padding: 4px; border-radius: var(--radius-md); background: var(--surface-2); }
+  .play-tile__name { font-size: 15px; font-weight: 650; line-height: 1.25; }
+  .play-tile__meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; font: 500 14px/1.3 var(--font-family-mono); color: var(--ink-2); }
+  .play-count { position: absolute; top: 6px; right: 6px; min-width: 28px; height: 28px; padding: 0 8px; border-radius: var(--radius-pill); background: var(--ink); color: var(--surface); font: 700 15px/28px var(--font-family-mono); }
+  .play-size { display: inline-block; padding: 1px 6px; border-radius: var(--radius-sm); background: var(--ink); color: var(--surface); font: 700 14px/1.3 var(--font-family-mono); }
+  .play-box { position: relative; aspect-ratio: 1; width: 100%; max-width: 28rem; margin: 0 auto; user-select: none; }
+  .play-box > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; border-radius: 4px; }
+  .play-box__grid { position: absolute; top: 24%; bottom: 20%; left: 21%; right: 21%; display: grid; gap: 6px; }
+  .play-box__empty { position: absolute; inset-inline: 24%; top: 50%; transform: translateY(-50%); margin: 0; text-align: center; font-size: 17px; font-weight: 650; color: var(--ink); background: var(--surface); border-radius: var(--radius-md); padding: 8px; }
+  .play-unit { position: relative; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 0; border: 0; border-radius: 4px; background: transparent; cursor: pointer; }
+  .play-unit:focus-visible { outline: 3px solid var(--focus-on-dark); outline-offset: 2px; }
+  .play-unit img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35)); }
+  .play-unit--ok { box-shadow: 0 0 0 var(--box-width) var(--box-present); }
+  .play-unit--bad { box-shadow: 0 0 0 var(--box-width) var(--box-unexpected); }
+  .play-unit--warn { box-shadow: 0 0 0 var(--box-width) var(--warn-on-dark); }
+  .play-unit__mark { position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: var(--ink); }
+  .play-unit__mark .sp-icon { width: 18px; height: 18px; stroke-width: 3; }
+  .play-unit--ok .play-unit__mark { background: var(--box-present); }
+  .play-unit--bad .play-unit__mark { background: var(--box-unexpected); }
+  .play-unit--warn .play-unit__mark { background: var(--warn-on-dark); }
+  .play-label { display: flex; align-items: center; gap: 12px; }
+  .play-label__size { display: grid; place-items: center; width: 52px; height: 52px; border: 3px solid currentColor; border-radius: var(--radius-md); background: var(--surface); font: 800 22px/1 var(--font-family-mono); }
+  .play-parcel { display: flex; flex-direction: column; gap: 12px; width: 100%; height: 100%; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-raised); color: var(--ink); font: inherit; text-align: left; text-decoration: none; cursor: pointer; transition: border-color var(--dur-fast) var(--ease-out); }
+  .play-parcel:hover { border-color: var(--ink-2); }
+  .play-parcel:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .play-parcel__pics { display: flex; flex-wrap: wrap; gap: 8px; }
+  .play-parcel__pics img { width: 80px; height: 80px; object-fit: contain; padding: 4px; border-radius: var(--radius-md); background: var(--surface-2); }
+  .play-mixup { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 8px 12px; border: 2px solid var(--line); border-radius: var(--radius-md); font-size: 16px; }
+  .play-mixup--alert { border-color: var(--warn); background: var(--warn-soft); font-weight: 650; }
+
+  /* Front page: try a parcel without signing in, straight from its photos (dark, so lime on hover). */
+  .fp-try { margin-top: 28px; }
+  .fp-try__label { margin: 0 0 10px; font-size: 16px; color: var(--ink-2-on-dark); }
+  .fp-try__list { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .fp-try__item { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 104px; padding: 8px 8px 10px; border: 2px solid var(--line-on-dark); border-radius: var(--radius-lg); background: var(--frame-2); color: var(--ink-on-dark); text-align: center; text-decoration: none; font-size: 14px; line-height: 1.25; transition: border-color var(--dur-fast) var(--ease-out); }
+  .fp-try__item:hover { border-color: var(--brand); }
+  .fp-try__item:focus-visible { outline: 3px solid var(--focus-on-dark); outline-offset: 2px; }
+  .fp-try__item img { width: 80px; height: 80px; object-fit: contain; padding: 4px; border-radius: var(--radius-md); background: var(--surface); }
+  .fp-try__n { font: 500 13px/1 var(--font-family-mono); color: var(--ink-2-on-dark); }
+
   /* ---------- Part 3: Holio WMS (mock) ----------
      A separate system on purpose: no Sjekkpunkt token for colour or type, so the jury sees two
      products. system-ui and a plain grey-blue. */

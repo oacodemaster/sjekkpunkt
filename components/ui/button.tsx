@@ -25,9 +25,9 @@ export function Button({ variant, block, desk, icon, iconAfter, children, classN
   );
 }
 
-export function ButtonLink({ href, variant, block, desk, icon, iconAfter, children, className }: Common & { href: string }) {
+export function ButtonLink({ href, variant, block, desk, icon, iconAfter, children, className, testId }: Common & { href: string; testId?: string }) {
   return (
-    <Link href={href} className={buttonClass({ variant, block, desk, className })}>
+    <Link href={href} className={buttonClass({ variant, block, desk, className })} data-testid={testId}>
       {icon && <Icon name={icon} />}
       {children}
       {iconAfter && <Icon name={iconAfter} />}

@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ConversationProvider } from '@elevenlabs/react';
 import { Verdict } from '@/components/pack/pack-station';
+import { Banner, Button, Card, Icon, OrderLine, StatusChip, type LineState, type Tone } from '@/components/ui';
 import { usePackStation, type PackCameraTarget, type PackStation } from '@/components/pack/use-pack-station';
 import { PublicHeader } from '@/components/public-header';
 import { useVoiceLink } from '@/components/voice/voice-dock';
@@ -54,23 +55,22 @@ function Mixups({ session, lang }: { session: Session; lang: Lang }) {
   const now = new Date();
   const pairs = [...new Map(session.events.map((e) => [pairKey(e.skuPair), e.skuPair])).values()];
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-sm" data-testid="mixups">
-      <h2 className="text-sm font-bold uppercase tracking-wide text-muted">{t('mixupsTitle', lang)}</h2>
-      <p className="mt-1 text-sm text-muted">{t('mixupsHelp', lang).replace('{n}', String(CONFUSION_THRESHOLD))}</p>
+    <Card eyebrow={t('mixupsTitle', lang)} data-testid="mixups">
+      <p className="m-0 text-[16px] leading-[22px] text-ink-2">{t('mixupsHelp', lang).replace('{n}', String(CONFUSION_THRESHOLD))}</p>
       {pairs.length === 0 ? (
-        <p className="mt-2 text-base">{t('mixupsNone', lang)}</p>
+        <p className="type-body m-0">{t('mixupsNone', lang)}</p>
       ) : (
-        <ul className="mt-2 flex flex-col gap-1.5">
+        <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {pairs.map((pair) => {
             const n = countInWindow(session.events, pair, now, CONFUSION_WINDOW_DAYS);
             const alert = session.alerts.some((a) => a.active && pairKey(a.skuPair) === pairKey(pair));
             return (
-              <li key={pairKey(pair)} className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-base ${alert ? 'bg-amber-50 font-semibold text-warn' : 'bg-slate-50'}`}>
-                <span>
-                  {alert && '⚠ '}
+              <li key={pairKey(pair)} className={`play-mixup ${alert ? 'play-mixup--alert' : ''}`}>
+                <span className="flex items-center gap-2">
+                  {alert && <Icon name="warn" className="text-warn" />}
                   {pairText(pair, lang)}
                 </span>
-                <span className="shrink-0 font-mono text-sm">
+                <span className="sp-mono shrink-0">
                   {Math.min(n, CONFUSION_THRESHOLD)}/{CONFUSION_THRESHOLD}
                 </span>
               </li>
@@ -78,20 +78,20 @@ function Mixups({ session, lang }: { session: Session; lang: Lang }) {
           })}
         </ul>
       )}
-    </section>
+    </Card>
   );
 }
 
 // ------------------------------------------------------------------ the app
 
-export function PlayApp({ lang: serverLang, voice }: { lang: Lang; voice: boolean }) {
+export function PlayApp({ lang: serverLang, voice, initialParcel }: { lang: Lang; voice: boolean; initialParcel?: string }) {
   const [lang, setLang] = useState(serverLang);
   const [fromServer, setFromServer] = useState(serverLang);
   if (serverLang !== fromServer) {
     setFromServer(serverLang);
     setLang(serverLang);
   }
-  const [parcelId, setParcelId] = useState<string | null>(null);
+  const [parcelId, setParcelId] = useState<string | null>(initialParcel && parcelById(initialParcel) ? initialParcel : null);
   const [attempt, setAttempt] = useState(0);
   const [session, setSession] = useState<Session>(EMPTY);
   const parcel = parcelId ? parcelById(parcelId) : undefined;
@@ -132,18 +132,18 @@ export function PlayApp({ lang: serverLang, voice }: { lang: Lang; voice: boolea
   };
 
   return (
-    <div className="flex flex-1 flex-col bg-slate-100" lang={lang}>
+    <div className="sp-light flex min-h-dvh flex-1 flex-col bg-surface-2 text-ink" lang={lang}>
       <PublicHeader lang={lang} current="play" onLangChange={setLang} />
       {session.newAlert && (
-        <div className="mx-auto mt-3 flex w-full max-w-6xl px-4">
-          <p role="alert" className="flex flex-1 items-center justify-between gap-3 rounded-2xl border-2 border-warn bg-amber-50 px-4 py-3 text-base font-semibold text-warn" data-testid="new-alert">
-            <span>
-              ⚠ {pairText(session.newAlert.skuPair, lang)}: {t('newAlert', lang)}
+        <div className="mx-auto mt-4 w-full max-w-6xl px-4">
+          <Banner tone="warn" role="alert" data-testid="new-alert" title={pairText(session.newAlert.skuPair, lang)}>
+            <span className="flex flex-wrap items-center justify-between gap-2">
+              {t('newAlert', lang)}
+              <Button variant="quiet" className="min-h-12" onClick={() => setSession((s) => ({ ...s, newAlert: null }))}>
+                OK
+              </Button>
             </span>
-            <button className="shrink-0 text-xl leading-none" aria-label="OK" onClick={() => setSession((s) => ({ ...s, newAlert: null }))}>
-              ×
-            </button>
-          </p>
+          </Banner>
         </div>
       )}
       {parcel ? (
@@ -170,43 +170,38 @@ export function PlayApp({ lang: serverLang, voice }: { lang: Lang; voice: boolea
 
 function Picker({ lang, session, onOpen }: { lang: Lang; session: Session; onOpen: (id: string) => void }) {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 pb-12">
-      <section className="flex flex-col gap-2 pt-4">
-        <h1 className="text-4xl font-black tracking-tight">{t('playTitle', lang)}</h1>
-        <p className="max-w-2xl text-lg">{t('playIntro', lang)}</p>
-        <p className="max-w-2xl text-base text-muted">{t('practiceNote', lang)}</p>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-12 pt-6">
+      <section className="flex flex-col gap-3">
+        <h1 className="m-0 text-[34px] font-extrabold leading-[40px] tracking-[-0.025em]">{t('playTitle', lang)}</h1>
+        <p className="type-body m-0 max-w-2xl">{t('playIntro', lang)}</p>
+        <p className="m-0 max-w-2xl text-[16px] leading-[22px] text-ink-2">{t('practiceNote', lang)}</p>
       </section>
-      <section>
-        <h2 className="mb-3 text-xl font-bold">{t('pickParcel', lang)}</h2>
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="flex flex-col gap-3">
+        <h2 className="type-title m-0">{t('pickParcel', lang)}</h2>
+        <ul className="m-0 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
           {PLAY_PARCELS.map((p) => {
             const looks = [...new Set(p.order.lines.map((l) => imageOf(l.sku)))];
             const units = p.order.lines.reduce((n, l) => n + l.qty, 0);
             return (
               <li key={p.order.id}>
-                <button
-                  onClick={() => onOpen(p.order.id)}
-                  className="flex h-full w-full flex-col gap-3 rounded-2xl bg-white p-4 text-left shadow-sm ring-accent transition hover:shadow-md focus-visible:ring-4 active:scale-[0.99]"
-                  data-testid="parcel"
-                  data-order={p.order.id}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-base text-muted">
+                <button onClick={() => onOpen(p.order.id)} className="play-parcel" data-testid="parcel" data-order={p.order.id}>
+                  <span className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="sp-mono text-[16px] text-ink-2">
                       {t('order', lang)} #{p.order.id}
                     </span>
-                    <span className={`rounded-full px-3 py-1 text-sm font-bold ${p.lesson === 'alert' ? 'bg-amber-100 text-warn' : 'bg-blue-50 text-accent'}`}>
+                    <StatusChip tone={p.lesson === 'alert' ? 'warn' : undefined} icon={p.lesson === 'alert' ? undefined : 'box'} desk>
                       {t(LESSON[p.lesson].title, lang)}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
+                    </StatusChip>
+                  </span>
+                  <span className="play-parcel__pics">
                     {looks.map((src) => (
-                      <Pic key={src} src={src} alt="" className="h-20 w-20 rounded-xl bg-slate-50 object-contain p-1" />
+                      <Pic key={src} src={src} alt="" />
                     ))}
-                  </div>
-                  <p className="text-base">{t(LESSON[p.lesson].help, lang)}</p>
-                  <p className="mt-auto text-sm font-semibold text-muted">
+                  </span>
+                  <span className="text-[17px] leading-[24px]">{t(LESSON[p.lesson].help, lang)}</span>
+                  <span className="mt-auto text-[15px] font-semibold text-ink-2">
                     {units} {t('items', lang)}
-                  </p>
+                  </span>
                 </button>
               </li>
             );
@@ -244,6 +239,8 @@ function BenchWithVoice(props: BenchProps) {
     </ConversationProvider>
   );
 }
+
+const UNIT_ICON = { ok: 'ok', bad: 'stop', warn: 'warn' } as const;
 
 function Bench({
   parcel,
@@ -346,217 +343,223 @@ function Bench({
   const cols = Math.max(1, Math.ceil(Math.sqrt(box.length)));
   const inBox = (sku: string) => box.filter((u) => u.sku === sku).length;
 
+  // The one main action, as at the station: check, show the label, or seal (commits are primary).
+  const main: ReactNode = !fresh ? (
+    <Button block icon="camera" onClick={() => void tap({ purpose: 'pack_check' })} disabled={locked || box.length === 0} data-testid="play-check">
+      {busy === 'capture' ? t('checking', lang) : checked ? t('checkAgain', lang) : t('check', lang)}
+    </Button>
+  ) : decision.canSeal ? (
+    <Button block icon="ok" onClick={() => void seal()} disabled={locked} data-testid="play-seal">
+      {t('readyToSeal', lang)}
+    </Button>
+  ) : status === 'NEEDS_LABEL_PHOTO' && needLabel.length > 0 ? (
+    <>
+      <Button block icon="label" onClick={() => void tap({ purpose: 'label_closeup', sku: needLabel[0] })} disabled={locked} data-testid="play-label">
+        {t('showLabel', lang)}: {nameOf(PM.get(needLabel[0]), lang)}
+      </Button>
+      <Button block variant="secondary" icon="camera" onClick={() => void tap({ purpose: 'pack_check' })} disabled={locked}>
+        {t('checkAgain', lang)}
+      </Button>
+    </>
+  ) : (
+    <Button block icon="camera" onClick={() => void tap({ purpose: 'pack_check' })} disabled={locked || box.length === 0} data-testid="play-check">
+      {t('checkAgain', lang)}
+    </Button>
+  );
+
   return (
-    <main className="mx-auto grid w-full max-w-6xl flex-1 gap-4 p-4 pb-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]" data-testid="play-bench" data-status={fresh ? status : dirty ? 'DIRTY' : 'START'}>
+    <main
+      className="mx-auto grid w-full max-w-6xl flex-1 gap-4 px-4 pb-10 pt-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]"
+      data-testid="play-bench"
+      data-status={fresh ? status : dirty ? 'DIRTY' : 'START'}
+    >
       {/* ---------------- order + box ---------------- */}
       <div className="flex min-w-0 flex-col gap-4">
-        <section className="rounded-2xl bg-white p-4 shadow-sm">
+        <Card>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h1 className="text-2xl font-bold">
-              {t('order', lang)} #{order.id}
+            <h1 className="type-title m-0">
+              {t('order', lang)} <span className="sp-mono">#{order.id}</span>
             </h1>
-            <button className="text-base text-accent underline" onClick={onPick}>
+            <button className="sp-link min-h-12 bg-transparent text-[16px]" onClick={onPick}>
               {t('otherParcel', lang)}
             </button>
           </div>
           {decision.lines.some((l) => l.alertActive) && !sealed && (
-            <p className="mt-3 rounded-xl border-2 border-warn bg-amber-50 px-3 py-2 text-base font-semibold text-warn" role="alert" data-testid="alert-banner">
-              ⚠ {t('alertBanner', lang)}
-            </p>
+            <Banner tone="warn" role="alert" data-testid="alert-banner">
+              {t('alertBanner', lang)}
+            </Banner>
           )}
-          <ul className="mt-3 flex flex-col gap-2">
+          <ul className="sp-lines" aria-label={t('order', lang)}>
             {decision.lines.map((l) => {
               const p = PM.get(l.sku);
               const bad = fresh && (l.state !== 'present' || !!l.labelSizeMismatch);
-              const note = !fresh
+              const state: LineState = !fresh ? 'idle' : l.state === 'missing' && !l.labelSizeMismatch ? 'missing' : bad ? 'stop' : needLabel.includes(l.sku) ? 'warn' : 'ok';
+              const note: { tone: Tone; text: string; icon?: 'label' } | null = !fresh
                 ? null
                 : l.labelSizeMismatch
-                  ? `${t('labelShows', lang)} ${l.labelSizeMismatch}`
+                  ? { tone: 'stop', text: `${t('labelShows', lang)} ${l.labelSizeMismatch}` }
                   : l.state === 'missing'
-                    ? `${t('missing', lang)} ${l.diff}`
+                    ? { tone: 'stop', text: `${t('missing', lang)} ${l.diff}` }
                     : l.state === 'extra'
-                      ? `${l.diff} ${t('extra', lang)}`
+                      ? { tone: 'stop', text: `${l.diff} ${t('extra', lang)}` }
                       : needLabel.includes(l.sku)
-                        ? t('needsLabel', lang)
-                        : t('correct', lang);
+                        ? { tone: 'warn', text: t('needsLabel', lang), icon: 'label' }
+                        : { tone: 'ok', text: t('correct', lang) };
               return (
-                <li key={l.sku} className={`flex items-center gap-3 rounded-xl border-2 p-2 ${bad ? 'border-bad' : fresh && note === t('correct', lang) ? 'border-ok' : 'border-gray-200'}`} data-testid="play-line" data-sku={l.sku}>
-                  <Pic src={imageOf(l.sku)} alt="" className="h-14 w-14 shrink-0 rounded-lg bg-slate-50 object-contain p-0.5" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-base font-semibold leading-tight">{nameOf(p, lang)}</div>
-                    <div className="mt-0.5 flex flex-wrap gap-1 text-sm">
-                      {p?.size && <span className="rounded-md bg-frame px-1.5 font-bold text-white">{p.size}</span>}
-                      <span className="font-mono text-muted">
-                        {t('shelf', lang)} {p?.location}
-                      </span>
-                      {note && <span className={`rounded-full px-2 font-semibold ${bad ? 'bg-red-50 text-bad' : note === t('correct', lang) ? 'bg-green-50 text-ok' : 'bg-amber-50 text-warn'}`}>{note}</span>}
-                      {fresh && l.sizeVerified && p?.size && <span className="rounded-full bg-green-50 px-2 text-ok">{t('sizeVerifiedTag', lang)} ✓</span>}
-                    </div>
-                  </div>
-                  <span className={`flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl px-2 text-lg font-black ${!fresh ? 'bg-slate-100' : bad ? 'bg-bad text-white' : 'bg-ok text-white'}`}>
-                    {fresh ? `${l.seen}/${l.ordered}` : `×${l.ordered}`}
-                  </span>
-                </li>
+                <OrderLine
+                  key={l.sku}
+                  name={nameOf(p, lang)}
+                  sku={`${t('shelf', lang)} ${p?.location ?? ''}`}
+                  thumb={{ url: imageOf(l.sku) }}
+                  qty={fresh ? `${l.seen} ${t('of', lang)} ${l.ordered}` : `× ${l.ordered}`}
+                  qtyDone={fresh && !bad && l.seen >= l.ordered}
+                  qtyLabel={`${fresh ? l.seen : 0} ${t('of', lang)} ${l.ordered}`}
+                  state={state}
+                  data-testid="play-line"
+                  data-sku={l.sku}
+                  foot={
+                    note && (
+                      <>
+                        <StatusChip tone={note.tone} icon={note.icon}>
+                          {note.text}
+                        </StatusChip>
+                        {l.sizeVerified && p?.size && <StatusChip icon="label">{t('sizeVerifiedTag', lang)}</StatusChip>}
+                      </>
+                    )
+                  }
+                />
               );
             })}
           </ul>
-        </section>
+        </Card>
 
-        <section className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm">
-          <div className="flex items-baseline justify-between gap-2">
-            <h2 className="text-sm font-bold uppercase tracking-wide text-muted">{t('boxTitle', lang)}</h2>
-            {!sealed && box.length > 0 && <span className="text-sm text-muted">{t('boxHint', lang)}</span>}
-          </div>
-
+        <Card eyebrow={t('boxTitle', lang)}>
+          {!sealed && box.length > 0 && <p className="m-0 -mt-1 text-[16px] leading-[22px] text-ink-2">{t('boxHint', lang)}</p>}
           {sealed ? (
-            <div className="flex flex-col items-center gap-3 py-2 text-center" data-testid="sealed">
-              <Pic src="/sample/parcel-sealed.webp" alt={t('sealed', lang)} className="h-48 w-48 object-contain" />
-              <h2 className="text-2xl font-bold text-ok">✓ {t('sealed', lang)}</h2>
-              <p className="text-base">{t('evidenceSaved', lang)}</p>
+            <div className="sp-done" data-testid="sealed">
+              <Pic src="/sample/parcel-sealed.webp" alt={t('sealed', lang)} className="h-44 w-44 object-contain" />
+              <h2 className="type-title m-0 flex items-center gap-2">
+                <Icon name="ok" className="text-ok" />
+                {t('sealed', lang)}
+              </h2>
+              <p className="type-body m-0">{t('evidenceSaved', lang)}</p>
               <div className="grid w-full gap-2 sm:grid-cols-3">
-                <button className="btn-primary" onClick={onNext}>
+                <Button block icon="arrow-right" onClick={onNext}>
                   {t('nextOrder', lang)}
-                </button>
-                <button className="btn-secondary" onClick={onAgain}>
+                </Button>
+                <Button block variant="secondary" onClick={onAgain}>
                   {t('packAgain', lang)}
-                </button>
-                <button className="btn-secondary" onClick={onPick}>
+                </Button>
+                <Button block variant="secondary" onClick={onPick}>
                   {t('otherParcel', lang)}
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <>
-              <div className="relative mx-auto aspect-square w-full max-w-md select-none">
-                <Pic src="/sample/box-open.webp" alt="" className="absolute inset-0 h-full w-full object-contain" />
-                <div
-                  className="absolute grid gap-1"
-                  style={{ top: '24%', bottom: '20%', left: '21%', right: '21%', gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-                  data-testid="box"
-                >
-                  {box.map((u, k) => {
-                    const tone = toneOf(u);
-                    const p = PM.get(u.sku);
-                    return (
-                      <button
-                        key={u.uid}
-                        onClick={() => remove(u.uid)}
-                        disabled={locked}
-                        className={`relative flex min-h-0 items-center justify-center rounded-xl transition ${tone === 'bad' ? 'bg-red-500/15 ring-4 ring-bad' : tone === 'warn' ? 'bg-amber-400/15 ring-4 ring-warn' : tone === 'ok' ? 'ring-4 ring-ok' : 'hover:bg-white/30'}`}
-                        aria-label={`${nameOf(p, lang)} – ${t('boxHint', lang)}`}
-                        data-testid="box-unit"
-                        data-sku={u.sku}
-                        data-tone={tone ?? 'none'}
-                      >
-                        <span className="flex h-full w-full items-center justify-center" style={{ transform: `rotate(${((k * 37) % 9) - 4}deg)` }}>
-                          <Pic src={imageOf(u.sku)} alt={nameOf(p, lang)} className="h-full max-h-full w-full object-contain drop-shadow-md" />
-                        </span>
-                        {tone && (
-                          <span className={`absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full text-base font-black text-white shadow ${tone === 'bad' ? 'bg-bad' : tone === 'warn' ? 'bg-warn' : 'bg-ok'}`}>
-                            {tone === 'bad' ? '✕' : tone === 'warn' ? '?' : '✓'}
+              {fresh && <Verdict d={decision} lang={lang} />}
+              <div className="sp-stage">
+                <div className="play-box">
+                  <Pic src="/sample/box-open.webp" alt="" />
+                  <div className="play-box__grid" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} data-testid="box">
+                    {box.map((u, k) => {
+                      const tone = toneOf(u);
+                      const p = PM.get(u.sku);
+                      return (
+                        <button
+                          key={u.uid}
+                          onClick={() => remove(u.uid)}
+                          disabled={locked}
+                          className={`play-unit ${tone ? `play-unit--${tone}` : ''}`}
+                          aria-label={`${nameOf(p, lang)} – ${t('boxHint', lang)}`}
+                          data-testid="box-unit"
+                          data-sku={u.sku}
+                          data-tone={tone ?? 'none'}
+                        >
+                          <span className="flex h-full w-full items-center justify-center" style={{ transform: `rotate(${((k * 37) % 9) - 4}deg)` }}>
+                            <Pic src={imageOf(u.sku)} alt={nameOf(p, lang)} />
                           </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                {box.length === 0 && (
-                  <p className="absolute inset-x-[24%] top-1/2 -translate-y-1/2 text-center text-base font-semibold text-amber-900/70">{t('boxEmpty', lang)}</p>
-                )}
-                {busy === 'capture' && (
-                  <div className="absolute inset-[18%] flex items-center justify-center rounded-2xl bg-accent/15 ring-4 ring-accent" aria-live="polite">
-                    <span className="animate-pulse rounded-full bg-accent px-4 py-2 text-lg font-bold text-white">{t('checking', lang)}</span>
+                          {tone && (
+                            <span className="play-unit__mark" aria-hidden>
+                              <Icon name={UNIT_ICON[tone]} />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
-                )}
+                  {box.length === 0 && <p className="play-box__empty">{t('boxEmpty', lang)}</p>}
+                </div>
+                <div className="sp-stage__meta">
+                  <span>
+                    {t('order', lang)} {order.id}
+                  </span>
+                  <span>
+                    {box.length} {t('items', lang)}
+                  </span>
+                </div>
               </div>
-
-              {dirty && (
-                <p className="rounded-xl bg-amber-50 px-4 py-3 text-base font-semibold text-warn" data-testid="box-changed">
-                  {t('boxChanged', lang)}
+              {busy === 'capture' && (
+                <p className="sp-busy m-0" aria-live="polite">
+                  {t('checking', lang)}
                 </p>
               )}
-              {fresh && <Verdict d={decision} lang={lang} />}
+              {dirty && (
+                <Banner tone="warn" data-testid="box-changed">
+                  {t('boxChanged', lang)}
+                </Banner>
+              )}
               {fresh && status === 'MISMATCH' && decision.unexpected.length > 0 && (
-                <ul className="flex flex-col gap-1">
+                <ul className="m-0 flex list-none flex-wrap gap-2 p-0" data-testid="unexpected">
                   {decision.unexpected.map((u, k) => (
-                    <li key={k} className="rounded-xl bg-red-50 px-3 py-2 text-base font-semibold text-bad">
-                      ✕ {t('notInOrder', lang)}: {nameOf(u.sku ? PM.get(u.sku) : undefined, lang)}
+                    <li key={k}>
+                      <StatusChip tone="stop">
+                        {t('notInOrder', lang)}: {nameOf(u.sku ? PM.get(u.sku) : undefined, lang)}
+                      </StatusChip>
                     </li>
                   ))}
                 </ul>
               )}
               {label && (
-                <div className={`flex items-center gap-3 rounded-xl px-3 py-2 ${labelOk ? 'bg-green-50 text-ok' : 'bg-red-50 text-bad'}`} data-testid="label-result">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-current bg-white text-xl font-black">{label.sizeRead ?? '?'}</span>
-                  <span className="text-base font-semibold">
+                <div className={`play-label ${labelOk ? 'text-ok' : 'text-stop'}`} data-testid="label-result">
+                  <span className="play-label__size">{label.sizeRead ?? '?'}</span>
+                  <StatusChip tone={labelOk ? 'ok' : 'stop'} icon="label">
                     {t('labelShows', lang)} {label.sizeRead ?? '?'} · {nameOf(PM.get(label.sku), lang)}
-                  </span>
+                  </StatusChip>
                 </div>
               )}
-
-              <div className="flex flex-col gap-2">
-                {!fresh ? (
-                  <button className="btn-primary min-h-16 text-2xl" onClick={() => void tap({ purpose: 'pack_check' })} disabled={locked || box.length === 0} data-testid="play-check">
-                    {checked ? t('checkAgain', lang) : t('check', lang)}
-                  </button>
-                ) : decision.canSeal ? (
-                  <button className="btn min-h-16 bg-ok text-2xl text-white" onClick={() => void seal()} disabled={locked} data-testid="play-seal">
-                    {t('readyToSeal', lang)}
-                  </button>
-                ) : status === 'NEEDS_LABEL_PHOTO' && needLabel.length > 0 ? (
-                  <>
-                    <button className="btn min-h-16 bg-warn text-xl text-white" onClick={() => void tap({ purpose: 'label_closeup', sku: needLabel[0] })} disabled={locked} data-testid="play-label">
-                      {t('showLabel', lang)}: {nameOf(PM.get(needLabel[0]), lang)}
-                    </button>
-                    <button className="btn-secondary" onClick={() => void tap({ purpose: 'pack_check' })} disabled={locked}>
-                      {t('checkAgain', lang)}
-                    </button>
-                  </>
-                ) : (
-                  <button className="btn-primary min-h-16 text-2xl" onClick={() => void tap({ purpose: 'pack_check' })} disabled={locked || box.length === 0} data-testid="play-check">
-                    {t('checkAgain', lang)}
-                  </button>
-                )}
-              </div>
+              <div className="flex flex-col gap-2">{main}</div>
             </>
           )}
-        </section>
+        </Card>
       </div>
 
-      {/* ---------------- shelf + loop ---------------- */}
+      {/* ---------------- shelf, coach, loop ---------------- */}
       <div className="flex min-w-0 flex-col gap-4">
         {voice && (
-          <section className="order-2 flex flex-col gap-1 lg:order-none" data-testid="play-voice">
-            <p className="px-1 text-sm text-muted">{t('voiceHint', lang)}</p>
+          <Card eyebrow={<><Icon name="mic" />{t('voiceHint', lang)}</>} className="order-2 lg:order-none" data-testid="play-voice">
             <PlayVoice station={station} lang={lang} onLangChange={setLang} {...mic} />
-          </section>
+          </Card>
         )}
-        <section className="order-1 rounded-2xl bg-white p-4 shadow-sm lg:order-none" aria-labelledby="shelf-title">
-          <h2 id="shelf-title" className="text-sm font-bold uppercase tracking-wide text-muted">
-            {t('shelfTitle', lang)}
-          </h2>
-          <p className="mb-3 text-sm text-muted">{t('shelfHint', lang)}</p>
-          <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3">
+        <Card eyebrow={t('shelfTitle', lang)} className="order-1 lg:order-none" aria-labelledby="shelf-title">
+          <p id="shelf-title" className="m-0 text-[16px] leading-[22px] text-ink-2">
+            {t('shelfHint', lang)}
+          </p>
+          <ul className="m-0 grid list-none grid-cols-3 gap-2 p-0 sm:grid-cols-4 lg:grid-cols-3">
             {parcel.shelf.map((sku) => {
               const p = PM.get(sku);
               const n = inBox(sku);
               return (
                 <li key={sku}>
-                  <button
-                    onClick={() => add(sku)}
-                    disabled={locked}
-                    className="relative flex h-full w-full flex-col items-center gap-1 rounded-xl border-2 border-gray-200 bg-white p-2 text-center transition hover:border-accent active:scale-95 disabled:opacity-50"
-                    data-testid="shelf-item"
-                    data-sku={sku}
-                  >
-                    <Pic src={imageOf(sku)} alt="" className="aspect-square w-full rounded-lg bg-slate-50 object-contain p-1" />
-                    <span className="text-sm font-semibold leading-tight">{nameOf(p, lang)}</span>
-                    <span className="flex items-center gap-1 text-xs">
-                      {p?.size && <span className="rounded bg-frame px-1.5 text-sm font-bold text-white">{p.size}</span>}
-                      <span className="font-mono text-muted">{p?.location}</span>
+                  <button onClick={() => add(sku)} disabled={locked} className="play-tile" data-testid="shelf-item" data-sku={sku}>
+                    <Pic src={imageOf(sku)} alt="" />
+                    <span className="play-tile__name">{nameOf(p, lang)}</span>
+                    <span className="play-tile__meta">
+                      {p?.size && <span className="play-size">{p.size}</span>}
+                      {p?.location}
                     </span>
                     {n > 0 && (
-                      <span className="absolute right-1 top-1 rounded-full bg-accent px-2 text-sm font-bold text-white" aria-label={`${n} ${t('inBox', lang)}`}>
+                      <span className="play-count" aria-label={`${n} ${t('inBox', lang)}`}>
                         {n}
                       </span>
                     )}
@@ -565,13 +568,12 @@ function Bench({
               );
             })}
           </ul>
-        </section>
+        </Card>
         <div className="order-3 flex flex-col gap-4 lg:order-none">
           <Mixups session={session} lang={lang} />
-          <p className="px-1 text-sm text-muted">{t('practiceNote', lang)}</p>
+          <p className="m-0 px-1 text-[15px] leading-[21px] text-ink-2">{t('practiceNote', lang)}</p>
         </div>
       </div>
-
     </main>
   );
 }

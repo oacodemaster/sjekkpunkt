@@ -107,7 +107,7 @@ const nb: GuideContent = {
   },
   languages: {
     title: 'Bytte språk',
-    text: 'Velg språk med språkvelgeren øverst på siden (🌐). Valget huskes på enheten. For innloggede medarbeidere blir det også språket coachen starter på. Admin bestemmer hvilke språk som er slått på.',
+    text: 'Velg språk med språkknappen øverst på siden (for eksempel «NB»). Valget huskes på enheten. For innloggede medarbeidere blir det også språket coachen starter på. Admin bestemmer hvilke språk som er slått på.',
   },
   privacy: {
     title: 'Personvern i korte trekk',
@@ -220,7 +220,7 @@ const en: GuideContent = {
   },
   languages: {
     title: 'Switching language',
-    text: 'Pick a language with the switcher at the top of the page (🌐). The choice is remembered on the device. For signed-in workers it is also the language the coach starts in. The admin decides which languages are switched on.',
+    text: 'Pick a language with the language button at the top of the page (for example "EN"). The choice is remembered on the device. For signed-in workers it is also the language the coach starts in. The admin decides which languages are switched on.',
   },
   privacy: {
     title: 'Privacy in short',

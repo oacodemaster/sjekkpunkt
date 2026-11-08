@@ -19,5 +19,7 @@ export default async function PlayPage({ searchParams }: PageProps<'/play'>) {
   const sp = await searchParams;
   const lang = await requestLang(undefined, sp.lang);
   const voice = process.env.DEMO_ENABLED === 'true' && !!agentIdFor('pack') && !!process.env.ELEVENLABS_API_KEY;
-  return <PlayApp lang={lang} voice={voice} />;
+  // ?parcel=4102 opens that parcel at once (the front page links each sample parcel's photo).
+  const parcel = typeof sp.parcel === 'string' ? sp.parcel : undefined;
+  return <PlayApp lang={lang} voice={voice} initialParcel={parcel} />;
 }
