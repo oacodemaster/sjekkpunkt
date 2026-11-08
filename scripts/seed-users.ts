@@ -3,16 +3,10 @@
 
 import { config } from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+import { SEED_USERS } from '../lib/auth/demo-users';
 import { WAREHOUSE_ID } from '../lib/demo/seed';
 
 config({ path: '.env.local', quiet: true });
-
-export const SEED_USERS = [
-  { role: 'packer', email: 'packer@sjekkpunkt.test', lang: 'pl', name: 'Pakker 1' },
-  { role: 'returns', email: 'returns@sjekkpunkt.test', lang: 'uk', name: 'Retur 1' },
-  { role: 'lead', email: 'lead@sjekkpunkt.test', lang: 'nb', name: 'Teamleder' },
-  { role: 'admin', email: 'admin@sjekkpunkt.test', lang: 'nb', name: 'Admin' },
-] as const;
 
 async function main() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;

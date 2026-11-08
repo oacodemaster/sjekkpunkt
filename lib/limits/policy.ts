@@ -51,6 +51,23 @@ export const PLAY_VOICE_LIMITS: { perVisitor: Window[]; total: Window[] } = {
   ],
 };
 
+/**
+ * The one-tap demo sign-in on /login (packer, returns, lead) needs no password, so it is limited
+ * per visitor (hashed IP) and in total. Signing in costs nothing by itself; what the visitor does
+ * next is limited per user and by the daily caps like any signed-in call. The total also keeps
+ * the sign-ins well under Supabase Auth's own per-IP limits, which all count against the server.
+ */
+export const QUICK_SIGNIN_LIMITS: { perVisitor: Window[]; total: Window[] } = {
+  perVisitor: [
+    { window: 60, limit: 6 },
+    { window: 3600, limit: 30 },
+  ],
+  total: [
+    { window: 60, limit: 30 },
+    { window: 3600, limit: 200 },
+  ],
+};
+
 /** Which daily budget a route spends from. */
 export const ROUTE_PROVIDER: Record<LimitedRoute, Provider> = {
   vision: 'vision',

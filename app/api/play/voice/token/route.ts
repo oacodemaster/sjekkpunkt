@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { fail } from '@/lib/api/http';
 import { WAREHOUSE_ID } from '@/lib/demo/seed';
-import { limitPlayVoice, limitResponse } from '@/lib/limits/server';
+import { clientIp, limitPlayVoice, limitResponse } from '@/lib/limits/server';
 import { COST_ORE } from '@/lib/limits/policy';
 import { PLAY_KEYTERMS } from '@/lib/play/keyterms';
 import { agentIdFor, mintConversationToken } from '@/lib/voice/server';
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
   const agentId = agentIdFor('pack');
   if (!agentId) return fail('voice_not_configured', 503);
-  const limit = await limitPlayVoice(WAREHOUSE_ID, visitor(req));
+  const limit = await limitPlayVoice(WAREHOUSE_ID, clientIp(req.headers));
   if (!limit.ok) return limitResponse(limit);
 
   const token = await mintConversationToken(agentId);
@@ -37,7 +37,3 @@ function sameOrigin(req: NextRequest): boolean {
   return !!origin && origin === req.nextUrl.origin;
 }
 
-/** Vercel sets x-forwarded-for itself; the first entry is the client. Only its hash is stored. */
-function visitor(req: NextRequest): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
-}

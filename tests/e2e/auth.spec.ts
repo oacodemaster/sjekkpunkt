@@ -70,3 +70,37 @@ test('admin lands on admin and sees settings and users', async ({ page }) => {
   await page.getByRole('button', { name: 'Logg ut' }).click();
   await expect(page).toHaveURL(/\/login/);
 });
+
+// One-tap demo sign-in (DEMO_ENABLED=true): packer, returns and lead, never admin.
+test.describe('one-tap demo sign-in', () => {
+  test('a packer tap lands on the pack queue with the demo handheld, no password, no device step', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.getByTestId('quick-admin')).toHaveCount(0);
+    await page.getByTestId('quick-packer').click();
+    await expect(page).toHaveURL(/\/pack$/);
+    await expect(page.getByRole('heading', { name: 'Zamówienia do spakowania' })).toBeVisible();
+    await expect(page.getByText('device-07')).toBeVisible();
+  });
+
+  test('returns and lead taps land on their screens; next= is kept', async ({ page, context }) => {
+    await page.goto('/login');
+    await page.getByTestId('quick-returns').click();
+    await expect(page).toHaveURL(/\/return$/);
+    await expect(page.getByText('device-03')).toBeVisible();
+
+    await context.clearCookies();
+    await page.goto('/insights');
+    await expect(page).toHaveURL(/\/login\?next=%2Finsights/);
+    await page.getByTestId('quick-lead').click();
+    await expect(page).toHaveURL(/\/insights$/);
+  });
+
+  test('a tampered role (admin) is refused and stays signed out', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByTestId('quick-lead').evaluate((b) => b.setAttribute('value', 'admin'));
+    await page.getByTestId('quick-lead').click();
+    await expect(page.getByText('Demo sign-in is not available right now')).toBeVisible();
+    await page.goto('/admin');
+    await expect(page).toHaveURL(/\/login/);
+  });
+});

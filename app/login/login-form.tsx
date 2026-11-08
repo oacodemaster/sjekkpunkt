@@ -9,7 +9,8 @@ const ERRORS: Record<string, string> = {
   noProfile: 'Brukeren har ingen rolle ennå · This user has no role yet',
 };
 
-export function LoginForm({ next }: { next?: string }) {
+/** `secondary` when the demo's one-tap buttons sit above it, so they keep the main action. */
+export function LoginForm({ next, secondary }: { next?: string; secondary?: boolean }) {
   const [state, action, pending] = useActionState<SignInState, FormData>(signIn, {});
 
   return (
@@ -22,7 +23,7 @@ export function LoginForm({ next }: { next?: string }) {
           {ERRORS[state.error] ?? state.error}
         </Banner>
       )}
-      <Button type="submit" block disabled={pending}>
+      <Button type="submit" block disabled={pending} variant={secondary ? 'secondary' : 'primary'}>
         {pending ? '…' : 'Logg inn'}
       </Button>
     </form>

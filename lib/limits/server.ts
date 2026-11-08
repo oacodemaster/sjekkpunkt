@@ -5,7 +5,7 @@ import { SETTING_DEFAULTS } from '@/lib/admin/settings';
 import { settingsSchema } from '@/lib/admin/schemas';
 import { getDeviceLabel, type CurrentUser } from '@/lib/auth/dal';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { overCap, PLAY_VOICE_LIMITS, RATE_LIMITS, ROUTE_PROVIDER, type LimitedRoute, type Provider } from './policy';
+import { overCap, PLAY_VOICE_LIMITS, QUICK_SIGNIN_LIMITS, RATE_LIMITS, ROUTE_PROVIDER, type LimitedRoute, type Provider } from './policy';
 
 // Server side of rate limits and spend caps (M8). Counters live in Postgres (api_gate,
 // record_spend) because serverless instances share no memory. A database error fails open with a
@@ -86,6 +86,29 @@ export async function limitPlayVoice(warehouseId: string, visitor: string): Prom
   if (!g.ok) return { ok: false, reason: 'rate_limited', retryAfter: g.retry_after };
   if (overCap(g.spent_ore, cap / 100)) return { ok: false, reason: 'spend_cap' };
   return { ok: true, record: recorder(warehouseId, provider, cap) };
+}
+
+/**
+ * The one-tap demo sign-in has no user yet: counted per visitor (a hash of the IP) and in total.
+ * Fails closed like the practice demo. True when the sign-in may go ahead.
+ */
+export async function limitQuickSignIn(visitor: string): Promise<{ ok: true } | { ok: false; retryAfter: number }> {
+  const checks = [
+    ...QUICK_SIGNIN_LIMITS.perVisitor.map((w) => ({ key: hash(`quick_signin|v|${visitor}|${w.window}`), window: w.window, limit: w.limit })),
+    ...QUICK_SIGNIN_LIMITS.total.map((w) => ({ key: hash(`quick_signin|all|${w.window}`), window: w.window, limit: w.limit })),
+  ];
+  const gate = await createAdminClient().rpc('api_gate', { p: { checks } });
+  if (gate.error) {
+    console.error('[limits] api_gate failed:', gate.error.message);
+    return { ok: false, retryAfter: 60 };
+  }
+  const g = gate.data as { ok: boolean; retry_after: number };
+  return g.ok ? { ok: true } : { ok: false, retryAfter: g.retry_after };
+}
+
+/** The visitor's address for the public limits. Vercel sets x-forwarded-for itself; the first entry is the client. Only its hash is stored. */
+export function clientIp(headers: Headers): string {
+  return headers.get('x-forwarded-for')?.split(',')[0]?.trim() || headers.get('x-real-ip') || 'unknown';
 }
 
 /** Spend check without a rate limit, for paid calls made inside other routes (note translation). */
