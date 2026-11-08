@@ -21,7 +21,8 @@ const eslintConfig = defineConfig([
       ],
     },
   },
-  globalIgnores(["public/elevenlabs/**"]),
+  // .claude/ holds local git worktrees (other branches, with their own builds); not this tree.
+  globalIgnores(["public/elevenlabs/**", ".claude/**"]),
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
