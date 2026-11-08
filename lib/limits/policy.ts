@@ -35,6 +35,22 @@ export const RATE_LIMITS: Record<LimitedRoute, Window[]> = {
   ],
 };
 
+/**
+ * The public practice demo (/play) mints voice sessions without a login, so it is limited per
+ * visitor (hashed IP) and in total across all visitors, on top of the daily ElevenLabs cap. The
+ * total keeps one busy day of visitors from using up the stations' budget.
+ */
+export const PLAY_VOICE_LIMITS: { perVisitor: Window[]; total: Window[] } = {
+  perVisitor: [
+    { window: 60, limit: 3 },
+    { window: 3600, limit: 10 },
+  ],
+  total: [
+    { window: 3600, limit: 40 },
+    { window: 86400, limit: 150 },
+  ],
+};
+
 /** Which daily budget a route spends from. */
 export const ROUTE_PROVIDER: Record<LimitedRoute, Provider> = {
   vision: 'vision',

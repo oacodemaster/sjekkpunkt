@@ -18,6 +18,7 @@ const sameTarget = (a: PackCameraTarget | null, b: PackCameraTarget) =>
 export function PackVoice({
   station,
   lang,
+  languages,
   onLangChange,
   talk,
   setTalk,
@@ -26,6 +27,8 @@ export function PackVoice({
 }: {
   station: PackStation;
   lang: Lang;
+  /** the languages the admin enabled (the dock's language chip) */
+  languages?: readonly Lang[];
   onLangChange: (l: Lang) => void;
   talk: boolean;
   setTalk: (v: boolean) => void;
@@ -104,6 +107,7 @@ export function PackVoice({
       dynamicVariables={{ order_number: station.view.order.id }}
       firstMessage={(l) => PACK_FIRST_MESSAGES[l].replace('{{order_number}}', station.view.order.id)}
       lang={lang}
+      languages={languages}
       onLangChange={onLangChange}
       talk={talk}
       setTalk={setTalk}

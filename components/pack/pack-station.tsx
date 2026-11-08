@@ -22,7 +22,7 @@ const REASONS: { v: ManualReason; key: StringKey }[] = [
 ];
 
 /** The verdict banner from the brief: red «Feil vare», amber «Vis etiketten», green «Klar til forsegling». */
-function Verdict({ d, lang }: { d: PackDecision; lang: Lang }) {
+export function Verdict({ d, lang }: { d: PackDecision; lang: Lang }) {
   const { seen, ordered } = unitCount(d);
   const conf: Record<PackDecision['status'], { tone: Tone; title: string; text?: string }> = {
     MISMATCH: { tone: 'stop', title: t('wrongItem', lang), text: t('packMismatchMsg', lang) },

@@ -27,7 +27,8 @@ function apiRoutes(dir = 'app/api'): Route[] {
   }
   return out;
 }
-const PUBLIC_ROUTES = [/^\/api\/health$/, /^\/api\/cron\//];
+// /api/play/ is the practice demo's voice token: no session, but same-origin only (checked below).
+const PUBLIC_ROUTES = [/^\/api\/health$/, /^\/api\/cron\//, /^\/api\/play\//];
 
 /** Who may call each group of routes (addendum section 6). Unlisted routes are checked in their own specs. */
 const ALLOWED: [RegExp, string[]][] = [
@@ -64,6 +65,8 @@ test('every API route refuses a visitor without a session', async ({ page }) => 
       const res = await call(page, m, r.path);
       if (PUBLIC_ROUTES.some((re) => re.test(r.path))) {
         if (r.path.startsWith('/api/cron/')) expect(res.status(), `${m} ${r.path}`).toBe(401); // needs CRON_SECRET
+        // A script without the browser's same-origin header never gets a token (nothing is minted).
+        if (r.path.startsWith('/api/play/')) expect(res.status(), `${m} ${r.path}`).toBe(403);
         continue;
       }
       expect(res.status(), `${m} ${r.path}`).toBe(401);
@@ -124,6 +127,13 @@ test('pages carry a nonce CSP and the security headers, and render with no CSP v
   // The demo runs scripted (images, audio, director bar) under the same policy.
   await page.goto('/demo');
   await expect(page.getByTestId('lang-chip')).toBeVisible(); // on every screen size (the station tabs are projector-only)
+  await page.waitForLoadState('networkidle');
+  // The public guide and practice demo (sample photos, the practice bench) under the same policy.
+  await page.goto('/guide');
+  await page.waitForLoadState('networkidle');
+  await page.goto('/play');
+  await page.locator('[data-testid=parcel][data-order="4102"]').click();
+  await expect(page.getByTestId('play-bench')).toBeVisible();
   await page.waitForLoadState('networkidle');
 
   for (const [role, path] of [

@@ -52,6 +52,7 @@ a bug that loops, and anyone who gets hold of a key.
 |---|---|---|
 | A loop or script burns the AI budget | Rate limits per user and per device on vision, voice token, translate and TTS, counted in Postgres (`lib/limits/`, `api_gate`) | `security.spec.ts` (429 + Retry-After), `hardening.test.ts` |
 | Slow, steady overspend | Daily spend caps per provider from settings; over the cap the stations go tap-only with a clear message and the lead sees a `SPEND_CAP_REACHED` audit row | `security.spec.ts` (tap-only banner, `spend_cap`) |
+| Strangers spend the voice budget through the public practice demo (`/play`) | `/api/play/voice/token` answers only with `DEMO_ENABLED=true` and only to a same-origin browser request (`Sec-Fetch-Site`), so another site cannot spend from its visitors' browsers; 3 a minute and 10 an hour per visitor (hashed IP), 40 an hour and 150 a day in total, then the daily ElevenLabs cap; unlike the signed-in routes it fails closed. The coach's practice tools touch only the on-screen box, never the database | `security.spec.ts` (403 without the same-origin header), `voice-live-play.spec.ts` |
 | Long or hanging calls | Vision 8 s total, translation 4 s, voice sessions 15 min max, 500 sessions a day per agent at ElevenLabs, spoken summaries generated once and cached | `rules.test.ts` P9, `agent-config.test.ts` |
 
 ## Web basics (OWASP Top 10)
@@ -65,7 +66,8 @@ high or critical in production packages (A06). Cron is protected by `CRON_SECRET
 
 ## Accepted risks
 
-- Limits fail open if the database is down (the route fails on the same database a moment later).
+- Limits fail open if the database is down (the route fails on the same database a moment later). The public practice token route fails closed.
+- A visitor behind changing IPs can take more practice voice sessions than the per-visitor limit; the total limits and the daily cap still hold.
 - Spend is an estimate per call, not the provider's invoice (`lib/limits/policy.ts`).
 - `style-src 'unsafe-inline'` remains for React style attributes; styles cannot run script.
 - One moderate advisory in a lint-only dev dependency (minimatch via eslint-config-next); not shipped.

@@ -1,9 +1,11 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { getCurrentUser, HOME } from '@/lib/auth/dal';
 import type { Lang } from '@/lib/engine/types';
+import { LANG_COOKIE, LANG_COOKIE_MAX_AGE } from '@/lib/i18n/lang';
 import { LANGS } from '@/lib/i18n/strings';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { enabledLanguages } from './server';
@@ -21,6 +23,7 @@ export async function chooseLanguage(formData: FormData) {
   if (!lang.success || !enabled.includes(lang.data)) redirect('/welcome');
   const { error } = await createAdminClient().from('profiles').update({ preferred_lang: lang.data }).eq('user_id', user.userId);
   if (error) throw new Error(`profile: ${error.message}`);
+  (await cookies()).set(LANG_COOKIE, lang.data, { path: '/', maxAge: LANG_COOKIE_MAX_AGE, sameSite: 'lax', httpOnly: true, secure: process.env.NODE_ENV === 'production' });
   redirect(user.privacyInfoReadAt ? HOME[user.role] : '/privacy?first=1');
 }
 

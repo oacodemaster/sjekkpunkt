@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { buildCsp, makeNonce } from '@/lib/security/csp';
 
 // Paths that work without a session. /api/cron/ checks CRON_SECRET itself (Vercel Cron has no session).
-const PUBLIC = [/^\/$/, /^\/login/, /^\/privacy/, /^\/demo/, /^\/api\/health/, /^\/api\/cron\//];
+// /guide and /play are public; /api/play/ guards itself (demo flag, same origin, rate limits).
+const PUBLIC = [/^\/$/, /^\/login/, /^\/privacy/, /^\/demo/, /^\/guide/, /^\/play/, /^\/api\/health/, /^\/api\/cron\//, /^\/api\/play\//];
 
 /**
  * Refreshes the Supabase session once per navigation (the only place that does)

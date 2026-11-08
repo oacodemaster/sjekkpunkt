@@ -19,6 +19,7 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | M8 Hardening | Done 2026-11-07 (see M8 notes below) |
 | M9 Stage readiness | Done 2026-11-07 (see M9 notes below); the prop test in `docs/test-plan.md` is still to be run with real props |
 | D1 Design system | Done 2026-11-08, live (see D1 notes below) |
+| P1 Guide, practice demo, languages | Built 2026-11-08, not yet deployed (see P1 notes below) |
 | S1 | Not started |
 
 ## Stack
@@ -102,6 +103,10 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 - The Sjekkpunkt design system (artifact https://claude.ai/artifact/Lpy68JFc9X9VfvtGVM92ga) on every screen, visual layer only.
 
 **D1 notes.** Built: `design/tokens.json` (a copy of the design system's tokens) and `pnpm design:tokens`, which writes `app/tokens.css` for Tailwind 4 (a unit test fails when they drift and checks the contrast of every colour pair the app uses); the design system's status colours replace the brief's. Golos Text and JetBrains Mono through `next/font` (latin, latin-ext, cyrillic, cyrillic-ext), self-hosted, so the CSP did not change. `app/ui.css`: the design system's `bundle.css` verbatim, then the app's additions (segmented choices, checkboxes, desk tables, stats, the sticky thumb zone, the front page), then the `.holio` scope, which uses no Sjekkpunkt token. The components in `components/ui/`, the logos in `public/brand/` and the icons copied by blob id. Every screen restyled: the front page (Forside) with the loop and «Se demoen», the signed-out pages, both stations (verdict first, photo on stage, the main action and the voice dock in a thumb zone that stays mounted while the camera is open), the lead console, insights, admin, the Holio mock and the demo stage (dark frame, lime on the active scene). No data-testid, role or accessible name changed. Choices in `docs/decisions.md` («The Sjekkpunkt design system in the app»). Left open on purpose, because they need strings in six languages or data the app lacks: grade words and caption speaker labels at the station, «Bilde» in the step count, the shelf-plate note, the «Motorens forslag» label, order-line thumbnails, and a tappable language chip in the header (no in-shift language picker yet).
+
+### P1 Guide, practice demo and language switching (owner request, 2026-11-08)
+
+**P1 notes.** Built: a language switcher on every worker and public page (cookie + `preferred_lang`, enabled languages only, stations follow without a reload, the voice dock offers only enabled languages); `/guide`, a public guide in Norwegian and English; 20 sample images from Media Master in `public/sample/` (`docs/generated-images.md`); `/play`, a public practice demo where anyone packs five sample parcels on screen with the real engine, a practice camera that sees colours but not garment sizes, a session mix-up loop that raises packing alerts, earcons, and the real packing coach to talk to (`/api/play/voice/token`). The start page is localised and links to both. Tests: `lib/play/play.test.ts`, `lib/i18n/lang.test.ts`, `tests/e2e/play.spec.ts`, `tests/e2e/voice-live-play.spec.ts` (opt-in), the security spec knows the public route. Choices in `docs/decisions.md` (2026-11-08). Left open: native review of the new pl/uk/ro/lt strings; the lead and admin screens stay Norwegian.
 
 ### S1 Stretch
 - R18 customer photo / transit damage, Shopify dev store import, more languages.

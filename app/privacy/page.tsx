@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getCurrentUser, HOME } from '@/lib/auth/dal';
 import type { Lang } from '@/lib/engine/types';
 import { PRIVACY } from '@/lib/i18n/privacy-strings';
+import { requestLang } from '@/lib/i18n/server';
 import { LANG_NAMES } from '@/lib/i18n/strings';
 import { acknowledgePrivacy } from '@/lib/privacy/actions';
 import { privacySettings } from '@/lib/privacy/server';
@@ -18,8 +19,8 @@ export default async function PrivacyPage({ searchParams }: PageProps<'/privacy'
   const user = await getCurrentUser();
   const sp = await searchParams;
   const { languages, retentionDays } = await privacySettings(user?.warehouseId);
-  const asked = typeof sp.lang === 'string' ? (sp.lang as Lang) : null;
-  const lang: Lang = asked && languages.includes(asked) ? asked : user && languages.includes(user.lang) ? user.lang : 'nb';
+  // ?lang= from the chips here, else the switcher's choice, the worker's language, the browser's.
+  const lang: Lang = await requestLang(languages, sp.lang);
   const text = PRIVACY[lang];
   const fill = (s: string) => s.replace('{days}', String(retentionDays));
   const first = sp.first === '1' && !!user && !user.privacyInfoReadAt;

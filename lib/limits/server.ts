@@ -5,7 +5,7 @@ import { SETTING_DEFAULTS } from '@/lib/admin/settings';
 import { settingsSchema } from '@/lib/admin/schemas';
 import { getDeviceLabel, type CurrentUser } from '@/lib/auth/dal';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { overCap, RATE_LIMITS, ROUTE_PROVIDER, type LimitedRoute, type Provider } from './policy';
+import { overCap, PLAY_VOICE_LIMITS, RATE_LIMITS, ROUTE_PROVIDER, type LimitedRoute, type Provider } from './policy';
 
 // Server side of rate limits and spend caps (M8). Counters live in Postgres (api_gate,
 // record_spend) because serverless instances share no memory. A database error fails open with a
@@ -64,6 +64,28 @@ export async function limitCall(user: CurrentUser, route: LimitedRoute): Promise
   if (!g.ok) return { ok: false, reason: 'rate_limited', retryAfter: g.retry_after };
   if (overCap(g.spent_ore, cap / 100)) return { ok: false, reason: 'spend_cap' };
   return { ok: true, record: recorder(user.warehouseId, provider, cap) };
+}
+
+/**
+ * limitCall for the public practice demo, which has no user: counted per visitor (a hash of the
+ * IP, never stored in clear) and in total, then today's ElevenLabs spend for the warehouse.
+ */
+export async function limitPlayVoice(warehouseId: string, visitor: string): Promise<LimitResult> {
+  const provider: Provider = 'elevenlabs';
+  const checks = [
+    ...PLAY_VOICE_LIMITS.perVisitor.map((w) => ({ key: hash(`play_voice|v|${visitor}|${w.window}`), window: w.window, limit: w.limit })),
+    ...PLAY_VOICE_LIMITS.total.map((w) => ({ key: hash(`play_voice|all|${w.window}`), window: w.window, limit: w.limit })),
+  ];
+  const [gate, cap] = await Promise.all([createAdminClient().rpc('api_gate', { p: { warehouse_id: warehouseId, provider, checks } }), capOre(warehouseId, provider)]);
+  // Unlike the signed-in routes this fails closed: a public route must not spend without a count.
+  if (gate.error) {
+    console.error('[limits] api_gate failed:', gate.error.message);
+    return { ok: false, reason: 'rate_limited', retryAfter: 60 };
+  }
+  const g = gate.data as { ok: boolean; retry_after: number; spent_ore: number };
+  if (!g.ok) return { ok: false, reason: 'rate_limited', retryAfter: g.retry_after };
+  if (overCap(g.spent_ore, cap / 100)) return { ok: false, reason: 'spend_cap' };
+  return { ok: true, record: recorder(warehouseId, provider, cap) };
 }
 
 /** Spend check without a rate limit, for paid calls made inside other routes (note translation). */

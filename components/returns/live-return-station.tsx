@@ -76,13 +76,13 @@ function withTapUpdates(station: ReturnStation, voice: VoiceLink): ReturnStation
   };
 }
 
-export function LiveReturnStation({ view, lang }: { view: ReturnView; lang: Lang }) {
+export function LiveReturnStation({ view, lang, languages }: { view: ReturnView; lang: Lang; languages?: readonly Lang[] }) {
   const [talk, setTalk] = useState(false);
   const [handsFree, setHandsFree] = useState(false);
   return (
     // Push-to-talk: the mic is muted unless the button is held or hands-free is on.
     <ConversationProvider isMuted={!(talk || handsFree)}>
-      <StationWithVoice view={view} lang={lang} talk={talk} setTalk={setTalk} handsFree={handsFree} setHandsFree={setHandsFree} />
+      <StationWithVoice view={view} lang={lang} languages={languages} talk={talk} setTalk={setTalk} handsFree={handsFree} setHandsFree={setHandsFree} />
     </ConversationProvider>
   );
 }
@@ -90,10 +90,12 @@ export function LiveReturnStation({ view, lang }: { view: ReturnView; lang: Lang
 function StationWithVoice({
   view,
   lang,
+  languages,
   ...mic
 }: {
   view: ReturnView;
   lang: Lang;
+  languages?: readonly Lang[];
   talk: boolean;
   setTalk: (v: boolean) => void;
   handsFree: boolean;
@@ -104,6 +106,12 @@ function StationWithVoice({
   const raw = useReturnStation(view, port);
   const station = withEarcons(raw);
   const [uiLang, setUiLang] = useState<Lang>(lang);
+  // The header's language switcher changes the worker's language: follow it without a reload.
+  const [fromHeader, setFromHeader] = useState<Lang>(lang);
+  if (lang !== fromHeader) {
+    setFromHeader(lang);
+    setUiLang(lang);
+  }
   const voice = useVoiceLink();
   // Alert when a photo raises a new red flag on the item in front of the worker.
   const flags = raw.decision.flags.join(',');
@@ -125,7 +133,7 @@ function StationWithVoice({
           router.push('/return');
           router.refresh();
         }}
-        dock={<ReturnVoice station={station} lang={uiLang} onLangChange={setUiLang} {...mic} />}
+        dock={<ReturnVoice station={station} lang={uiLang} onLangChange={setUiLang} languages={languages} {...mic} />}
       />
     </>
   );

@@ -116,6 +116,8 @@ export function VoiceDock({
   setHandsFree,
   languages = LANGS,
   desk = false,
+  tokenUrl = '/api/voice/token',
+  connectContext,
 }: {
   /** lead console: 48px desk controls on one row instead of the handheld's stacked 56px ones */
   desk?: boolean;
@@ -133,8 +135,12 @@ export function VoiceDock({
   setHandsFree: (v: boolean) => void;
   /** languages offered on the chip (the lead assistant speaks Norwegian only) */
   languages?: readonly Lang[];
+  /** where the conversation token comes from (the practice demo has its own public route) */
+  tokenUrl?: string;
+  /** a silent "[screen]" note sent once the session is up (the practice demo explains itself) */
+  connectContext?: string;
 }) {
-  const { startSession, endSession } = useConversationControls();
+  const { startSession, endSession, sendContextualUpdate } = useConversationControls();
   const { status } = useConversationStatus();
   const { isSpeaking } = useConversationMode();
   /** problems before or while connecting; once connected, the SDK status is the truth */
@@ -148,6 +154,7 @@ export function VoiceDock({
   const varsRef = useLatest(dynamicVariables);
   const firstRef = useLatest(firstMessage);
   const workerLineRef = useLatest(onWorkerLine);
+  const connectContextRef = useLatest(connectContext);
 
   // ---------- session ----------
 
@@ -171,7 +178,7 @@ export function VoiceDock({
       let token: string;
       let keyterms: string[] = [];
       try {
-        const res = await fetch('/api/voice/token', {
+        const res = await fetch(tokenUrl, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ station }),
@@ -218,14 +225,17 @@ export function VoiceDock({
             /* not JSON: keep the current language */
           }
         },
-        onConnect: () => setIssue(null),
+        onConnect: () => {
+          setIssue(null);
+          if (connectContextRef.current) sendContextualUpdate(connectContextRef.current);
+        },
         onError: (message) => {
           console.error('[voice]', message);
           setIssue('unavailable');
         },
       });
     },
-    [captions, firstRef, langRef, onLangChange, setHandsFree, startSession, station, varsRef, workerLineRef],
+    [captions, connectContextRef, firstRef, langRef, onLangChange, sendContextualUpdate, setHandsFree, startSession, station, tokenUrl, varsRef, workerLineRef],
   );
 
   const stop = useCallback(() => {

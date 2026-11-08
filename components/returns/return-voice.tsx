@@ -28,6 +28,7 @@ export { useVoiceLink, type VoiceLink, type VoiceState } from '@/components/voic
 export function ReturnVoice({
   station,
   lang,
+  languages,
   onLangChange,
   talk,
   setTalk,
@@ -37,6 +38,8 @@ export function ReturnVoice({
   station: ReturnStation;
   /** the worker's current language: starts from preferred_lang, flips when the agent switches */
   lang: Lang;
+  /** the languages the admin enabled (the dock's language chip) */
+  languages?: readonly Lang[];
   onLangChange: (l: Lang) => void;
   talk: boolean;
   setTalk: (v: boolean) => void;
@@ -152,6 +155,7 @@ export function ReturnVoice({
       dynamicVariables={{ return_number: station.view.ret.id }}
       firstMessage={(l) => FIRST_MESSAGES[l].replace('{{return_number}}', station.view.ret.id)}
       lang={lang}
+      languages={languages}
       onLangChange={onLangChange}
       onWorkerLine={(text) => (lastWorkerLine.current = text)}
       talk={talk}

@@ -1,10 +1,12 @@
 import { redirect } from 'next/navigation';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { LimitBanner } from '@/components/limit-banner';
-import { DeviceChip, HandheldHeader, LanguageChip } from '@/components/ui';
+import { DeviceChip, HandheldHeader } from '@/components/ui';
 import { signOut } from '@/lib/auth/actions';
 import { getDeviceLabel, requireRole } from '@/lib/auth/dal';
-import { LANG_NAMES, t } from '@/lib/i18n/strings';
+import { t } from '@/lib/i18n/strings';
 import { spendStatus } from '@/lib/limits/server';
+import { enabledLanguages } from '@/lib/privacy/server';
 
 /**
  * Handheld shell: a white station screen, phone width, one hand, 56px targets. On a wider
@@ -18,13 +20,13 @@ export default async function HandheldLayout({ children }: LayoutProps<'/'>) {
   if (worker && !user.privacyInfoReadAt) redirect('/welcome');
   if (!device && worker) redirect('/device');
   // Tap-only switch (M8): when today's budget is spent, every station says so up front.
-  const spend = await spendStatus(user.warehouseId);
+  const [spend, languages] = await Promise.all([spendStatus(user.warehouseId), enabledLanguages(user.warehouseId)]);
 
   return (
     <div className="flex flex-1 justify-center bg-surface sm:bg-frame sm:py-6">
-      <div className="sp-handheld sp-light flex w-full max-w-md flex-col overflow-hidden bg-surface text-ink sm:rounded-xl sm:shadow-device">
+      <div className="sp-handheld sp-light flex w-full max-w-md flex-col overflow-hidden bg-surface text-ink sm:rounded-xl sm:shadow-device" lang={user.lang}>
         <HandheldHeader
-          lang={<LanguageChip code={user.lang} name={LANG_NAMES[user.lang]} label={t('language', user.lang)} />}
+          lang={<LanguageSwitcher lang={user.lang} languages={languages} />}
           device={<DeviceChip label={device ?? '—'} title={t('device', user.lang)} />}
           privacy={{ label: t('privacy', user.lang) }}
           signOut={

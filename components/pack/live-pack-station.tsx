@@ -75,13 +75,13 @@ function withTapUpdates(station: PackStation, voice: VoiceLink): PackStation {
   };
 }
 
-export function LivePackStation({ view, lang }: { view: PackView; lang: Lang }) {
+export function LivePackStation({ view, lang, languages }: { view: PackView; lang: Lang; languages?: readonly Lang[] }) {
   const [talk, setTalk] = useState(false);
   const [handsFree, setHandsFree] = useState(false);
   return (
     // Push-to-talk: the mic is muted unless the button is held or hands-free is on.
     <ConversationProvider isMuted={!(talk || handsFree)}>
-      <StationWithVoice view={view} lang={lang} talk={talk} setTalk={setTalk} handsFree={handsFree} setHandsFree={setHandsFree} />
+      <StationWithVoice view={view} lang={lang} languages={languages} talk={talk} setTalk={setTalk} handsFree={handsFree} setHandsFree={setHandsFree} />
     </ConversationProvider>
   );
 }
@@ -89,10 +89,12 @@ export function LivePackStation({ view, lang }: { view: PackView; lang: Lang }) 
 function StationWithVoice({
   view,
   lang,
+  languages,
   ...mic
 }: {
   view: PackView;
   lang: Lang;
+  languages?: readonly Lang[];
   talk: boolean;
   setTalk: (v: boolean) => void;
   handsFree: boolean;
@@ -103,6 +105,12 @@ function StationWithVoice({
   const raw = usePackStation(view, port);
   const station = withEarcons(raw);
   const [uiLang, setUiLang] = useState<Lang>(lang);
+  // The header's language switcher changes the worker's language: follow it without a reload.
+  const [fromHeader, setFromHeader] = useState<Lang>(lang);
+  if (lang !== fromHeader) {
+    setFromHeader(lang);
+    setUiLang(lang);
+  }
   const voice = useVoiceLink();
   const status = raw.decision.status;
   const lastStatus = useRef(status);
@@ -121,7 +129,7 @@ function StationWithVoice({
           router.push('/pack');
           router.refresh();
         }}
-        dock={<PackVoice station={station} lang={uiLang} onLangChange={setUiLang} {...mic} />}
+        dock={<PackVoice station={station} lang={uiLang} onLangChange={setUiLang} languages={languages} {...mic} />}
       />
     </>
   );
