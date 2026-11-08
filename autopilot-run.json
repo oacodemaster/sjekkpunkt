@@ -1,0 +1,14 @@
+{
+  "steps": [
+    { "name": "Q0", "model": "Opus 5.5", "effort": "medium", "note": "Push P1, run every e2e spec against production, fix what breaks." },
+    { "name": "Q1", "model": "Opus 5.5", "effort": "high", "note": "Rebase ux-buildout onto D1 + P1; the DB already has its migration." },
+    { "name": "Q2", "model": "Opus 5.5", "effort": "xhigh", "note": "Whole-system security review: routes, RLS, public surface, injection." },
+    { "name": "Q3", "model": "Opus 5.5", "effort": "high", "note": "Dead code, error paths, axe pass, docs that match the code." },
+    { "name": "Q4", "model": "Opus 5.5", "effort": "high", "note": "Walk every role as a newcomer; one word for one thing." },
+    { "name": "Q5", "model": "Opus 5.5", "effort": "high", "note": "Scripted demo against brief 13 and the jury table." },
+    { "name": "Q6", "model": "Sonnet 5.5", "effort": "high", "note": "D1 leftovers at the stations, strings in six languages." },
+    { "name": "Q7", "model": "Opus 5.5", "effort": "high", "note": "New voices before River and Daniel retire; remake audio." },
+    { "name": "Q8", "model": "Opus 5.5", "effort": "high", "note": "Throttled handheld, failure paths, no double writes." },
+    { "name": "Q9", "model": "Opus 5.5", "effort": "high", "note": "Full e2e, checklists, demo runbook." }
+  ]
+}

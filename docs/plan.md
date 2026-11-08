@@ -20,6 +20,7 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | M9 Stage readiness | Done 2026-11-07 (see M9 notes below); the prop test in `docs/test-plan.md` is still to be run with real props |
 | D1 Design system | Done 2026-11-08, live (see D1 notes below) |
 | P1 Guide, practice demo, languages | Built 2026-11-08, not yet deployed (see P1 notes below); no login needed for `/`, `/play`, `/guide`, `/demo` |
+| Q Quality, security, demo | Planned 2026-11-08, run by Autopilot (steps Q0–Q9 and status in `docs/polish.md`) |
 | S1 | Not started |
 
 ## Stack
