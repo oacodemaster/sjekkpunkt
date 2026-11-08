@@ -22,7 +22,8 @@ const eslintConfig = defineConfig([
     },
   },
   // .claude/ holds local git worktrees (other branches, with their own builds); not this tree.
-  globalIgnores(["public/elevenlabs/**", ".claude/**"]),
+  // brag-output/ is the local working folder of the launch video (not committed).
+  globalIgnores(["public/elevenlabs/**", ".claude/**", "brag-output/**"]),
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

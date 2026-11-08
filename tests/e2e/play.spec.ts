@@ -88,6 +88,18 @@ test('the guide and the practice demo need no login and load their sample photos
   }
 });
 
+test('the front page shows the launch video, muted, with controls', async ({ page }) => {
+  await page.goto('/?lang=en');
+  const video = page.getByTestId('hero-video');
+  await expect(video).toBeVisible();
+  await expect(video).toHaveAttribute('aria-label', /Sjekkpunkt in 25 seconds/);
+  expect(await video.evaluate((v: HTMLVideoElement) => ({ muted: v.muted, controls: v.controls, loop: v.loop }))).toEqual({ muted: true, controls: true, loop: true });
+  for (const src of ['/video/sjekkpunkt.mp4', '/video/sjekkpunkt-poster.jpg']) {
+    const r = await page.request.get(src);
+    expect(r.status(), src).toBe(200);
+  }
+});
+
 test('the front page opens a sample parcel straight from its photo, without a login', async ({ page }) => {
   await page.goto('/?lang=en');
   await expect(page.getByTestId('try-parcel')).toHaveCount(5);

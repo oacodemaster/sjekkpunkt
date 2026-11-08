@@ -155,4 +155,12 @@ export const PLAY_STRINGS = {
     ro: 'Fără autentificare: alege un colet și împachetează-l singur.',
     lt: 'Be prisijungimo: pasirinkite siuntą ir supakuokite ją patys.',
   },
+  heroVideo: {
+    nb: 'Video: Sjekkpunkt på 25 sekunder. Pakking, retur og løkka mellom dem.',
+    en: 'Video: Sjekkpunkt in 25 seconds. Packing, returns and the loop between them.',
+    pl: 'Wideo: Sjekkpunkt w 25 sekund. Pakowanie, zwroty i pętla między nimi.',
+    uk: 'Відео: Sjekkpunkt за 25 секунд. Пакування, повернення і цикл між ними.',
+    ro: 'Video: Sjekkpunkt în 25 de secunde. Împachetare, retururi și bucla dintre ele.',
+    lt: 'Vaizdo įrašas: Sjekkpunkt per 25 sekundes. Pakavimas, grąžinimai ir ciklas tarp jų.',
+  },
 } as const;

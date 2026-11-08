@@ -314,8 +314,9 @@
   .demo-captions--compact { max-width: 100%; padding: 8px 12px 10px; }
   .demo-captions--compact .sp-cap__tr { margin-top: 4px; padding-top: 4px; }
 
-  /* Front page (design system «Forside», 1440 × 900): the lime in its home. The circular loop
-     from 1200px; below that the same five steps as a list. */
+  /* Front page (design system «Forside», 1440 × 900): the lime in its home. The launch video
+     (public/video) stands where the design system has the circular loop: beside the text from
+     1200px, under it below that. */
   .fp { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; gap: 32px; padding: 20px var(--gutter-handheld) 24px; }
   .fp-top { display: flex; justify-content: space-between; align-items: center; }
   .fp-main { display: grid; gap: 40px; align-items: center; }
@@ -326,20 +327,10 @@
   .fp-actions .sp-btn { min-height: 60px; padding-inline: 26px; font-size: 19px; }
   .fp-privacy { display: inline-block; margin-top: 22px; padding-block: 6px; font-size: 17px; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 4px; color: var(--ink-2-on-dark); }
   .fp-privacy:focus-visible { outline: 3px solid var(--focus-on-dark); outline-offset: 3px; }
-  .fp-figure { margin: 0; }
-  .fp-loop { position: relative; }
-  .fp-ring { display: none; }
-  .fp-nodes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-  .fp-node { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; background: var(--frame-2); border: 2px solid var(--line-on-dark); border-radius: var(--radius-lg); animation: fp-node var(--dur-loop) linear infinite; }
-  .fp-node__n { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 700 14px/1 var(--font-family-mono); background: var(--ink-on-dark); color: var(--frame); margin-top: 1px; }
-  .fp-node__nb { display: block; font-size: 17px; line-height: 22px; font-weight: 700; }
-  .fp-node__en { display: block; font-size: 14px; line-height: 19px; color: var(--ink-2-on-dark); margin-top: 2px; }
-  .fp-core { margin-top: 16px; padding: 14px 16px; border: 2px solid var(--line-on-dark); border-radius: var(--radius-lg); }
-  .fp-core__pair { font: 700 20px/1.3 var(--font-family-mono); }
-  .fp-core__rule { margin-top: 6px; font-size: 16px; line-height: 22px; color: var(--ink-2-on-dark); }
+  .fp-figure { margin: 0; min-width: 0; }
+  .fp-video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: var(--frame-2); border: 2px solid var(--line-on-dark); border-radius: var(--radius-lg); box-shadow: var(--shadow-device); }
+  .fp-video:focus-visible { outline: 3px solid var(--focus-on-dark); outline-offset: 3px; }
   .fp-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 24px; padding-top: 20px; border-top: 1px solid var(--line-on-dark); font-size: 16px; color: var(--ink-2-on-dark); }
-  @keyframes fp-node { 0%, 14% { background: var(--brand-wash); border-color: var(--brand); } 18%, 100% { background: var(--frame-2); border-color: var(--line-on-dark); } }
-  @keyframes fp-run { from { stroke-dashoffset: 60.8; } to { stroke-dashoffset: -1290.1; } }
   @media (min-width: 768px) {
     .fp { padding: 32px 48px 28px; }
     .fp-h1 { font-size: 44px; line-height: 48px; }
@@ -348,23 +339,11 @@
   }
   @media (min-width: 1200px) {
     .fp { height: 100dvh; min-height: 820px; padding: 40px 72px 32px; overflow: hidden; }
-    .fp-main { grid-template-columns: 1fr 560px; gap: 64px; }
+    .fp-main { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; }
     .fp-h1 { font-size: 60px; line-height: 62px; }
     .fp-en { margin-top: 18px; }
     .fp-how { margin-top: 32px; }
     .fp-actions { margin-top: 36px; }
-    .fp-loop { width: 540px; height: 540px; margin: 0 auto; }
-    .fp-ring { display: block; position: absolute; inset: 0; width: 540px; height: 540px; overflow: visible; }
-    .fp-track { fill: none; stroke: var(--line-on-dark); stroke-width: 3; }
-    .fp-glow { fill: none; stroke: var(--brand); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 121.6 1350.9; transform: rotate(-90deg); transform-origin: 270px 270px; animation: fp-run var(--dur-loop) linear infinite; }
-    .fp-chev { fill: none; stroke: var(--ink-2-on-dark); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-    .fp-nodes { display: block; }
-    .fp-node { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); width: 172px; }
-    .fp-core { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 196px; margin: 0; padding: 0; border: 0; text-align: center; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .fp-glow { stroke-dashoffset: 60.8; }
-    .fp-node:first-child { background: var(--brand-wash); border-color: var(--brand); }
   }
 
   /* Language picker (P1): the language chip made tappable. A native select lies over the chip, so
