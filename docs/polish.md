@@ -37,7 +37,7 @@ a place for new features beyond what the steps below name.
 
 | Step | What | State |
 |---|---|---|
-| Q0 | Ship P1 and verify D1 + P1 against production | Not started |
+| Q0 | Ship P1 and verify D1 + P1 against production | In progress (P1 live; e2e rerun and fixes left) |
 | Q1 | Merge `ux-buildout` (provider failures go tap-only) | Not started |
 | Q2 | Security review of the whole system | Not started |
 | Q3 | Code quality and docs that match the code | Not started |
@@ -60,7 +60,26 @@ run them).
 - `pnpm db:seed` when done, so the live demo is on seed.
 - Write up which specs ran and what was fixed.
 
-**Notes.**
+**Notes.** Session 1 (2026-11-08, ended early by the owner's «Wrap up»):
+
+- Checks green: typecheck, test (187), build, scan:bundle. `pnpm lint` failed with 3089 errors, all from the local
+  worktrees under `.claude/worktrees/` (other branches). `eslint.config.mjs` now ignores `.claude/**`; lint is clean.
+- Pushed P1 (`83fa5cf`, `a23d0f1`, `97ce0c7`) and the lint fix (`8a82a54`); Vercel status success, P1 is live.
+- First e2e run against the deployment without `E2E_RESET_DB=1`: auth's packer and returns tests failed because the
+  live data was not on seed (orders #2207/#1043 gone), and admin, insights, lead, returns and voice were skipped.
+  Against a deployment, run with `E2E_RESET_DB=1` (the reset keeps the catalogue; the admin spec cleans up its own
+  product). `pack.spec.ts` and voice's translation test need the local server (`npx playwright test` without
+  `E2E_BASE_URL`).
+- Second run with `E2E_RESET_DB=1`: 38 passed, 5 skipped (expected: pack, voice translation, grading-guide push),
+  3 failed. The run overlapped with the first attempt (a tool timeout left it running), so both shared the database
+  and the log; the security (`every API route refuses a visitor`) and stage (`pack_alerts` count 0) failures are not
+  trustworthy and need a clean rerun. One failure looks real: `admin.spec.ts:213` expects the public `/privacy`
+  heading in Norwegian («Slik bruker Sjekkpunkt opplysninger om deg») but gets English. P1's language switcher
+  probably changed the default language for a visitor without a cookie (likely from `Accept-Language` of the
+  Playwright device, en-US); decide whether the test or the page is wrong.
+- `pnpm db:seed` run at the end; the live demo is on seed.
+- Left for the next session: clean rerun of every spec against the deployment with `E2E_RESET_DB=1` (run it in the
+  background, it takes about 4 minutes), the local `pack.spec.ts` and `voice.spec.ts`, fix what fails, `db:seed`.
 
 ### Q1 Merge `ux-buildout`
 
