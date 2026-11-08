@@ -71,7 +71,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // everything except static assets
-    '/((?!_next/static|_next/image|favicon.ico|demo/|audio/|elevenlabs/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp3|ico)$).*)',
+    // everything except static assets (video/ is the front page's launch video)
+    '/((?!_next/static|_next/image|favicon.ico|demo/|audio/|video/|elevenlabs/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp3|mp4|ico)$).*)',
   ],
 };

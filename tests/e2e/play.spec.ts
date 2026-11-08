@@ -94,9 +94,11 @@ test('the front page shows the launch video, muted, with controls', async ({ pag
   await expect(video).toBeVisible();
   await expect(video).toHaveAttribute('aria-label', /Sjekkpunkt in 25 seconds/);
   expect(await video.evaluate((v: HTMLVideoElement) => ({ muted: v.muted, controls: v.controls, loop: v.loop }))).toEqual({ muted: true, controls: true, loop: true });
-  for (const src of ['/video/sjekkpunkt.mp4', '/video/sjekkpunkt-poster.jpg']) {
-    const r = await page.request.get(src);
+  // No redirect to /login on the way (the proxy must leave video/ alone): the file itself comes back.
+  for (const [src, type] of [['/video/sjekkpunkt.mp4', 'video/mp4'], ['/video/sjekkpunkt-poster.jpg', 'image/jpeg']]) {
+    const r = await page.request.get(src, { maxRedirects: 0 });
     expect(r.status(), src).toBe(200);
+    expect(r.headers()['content-type'], src).toBe(type);
   }
 });
 
