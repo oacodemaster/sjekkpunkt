@@ -484,12 +484,12 @@ export function DemoStage() {
               <dl className="holio m-0 grid grid-cols-2 gap-x-4 gap-y-2 border-0 p-3" data-testid="return-record">
                 {field('Retur', <span className="holio-mono">{state.view.ret.id}</span>)}
                 {field('Ordre', <span className="holio-mono">{state.view.order.id}</span>)}
-                {field('Lokasjon', decided?.committed.locationCode ?? '—', false, true)}
-                {field('Grad', decided?.committed.grade ?? '—', false, true)}
-                {field('Tilstand', decided ? (decided.decision.condition.damage === 'none' && decided.decision.condition.stains === 'none' ? 'Som ny' : 'Merker/skade') : '—')}
-                {field('Refusjon', decided ? (decided.committed.refundNok === null ? 'Teamleder avgjør' : nok(decided.committed.refundNok)) : '—')}
+                {field('Lokasjon', decided?.committed.locationCode ?? '–', false, true)}
+                {field('Grad', decided?.committed.grade ?? '–', false, true)}
+                {field('Tilstand', decided ? (decided.decision.condition.damage === 'none' && decided.decision.condition.stains === 'none' ? 'Som ny' : 'Merker/skade') : '–')}
+                {field('Refusjon', decided ? (decided.committed.refundNok === null ? 'Teamleder avgjør' : nok(decided.committed.refundNok)) : '–')}
                 {field('Returårsak', state.view.ret.customerReasonNb)}
-                {field('Sannsynlig årsak', decided?.committed.cause ? CAUSE_NB[decided.committed.cause] : '—')}
+                {field('Sannsynlig årsak', decided?.committed.cause ? CAUSE_NB[decided.committed.cause] : '–')}
                 {field(
                   'Flagg',
                   <span className="flex flex-wrap gap-1">
@@ -498,10 +498,10 @@ export function DemoStage() {
                         {FLAG_NB[f] ?? f}
                       </span>
                     ))}
-                    {!decided && '—'}
+                    {!decided && '–'}
                   </span>,
                 )}
-                {field('Lagerkorreksjon', <span className="holio-mono text-[13px]">{decided ? decided.decision.stockProposals.map((s) => `${s.sku} ${s.delta > 0 ? '+' : ''}${s.delta}`).join(' · ') || '—' : '—'}</span>)}
+                {field('Lagerkorreksjon', <span className="holio-mono text-[13px]">{decided ? decided.decision.stockProposals.map((s) => `${s.sku} ${s.delta > 0 ? '+' : ''}${s.delta}`).join(' · ') || '–' : '–'}</span>)}
                 {field(
                   'Bilder',
                   <span className="flex gap-1">
@@ -509,7 +509,7 @@ export function DemoStage() {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img key={p.photoId} src={p.url ?? ''} alt={p.purpose} className="h-11 w-11 rounded-[2px] object-cover" />
                     ))}
-                    {!record?.photos.length && '—'}
+                    {!record?.photos.length && '–'}
                   </span>,
                 )}
                 {field(

@@ -77,7 +77,7 @@ export default async function HolioOrderRecord({ params }: PageProps<'/holio/ord
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={url} alt="Pakkebevis" className="h-20 w-20 rounded-[2px] object-cover" />
                   ) : (
-                    <div className="holio-muted flex h-20 w-20 items-center justify-center rounded-[2px] bg-[#e9eef3]">—</div>
+                    <div className="holio-muted flex h-20 w-20 items-center justify-center rounded-[2px] bg-[#e9eef3]">–</div>
                   )}
                   <div>
                     <div className={c.status === 'MISMATCH' ? 'holio-bad' : c.status === 'VERIFIED' ? 'holio-ok' : 'holio-warn'}>{CHECK_NB[c.status] ?? c.status}</div>

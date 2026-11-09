@@ -28,7 +28,7 @@ a bug that loops, and anyone who gets hold of a key.
 | Photos read by the wrong person | Private bucket, signed URLs for minutes, RLS on every table (`supabase/migrations`) | `tests/db/rls.test.ts` |
 | Worker monitoring by the back door | Insights read only `insights_*` views with no user or device column; spend counts have no person column; rate-limit keys are hashed and deleted after a day | `tests/db/insights-anonymous.test.ts`, `tests/db/hardening.test.ts` |
 | Speech kept at the voice provider | Agents set `record_voice: false`, transcripts deleted after 7 days, sentiment analysis off (`lib/voice/agent-config.ts`) | `lib/voice/agent-config.test.ts` |
-| Customer names on shipping labels | Seed data is synthetic. Production: crop to the item and redact labels before upload (known next step, `docs/privacy.md`) | — |
+| Customer names on shipping labels | Seed data is synthetic. Production: crop to the item and redact labels before upload (known next step, `docs/privacy.md`) | None yet |
 
 ## LLM05 Improper output handling
 

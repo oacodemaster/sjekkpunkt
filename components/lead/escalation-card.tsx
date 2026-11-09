@@ -6,7 +6,7 @@ import { Banner, Button, GRADE_WORD_NB, GradeBadge, StatusChip } from '@/compone
 import { REASON_NB } from '@/lib/lead/plan';
 import type { LeadAction, LeadCard } from '@/lib/lead/types';
 
-const nok = (n: number | null | undefined) => (n === null || n === undefined ? '—' : `${n.toLocaleString('nb-NO').replace(/\s/g, ' ')} kr`);
+const nok = (n: number | null | undefined) => (n === null || n === undefined ? '–' : `${n.toLocaleString('nb-NO').replace(/\s/g, ' ')} kr`);
 const time = (iso: string) => new Date(iso).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
 const PURPOSE_NB: Record<string, string> = { front: 'Front', label: 'Etikett', damage: 'Skade', customer_note: 'Kundelapp', packaging: 'Emballasje' };
@@ -229,7 +229,7 @@ export function EscalationCard({
                       <img src={p.url} alt={PURPOSE_NB[p.purpose] ?? p.purpose} className="block aspect-square w-full rounded-[4px] object-contain" />
                     </a>
                   ) : (
-                    <div className="flex aspect-square w-full items-center justify-center text-ink-2-on-dark">{p.facesDiscarded ? 'Slettet' : '—'}</div>
+                    <div className="flex aspect-square w-full items-center justify-center text-ink-2-on-dark">{p.facesDiscarded ? 'Slettet' : '–'}</div>
                   )}
                 </div>
                 <figcaption className="mt-1">

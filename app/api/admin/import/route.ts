@@ -14,9 +14,9 @@ const Body = z.object({
 });
 
 /**
- * CSV import of products, orders or returns (addendum section 6). Every row is checked first —
- * the file (columns, types, grouping) and then the database (unknown SKUs, existing orders) —
- * and problems come back by line. Nothing is written unless the whole file passes; then the
+ * CSV import of products, orders or returns (addendum section 6). Every row is checked first:
+ * the file (columns, types, grouping), then the database (unknown SKUs, existing orders).
+ * Problems come back by line. Nothing is written unless the whole file passes; then the
  * SQL function writes it in one transaction with one audit row. `dryRun` (the default) only checks.
  */
 export async function POST(req: NextRequest) {

@@ -27,7 +27,7 @@ export async function chooseLanguage(formData: FormData) {
   redirect(user.privacyInfoReadAt ? HOME[user.role] : '/privacy?first=1');
 }
 
-/** "Jeg har lest dette" — an acknowledgement that the information was shown, not consent. */
+/** "Jeg har lest dette": an acknowledgement that the information was shown, not consent. */
 export async function acknowledgePrivacy() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');

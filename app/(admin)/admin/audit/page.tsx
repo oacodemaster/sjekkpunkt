@@ -117,7 +117,7 @@ export default async function AuditPage({ searchParams }: PageProps<'/admin/audi
                 </td>
                 <td>{STATIONS[e.station] ?? e.station}</td>
                 <td className="type-code-dense">{e.type}</td>
-                <td className="type-code-dense">{e.ref_label ?? '—'}</td>
+                <td className="type-code-dense">{e.ref_label ?? '–'}</td>
                 <td>
                   <details>
                     <summary className="cursor-pointer" title={e.summary_en}>
@@ -130,7 +130,7 @@ export default async function AuditPage({ searchParams }: PageProps<'/admin/audi
                     )}
                   </details>
                 </td>
-                <td>{e.actor_user ? (person.get(e.actor_user) ?? 'ukjent bruker') : e.actor_device ? (device.get(e.actor_device) ?? 'ukjent enhet') : '—'}</td>
+                <td>{e.actor_user ? (person.get(e.actor_user) ?? 'ukjent bruker') : e.actor_device ? (device.get(e.actor_device) ?? 'ukjent enhet') : '–'}</td>
               </tr>
             ))}
           </tbody>

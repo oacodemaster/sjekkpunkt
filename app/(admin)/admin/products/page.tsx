@@ -51,9 +51,9 @@ export default async function ProductsPage({ searchParams }: PageProps<'/admin/p
                 </td>
                 <td>{p.name_nb}</td>
                 <td className="type-code-dense">{p.location_code}</td>
-                <td className="text-ink-2">{p.variant_group ?? '—'}</td>
+                <td className="text-ink-2">{p.variant_group ?? '–'}</td>
                 <td className="type-code-dense text-right">{p.price_nok.toLocaleString('nb-NO')} kr</td>
-                <td className="type-code-dense text-right">{(p.reference_photo_paths ?? []).length || '—'}</td>
+                <td className="type-code-dense text-right">{(p.reference_photo_paths ?? []).length || '–'}</td>
               </tr>
             ))}
           </tbody>

@@ -43,7 +43,7 @@ export default async function AdminPage() {
             </div>
             <div>
               <dt className="text-[15px] text-ink-2">Neste utløper</dt>
-              <dd>{retention.nextExpiry ? when(retention.nextExpiry) : '—'}</dd>
+              <dd>{retention.nextExpiry ? when(retention.nextExpiry) : '–'}</dd>
             </div>
             <div>
               <dt className="text-[15px] text-ink-2">Siste kjøring</dt>
@@ -106,7 +106,7 @@ export default async function AdminPage() {
                   <td>{p.display_name}</td>
                   <td>{ROLE_NB[p.role] ?? p.role}</td>
                   <td className="sp-mono uppercase">{p.preferred_lang}</td>
-                  <td>{p.privacy_info_read_at ? when(p.privacy_info_read_at) : '—'}</td>
+                  <td>{p.privacy_info_read_at ? when(p.privacy_info_read_at) : '–'}</td>
                 </tr>
               ))}
             </tbody>

@@ -36,7 +36,7 @@ interface Tilstand {
 }
 
 function tilstandText(c: Tilstand | undefined): string {
-  if (!c) return '—';
+  if (!c) return '–';
   const tags = c.tagsAttached === 'unknown' ? 'ukjent' : c.tagsAttached ? 'festet' : 'fjernet';
   return `Skade ${SEV_NB[c.damage]}, flekker ${SEV_NB[c.stains]}, merkelapp ${tags}, emballasje ${c.packaging}${c.unusable ? ', ubrukelig' : ''}`;
 }
@@ -105,19 +105,19 @@ export default async function HolioReturnRecord({ params }: PageProps<'/holio/re
                 {d?.receivedSku && d.receivedSku !== it.orderedSku && <span className="holio-bad"> → mottatt {d.receivedSku}</span>}
               </dd>
               <dt>Lokasjon</dt>
-              <dd className="holio-mono text-[20px] font-bold">{d?.locationCode ?? '—'}</dd>
+              <dd className="holio-mono text-[20px] font-bold">{d?.locationCode ?? '–'}</dd>
               <dt>Grad</dt>
-              <dd className="text-[20px] font-bold">{d?.grade ?? '—'}</dd>
+              <dd className="text-[20px] font-bold">{d?.grade ?? '–'}</dd>
               <dt>Tilstand</dt>
               <dd>{tilstandText(e?.tilstand)}</dd>
               <dt>Refusjon</dt>
-              <dd>{d ? (d.refundNok === null ? 'Teamleder avgjør' : `${d.refundNok} kr`) : '—'}</dd>
+              <dd>{d ? (d.refundNok === null ? 'Teamleder avgjør' : `${d.refundNok} kr`) : '–'}</dd>
               <dt>Sannsynlig årsak</dt>
-              <dd>{d?.cause ? CAUSE_NB[d.cause] : '—'}</dd>
+              <dd>{d?.cause ? CAUSE_NB[d.cause] : '–'}</dd>
               <dt>Flagg</dt>
               <dd className="flex flex-wrap gap-2">
                 {(d?.flags ?? []).length === 0
-                  ? '—'
+                  ? '–'
                   : d!.flags.map((f) => (
                       <span key={f} className={`holio-tag ${f === 'suspicious_note' ? 'holio-bad' : 'holio-warn'}`}>
                         {FLAG_NB[f] ?? f}
@@ -125,15 +125,15 @@ export default async function HolioReturnRecord({ params }: PageProps<'/holio/re
                     ))}
               </dd>
               <dt>Merknad</dt>
-              <dd>{e?.merknad ?? '—'}</dd>
+              <dd>{e?.merknad ?? '–'}</dd>
               <dt>Kundelapp</dt>
-              <dd className="italic">{e?.kundelapp ? `«${e.kundelapp}» (lest som tekst)` : '—'}</dd>
+              <dd className="italic">{e?.kundelapp ? `«${e.kundelapp}» (lest som tekst)` : '–'}</dd>
               <dt>Status</dt>
               <dd>{it.status === 'decided' ? 'Bestemt' : it.status === 'escalated' ? 'Hos teamleder' : 'Ikke bestemt'}</dd>
               <dt>Bilder</dt>
               <dd className="flex flex-wrap gap-2">
                 {it.photos.filter((p) => p.url).length === 0
-                  ? '—'
+                  ? '–'
                   : it.photos
                       .filter((p) => p.url)
                       .map((p) => (

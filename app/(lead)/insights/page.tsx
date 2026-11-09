@@ -30,7 +30,7 @@ function Bar({ label, value, max, detail, testId }: { label: ReactNode; value: n
 }
 
 function AlertBadge({ origin }: { origin: 'auto' | 'manual' | null }) {
-  if (!origin) return <span className="text-ink-2">—</span>;
+  if (!origin) return <span className="text-ink-2">–</span>;
   return (
     <StatusChip desk tone="warn">
       Pakkevarsel aktivt{origin === 'manual' ? ' (manuelt)' : ''}

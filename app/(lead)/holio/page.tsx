@@ -54,7 +54,7 @@ export default async function HolioMockPage() {
                     <td>{o.customer_ref}</td>
                     <td>{o.status === 'packed' ? 'Pakket' : 'Plukket'}</td>
                     <td>
-                      {sealed ? (sealed.status === 'VERIFIED' ? `Verifisert (${sealed.method === 'barcode' ? 'strekkode' : 'kamera'})` : 'Manuelt bekreftet') : '—'}
+                      {sealed ? (sealed.status === 'VERIFIED' ? `Verifisert (${sealed.method === 'barcode' ? 'strekkode' : 'kamera'})` : 'Manuelt bekreftet') : '–'}
                       {caught && <span className="holio-tag holio-bad ml-2">feil stoppet</span>}
                     </td>
                   </tr>
@@ -91,8 +91,8 @@ export default async function HolioMockPage() {
                     </td>
                     <td className="holio-mono">{o?.ext_id}</td>
                     <td>{r.customer_reason_nb}</td>
-                    <td className="holio-mono">{latest.map((d) => d.location_code).join(', ') || '—'}</td>
-                    <td>{latest.map((d) => d.grade).join(', ') || '—'}</td>
+                    <td className="holio-mono">{latest.map((d) => d.location_code).join(', ') || '–'}</td>
+                    <td>{latest.map((d) => d.grade).join(', ') || '–'}</td>
                     <td>{STATUS_NB[r.status] ?? r.status}</td>
                   </tr>
                 );

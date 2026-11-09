@@ -27,7 +27,7 @@ export default async function HandheldLayout({ children }: LayoutProps<'/'>) {
       <div className="sp-handheld sp-light flex w-full max-w-md flex-col overflow-hidden bg-surface text-ink sm:rounded-xl sm:shadow-device" lang={user.lang}>
         <HandheldHeader
           lang={<LanguageSwitcher lang={user.lang} languages={languages} />}
-          device={<DeviceChip label={device ?? '—'} title={t('device', user.lang)} />}
+          device={<DeviceChip label={device ?? '–'} title={t('device', user.lang)} />}
           privacy={{ label: t('privacy', user.lang) }}
           signOut={
             <form action={signOut}>

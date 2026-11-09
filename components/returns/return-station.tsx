@@ -357,7 +357,7 @@ export function ReturnStationView({
               <Row
                 ok={decision.receivedSku === null ? null : !decision.wrongItemShipped}
                 label={decision.receivedSku === null ? t('identityUnknown', lang) : decision.wrongItemShipped ? t('wrongItemDelivered', lang) : t('rightItem', lang)}
-                value={decision.receivedSku ? <span className="sp-mono">{decision.receivedSku}</span> : '—'}
+                value={decision.receivedSku ? <span className="sp-mono">{decision.receivedSku}</span> : '–'}
               />
               {decision.wrongItemShipped && decision.cause && (
                 <li className="pb-3 pl-9">
@@ -455,7 +455,7 @@ export function ReturnStationView({
                 <div className="flex flex-wrap items-center gap-4">
                   <GradeBadge grade={decision.grade} kicker={`${t('grade', lang)} ${decision.grade}`} letterTestId="grade" />
                 </div>
-                <ShelfCode label={t('shelf', lang)} code={decision.locationCode ?? '—'} codeTestId="shelf" className="w-full" />
+                <ShelfCode label={t('shelf', lang)} code={decision.locationCode ?? '–'} codeTestId="shelf" className="w-full" />
                 <dl className="sp-kv">
                   <dt>{t('refund', lang)}</dt>
                   <dd>

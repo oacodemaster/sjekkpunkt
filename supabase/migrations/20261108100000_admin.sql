@@ -169,7 +169,7 @@ end $$;
 -- ---------------------------------------------------------------- CSV import
 
 /*
- admin_import(p jsonb) { warehouse_id, user_id, kind, plan } — all or nothing.
+ admin_import(p jsonb) { warehouse_id, user_id, kind, plan }: all or nothing.
  products: upsert by SKU. orders: new orders (status 'picked'); a line without a price takes the
  product's price. returns: new returns (status 'pending') against existing orders.
  The route checks SKUs, orders and duplicates first and reports them by line; the errors raised
