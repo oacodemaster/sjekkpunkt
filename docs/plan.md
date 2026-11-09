@@ -21,6 +21,7 @@ Starting point (2026-11-07): empty folder, no Phase 1 code to keep.
 | D1 Design system | Done 2026-11-08, live (see D1 notes below) |
 | P1 Guide, practice demo, languages | Built 2026-11-08, not yet deployed (see P1 notes below); no login needed for `/`, `/play`, `/guide`, `/demo` |
 | Q Quality, security, demo | Planned 2026-11-08, run by Autopilot (steps Q0–Q9 and status in `docs/polish.md`); Q0 in progress, P1 live |
+| L1 Landing page | Checkpoint 1 on 2026-11-09: copy, outline and visual direction in `docs/landing-copy.md`, em dash cleanup and its guard done. Waiting for the owner's approval of the copy and the draft pilot offer before the build (brief: `docs/landing-page-brief.md`) |
 | S1 | Not started |
 
 ## Stack
