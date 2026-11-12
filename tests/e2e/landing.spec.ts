@@ -51,17 +51,17 @@ test.describe('the page', () => {
 
   test('other languages fall back to English; ?lang=nb and a Norwegian browser stay on /', async ({ browser }) => {
     for (const [locale, cookie, url] of [
-      ['en-US', null, /\/en$/],
-      ['pl-PL', null, /\/en$/],
-      ['nb-NO', null, /:\d+\/$/],
-      ['en-US', 'nb', /:\d+\/$/],
-      ['nb-NO', 'uk', /\/en$/],
+      ['en-US', null, '/en'],
+      ['pl-PL', null, '/en'],
+      ['nb-NO', null, '/'],
+      ['en-US', 'nb', '/'],
+      ['nb-NO', 'uk', '/en'],
     ] as const) {
       const ctx = await browser.newContext({ locale });
       if (cookie) await ctx.addCookies([{ name: 'sp_lang', value: cookie, url: test.info().project.use.baseURL! }]);
       const page = await ctx.newPage();
       await page.goto('/');
-      await expect(page, `${locale} ${cookie}`).toHaveURL(url);
+      await expect(page, `${locale} ${cookie}`).toHaveURL((u) => u.pathname === url);
       await ctx.close();
     }
     const ctx = await browser.newContext({ locale: 'en-US' });
@@ -253,14 +253,21 @@ test.describe('the lead form', () => {
   test('a visitor who keeps posting is rate limited', async ({ page }) => {
     await page.goto('/?lang=nb');
     await fill(page, 'flood');
-    // Six attempts in ten minutes per visitor; every attempt counts, also the refused ones.
-    for (let k = 0; k < 6; k++) {
+    // Six attempts in ten minutes per visitor; every attempt counts, also the refused ones. Locally
+    // each test is its own visitor; on Vercel every test shares the runner's address, so the limit
+    // can come sooner than the seventh post.
+    const errors: string[] = [];
+    for (let k = 0; k < 8 && !errors.includes('rate'); k++) {
+      const posted = page.waitForResponse((r) => r.request().method() === 'POST');
       await page.getByTestId('lead-submit').click();
-      await expect(page.getByTestId('lead-error')).toHaveText('Det gikk for fort. Vent noen sekunder og send igjen.');
+      await posted;
+      const text = await page.getByTestId('lead-error').innerText();
+      errors.push(text.includes('For mange forsøk') ? 'rate' : text.includes('for fort') ? 'fast' : text);
     }
-    await page.waitForTimeout(3200);
-    await page.getByTestId('lead-submit').click();
-    await expect(page.getByTestId('lead-error')).toHaveText('For mange forsøk. Prøv igjen om litt.');
+    expect(errors.at(-1)).toBe('rate');
+    expect(errors.length).toBeLessThanOrEqual(7);
+    expect(errors.slice(0, -1).every((e) => e === 'fast')).toBe(true);
     expect(await leads('flood')).toEqual([]);
   });
+
 });

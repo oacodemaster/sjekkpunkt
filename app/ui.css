@@ -433,7 +433,7 @@
   .lp-demo__controls .sp-btn { flex: 1 1 auto; min-height: 52px; font-size: 17px; }
   .lp-demo__controls .sp-btn:disabled { background: transparent; color: var(--ink-2-on-dark); border-color: var(--line-on-dark); opacity: 1; cursor: default; }
   .lp-btn-light { background: var(--ink-on-dark); color: var(--frame); border-color: var(--ink-on-dark); }
-  .lp-btn-light:hover { background: var(--ink-2-on-dark); border-color: var(--ink-2-on-dark); }
+  @media (hover: hover) { .lp-btn-light:hover { background: var(--ink-2-on-dark); border-color: var(--ink-2-on-dark); } }
   .lp-demo__more { display: flex; flex-wrap: wrap; gap: 4px 16px; }
   .lp-demo__link { min-height: 44px; padding: 0; border: 0; background: none; color: var(--ink-on-dark); font: inherit; font-size: 16px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
   .lp-demo__link:disabled { opacity: 0.5; cursor: default; }
