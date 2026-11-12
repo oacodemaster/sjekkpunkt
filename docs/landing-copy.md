@@ -1,10 +1,12 @@
 # Sjekkpunkt landing page: copy
 
 Checkpoint 1 of `docs/landing-page-brief.md`. Norwegian (bokmål) was written first; the English is its own text, not a
-translation. Everything marked **[UTKAST]** / **[DRAFT]** needs the owner's approval before it goes live, and the page
-will not publish it until then.
+translation. The owner approved all of it on 2026-11-12 ("go with your best recommendations"), including the pilot
+offer, so the page publishes it as written.
 
-## 0. Open points for the owner
+## 0. Owner decisions (approved 2026-11-12)
+
+The owner accepted every recommendation below as written.
 
 1. **The pilot offer (section 9 of the page).** Length, scope, what it costs, and whether we promise to connect their
    order system during the pilot. The draft says four weeks, free, no lock-in, and keeps the integration promise soft.
@@ -206,7 +208,7 @@ signed-in user who opens `/` still goes to their station, as today.
 - **Trygt å slippe inn.** Data lagres i EU. Hver beslutning skrives i en logg som ikke kan endres. Et daglig tak på
   AI-kostnader, og når taket er nådd, går appen over til knapper og strekkode.
 
-### Pilot [UTKAST]
+### Pilot
 - **H2: Klar for en pilot. Ikke prøvd i drift ennå.**
 - Ingress: Sjekkpunkt er ferdig bygget, men har ikke vært i bruk på et ekte lager. Derfor finner du ingen kundelogoer
   eller resultattall her. Vi vil heller vise det på deres gulv.
@@ -217,7 +219,7 @@ signed-in user who opens `/` still goes to their station, as today.
   følger opp hver dag den første uka, og legger fram det vi har sett etter fire uker: pakker som ble stoppet,
   forvekslinger, returgrader og hva medarbeiderne syntes.
 - **Før start:** databehandleravtale, og underlag dere kan bruke når dere drøfter verktøyet med de tillitsvalgte.
-- **Pris:** Piloten koster ingenting. [EIER]
+- **Pris:** Piloten koster ingenting.
 - **Etterpå:** Dere bestemmer om dere vil fortsette. Ingen binding.
 - Knapp: **Be om en pilot**
 
@@ -250,12 +252,12 @@ signed-in user who opens `/` still goes to their station, as today.
 - **Hvor lagres dataene?** Database og bilder ligger i EU (Stockholm). Bildeanalysen og stemmen går gjennom Google og
   ElevenLabs. Før en pilot med ekte data setter vi dem opp med lagring i EU og uten at dataene brukes til trening.
 - **Hva koster det?** Piloten er gratis. Etter piloten avtaler vi en fast pris per stasjon og måned ut fra volumet
-  deres, og dere får prisen før dere bestemmer dere. [EIER]
+  deres, og dere får prisen før dere bestemmer dere.
 - **Hvem står bak?** Sjekkpunkt er laget av Forsterk, et norsk byrå som lager nettsider og digitale verktøy.
 
 ### Skjema
 - **H2: Be om en pilot, eller bare spør.**
-- Ingress: Fortell litt om lageret, så svarer vi innen én arbeidsdag. [UTKAST]
+- Ingress: Fortell litt om lageret, så svarer vi innen én arbeidsdag.
 - Felt:
   - Navn
   - Jobb-e-post
@@ -373,7 +375,7 @@ signed-in user who opens `/` still goes to their station, as today.
 - **Safe to let in.** Data is stored in the EU. Every decision goes into a log that cannot be changed. A daily cap on
   AI costs, and when it is reached the app switches to buttons and barcodes.
 
-### Pilot [DRAFT]
+### Pilot
 - **H2: Ready for a pilot. Not yet proven in production.**
 - Lead: Sjekkpunkt is fully built, but it has not run on a real warehouse floor yet. That is why you see no customer
   logos or results here. We would rather show it on yours.
@@ -385,7 +387,7 @@ signed-in user who opens `/` still goes to their station, as today.
   mix-ups, return grades and what your staff thought.
 - **Before we start:** a data processing agreement, and material you can use when you discuss the tool with employee
   representatives.
-- **Price:** The pilot costs nothing. [OWNER]
+- **Price:** The pilot costs nothing.
 - **After:** You decide whether to continue. No lock-in.
 - Button: **Ask for a pilot**
 
@@ -419,12 +421,12 @@ signed-in user who opens `/` still goes to their station, as today.
   through Google and ElevenLabs. Before a pilot with real data we set them up with EU storage and with no use of your
   data for training.
 - **What does it cost?** The pilot is free. After it we agree a fixed price per station and month based on your
-  volume, and you get the price before you decide. [OWNER]
+  volume, and you get the price before you decide.
 - **Who is behind it?** Sjekkpunkt is built by Forsterk, a Norwegian agency that makes websites and digital tools.
 
 ### Form
 - **H2: Ask for a pilot, or just ask.**
-- Lead: Tell us a little about your warehouse, and we will reply within one working day. [DRAFT]
+- Lead: Tell us a little about your warehouse, and we will reply within one working day.
 - Fields:
   - Name
   - Work email
