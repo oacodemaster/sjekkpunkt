@@ -8,6 +8,7 @@ const SECTIONS = [
   { href: '/admin/import', label: 'Import' },
   { href: '/admin/guide', label: 'Vurderingsveiledning' },
   { href: '/admin/audit', label: 'Revisjonslogg' },
+  { href: '/admin/leads', label: 'Henvendelser' },
 ];
 
 export default async function AdminLayout({ children }: LayoutProps<'/'>) {

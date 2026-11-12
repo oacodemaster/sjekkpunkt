@@ -68,6 +68,23 @@ export const QUICK_SIGNIN_LIMITS: { perVisitor: Window[]; total: Window[] } = {
   ],
 };
 
+/**
+ * The landing page form (POST from a public page, no login). Every attempt that reaches the
+ * server counts, whatever its outcome (honeypot, too quick, invalid), per visitor (hashed IP) and
+ * in total, so a script cannot fill the leads table or the owner's inbox. A person who mistypes
+ * a field is checked in the browser first and rarely needs more than two tries.
+ */
+export const LEAD_LIMITS: { perVisitor: Window[]; total: Window[] } = {
+  perVisitor: [
+    { window: 600, limit: 6 },
+    { window: 86400, limit: 20 },
+  ],
+  total: [
+    { window: 3600, limit: 60 },
+    { window: 86400, limit: 300 },
+  ],
+};
+
 /** Which daily budget a route spends from. */
 export const ROUTE_PROVIDER: Record<LimitedRoute, Provider> = {
   vision: 'vision',

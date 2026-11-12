@@ -5,7 +5,7 @@ import { SETTING_DEFAULTS } from '@/lib/admin/settings';
 import { settingsSchema } from '@/lib/admin/schemas';
 import { getDeviceLabel, type CurrentUser } from '@/lib/auth/dal';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { overCap, PLAY_VOICE_LIMITS, QUICK_SIGNIN_LIMITS, RATE_LIMITS, ROUTE_PROVIDER, type LimitedRoute, type Provider } from './policy';
+import { LEAD_LIMITS, overCap, PLAY_VOICE_LIMITS, QUICK_SIGNIN_LIMITS, RATE_LIMITS, ROUTE_PROVIDER, type LimitedRoute, type Provider } from './policy';
 
 // Server side of rate limits and spend caps (M8). Counters live in Postgres (api_gate,
 // record_spend) because serverless instances share no memory. A database error fails open with a
@@ -96,6 +96,24 @@ export async function limitQuickSignIn(visitor: string): Promise<{ ok: true } | 
   const checks = [
     ...QUICK_SIGNIN_LIMITS.perVisitor.map((w) => ({ key: hash(`quick_signin|v|${visitor}|${w.window}`), window: w.window, limit: w.limit })),
     ...QUICK_SIGNIN_LIMITS.total.map((w) => ({ key: hash(`quick_signin|all|${w.window}`), window: w.window, limit: w.limit })),
+  ];
+  const gate = await createAdminClient().rpc('api_gate', { p: { checks } });
+  if (gate.error) {
+    console.error('[limits] api_gate failed:', gate.error.message);
+    return { ok: false, retryAfter: 60 };
+  }
+  const g = gate.data as { ok: boolean; retry_after: number };
+  return g.ok ? { ok: true } : { ok: false, retryAfter: g.retry_after };
+}
+
+/**
+ * The landing page form: counted per visitor (a hash of the IP) and in total before anything else
+ * happens. Fails closed like the other public routes. True when the attempt may go ahead.
+ */
+export async function limitLead(visitor: string): Promise<{ ok: true } | { ok: false; retryAfter: number }> {
+  const checks = [
+    ...LEAD_LIMITS.perVisitor.map((w) => ({ key: hash(`lead|v|${visitor}|${w.window}`), window: w.window, limit: w.limit })),
+    ...LEAD_LIMITS.total.map((w) => ({ key: hash(`lead|all|${w.window}`), window: w.window, limit: w.limit })),
   ];
   const gate = await createAdminClient().rpc('api_gate', { p: { checks } });
   if (gate.error) {

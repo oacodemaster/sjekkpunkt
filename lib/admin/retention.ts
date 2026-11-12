@@ -1,8 +1,10 @@
 import 'server-only';
+import { LEAD_RETENTION_DAYS } from '@/lib/leads/schema';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 // Photo retention (addendum section 10): every photo gets expires_at = created_at +
 // photo_retention_days; this job deletes the files that have expired and clears their paths.
+// It also clears old rate-limit windows and deletes landing page leads after a year.
 // Product reference photos have no expiry. Runs daily from Vercel cron and on demand from admin.
 
 const BATCH = 1_000; // photos per run and warehouse; a backlog is worked off on the next run
@@ -56,6 +58,10 @@ export async function runRetention(opts: { trigger: 'cron' | 'admin'; warehouseI
   // Rate-limit windows (hashed keys) never outlive a day (M8).
   const { error: rlErr } = await db.rpc('purge_rate_limit_hits');
   if (rlErr) console.error('[retention] rate limit purge failed:', rlErr.message);
+  // Leads from the landing page form are kept for LEAD_RETENTION_DAYS, then deleted.
+  const { data: leads, error: leadErr } = await db.rpc('purge_old_leads', { p: { days: LEAD_RETENTION_DAYS } });
+  if (leadErr) console.error('[retention] lead purge failed:', leadErr.message);
+  else if (leads) console.info('[retention] leads deleted:', leads);
   return results;
 }
 
