@@ -66,9 +66,9 @@ test('the language switcher changes the page and is remembered', async ({ page }
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Zamówienie #4101');
   // The screen switches at once; the choice is stored by a server action a moment later.
   await expect.poll(async () => (await page.context().cookies()).find((c) => c.name === 'sp_lang')?.value).toBe('pl');
-  // Remembered on the device: the start page and the guide follow (the guide falls back to English).
+  // Remembered on the device: the landing page and the guide follow (both fall back to English).
   await page.goto('/');
-  await expect(page.getByTestId('start-play')).toHaveText('Wypróbuj sam');
+  await expect(page).toHaveURL(/\/en$/);
   await page.goto('/guide');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('How Sjekkpunkt works');
   await page.getByTestId('language-switcher').first().selectOption('nb');
@@ -86,28 +86,6 @@ test('the guide and the practice demo need no login and load their sample photos
     const r = await page.request.get(src);
     expect(r.status(), src).toBe(200);
   }
-});
-
-test('the front page shows the launch video, muted, with controls', async ({ page }) => {
-  await page.goto('/?lang=en');
-  const video = page.getByTestId('hero-video');
-  await expect(video).toBeVisible();
-  await expect(video).toHaveAttribute('aria-label', /Sjekkpunkt in 25 seconds/);
-  expect(await video.evaluate((v: HTMLVideoElement) => ({ muted: v.muted, controls: v.controls, loop: v.loop }))).toEqual({ muted: true, controls: true, loop: true });
-  // No redirect to /login on the way (the proxy must leave video/ alone): the file itself comes back.
-  for (const [src, type] of [['/video/sjekkpunkt.mp4', 'video/mp4'], ['/video/sjekkpunkt-poster.jpg', 'image/jpeg']]) {
-    const r = await page.request.get(src, { maxRedirects: 0 });
-    expect(r.status(), src).toBe(200);
-    expect(r.headers()['content-type'], src).toBe(type);
-  }
-});
-
-test('the front page opens a sample parcel straight from its photo, without a login', async ({ page }) => {
-  await page.goto('/?lang=en');
-  await expect(page.getByTestId('try-parcel')).toHaveCount(5);
-  await page.locator('[data-testid=try-parcel][href="/play?parcel=4102"]').click();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Order #4102');
-  await expect(bench(page)).toHaveAttribute('data-status', 'START');
 });
 
 test('a worker switches language in the handheld header; it becomes their language', async ({ page }) => {

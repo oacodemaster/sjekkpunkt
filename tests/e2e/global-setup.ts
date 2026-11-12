@@ -3,6 +3,8 @@ import pg from 'pg';
 
 /** Reset the hosted dev database to seed before a local e2e run (specs mutate it). */
 export default async function globalSetup() {
+  // Public-page specs (landing) need neither: E2E_NO_DB=1 skips the database here.
+  if (process.env.E2E_NO_DB === '1') return;
   const c = new pg.Client({ connectionString: process.env.DATABASE_URL });
   await c.connect();
   try {
