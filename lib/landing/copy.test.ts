@@ -34,7 +34,7 @@ describe('landing page copy', () => {
 
   it('has no em dash and no stand-in dash', () => {
     for (const s of all) {
-      expect(s).not.toContain('—');
+      expect(s).not.toContain(String.fromCharCode(0x2014));
       expect(s, s).not.toMatch(/ - | -- /);
     }
   });

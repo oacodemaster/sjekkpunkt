@@ -35,6 +35,8 @@ Handheld ──photo (EXIF removed)──▶ Supabase Storage (EU, private) ─�
 | Rate-limit counters | Each AI call | Hashed key (route + user or device), never readable | Deleted after one day | Nobody |
 | Daily spend | Each AI call | Per warehouse, day and provider; no person | Kept | Leads, admins |
 | Customer data | Orders and returns (synthetic in the seed), notes and labels in photos | Postgres, Storage | With the record; photos as above | By role |
+| Leads from the landing page form | A visitor who asks for information or a pilot: name, work email, company, and optionally role, orders per day, interest and a message | Postgres `leads` (eu-north-1); no IP, no device. A notice email to the owner through Resend when `RESEND_API_KEY` is set | 365 days, then deleted by the nightly job; sooner on request to hei@forsterk.no | Admins (`/admin/leads`, read only). No user role reads the table, and no insights view does |
+| Form rate-limit counters | Each form submission | Hashed key (a hash of the visitor's IP), never readable | Deleted after one day | Nobody |
 
 ## What Sjekkpunkt never does
 
@@ -73,3 +75,11 @@ at `/privacy`, in every enabled language (nb, en, pl, uk, ro, lt; pl, uk, ro, lt
 Before a real warehouse goes live: crop photos to the item and redact names and addresses on shipping labels before
 upload, the warehouse runs a DPIA and informs workers' representatives, and a native speaker reviews the four draft
 translations of the information screen.
+
+## The landing page form
+
+Forsterk, not the warehouse, is the controller for leads: they are inquiries to the people who sell
+Sjekkpunkt, not warehouse data. The public notice is on `/privacy` («Når du kontakter oss gjennom
+skjemaet» / «When you contact us through the form», `lib/landing/privacy.ts`). The form says what the
+details are used for next to the button. The landing page itself sets no cookie, loads nothing from a
+third party and makes no AI call; the packing check on it runs entirely in the browser.

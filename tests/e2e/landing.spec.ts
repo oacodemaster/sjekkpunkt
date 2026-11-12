@@ -41,7 +41,7 @@ test.describe('the page', () => {
       await page.locator(`#${lang === 'nb' ? 'prov' : 'try-it'}`).scrollIntoViewIfNeeded();
       await expect(page.getByTestId('demo-station')).toBeVisible();
       await expect(page.locator('h1')).toHaveCount(1);
-      expect(await page.locator('body').innerText()).not.toContain('—');
+      expect(await page.locator('body').innerText()).not.toContain(String.fromCharCode(0x2014)) // no em dash in the copy;
     }
     for (const src of ['/landing/nb/hero.webp', '/landing/en/hero.webp', '/og/sjekkpunkt-nb.png', '/video/sjekkpunkt.mp4']) {
       const r = await page.request.get(src, { maxRedirects: 0 });
