@@ -4,7 +4,8 @@ import { buildCsp, makeNonce } from '@/lib/security/csp';
 
 // Paths that work without a session. /api/cron/ checks CRON_SECRET itself (Vercel Cron has no session).
 // /guide and /play are public; /api/play/ guards itself (demo flag, same origin, rate limits).
-const PUBLIC = [/^\/$/, /^\/login/, /^\/privacy/, /^\/demo/, /^\/guide/, /^\/play/, /^\/api\/health/, /^\/api\/cron\//, /^\/api\/play\//];
+// /en is the English landing page; the sitemap and robots are for search engines.
+const PUBLIC = [/^\/$/, /^\/en$/, /^\/sitemap\.xml$/, /^\/robots\.txt$/, /^\/login/, /^\/privacy/, /^\/demo/, /^\/guide/, /^\/play/, /^\/api\/health/, /^\/api\/cron\//, /^\/api\/play\//];
 
 /**
  * Refreshes the Supabase session once per navigation (the only place that does)
@@ -71,7 +72,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // everything except static assets (video/ is the front page's launch video)
-    '/((?!_next/static|_next/image|favicon.ico|demo/|audio/|video/|elevenlabs/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp3|mp4|ico)$).*)',
+    // everything except static assets (video/ is the launch video, landing/ and og/ the landing page's screens)
+    '/((?!_next/static|_next/image|favicon.ico|demo/|audio/|video/|landing/|og/|elevenlabs/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp3|mp4|ico)$).*)',
   ],
 };

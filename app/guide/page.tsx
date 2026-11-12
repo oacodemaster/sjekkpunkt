@@ -88,7 +88,7 @@ export default async function GuidePage({ searchParams }: PageProps<'/guide'>) {
           <h1 className="m-0 max-w-3xl text-[40px] font-extrabold leading-[44px] tracking-[-0.025em] sm:text-[60px] sm:leading-[64px]">{g.title}</h1>
           <p className="type-lead m-0 max-w-2xl text-ink-2-on-dark">{g.lead}</p>
           {demo && (
-            <div className="fp-actions mt-2">
+            <div className="lp-actions mt-2">
               <ButtonLink href="/play" variant="brand" iconAfter="arrow-right">
                 {g.tryIt}
               </ButtonLink>

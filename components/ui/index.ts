@@ -13,3 +13,4 @@ export { PhotoStage, type BoxKind, type StageBox } from './photo-stage';
 export { StepIndicator, type Step } from './step-indicator';
 export { CaptionPair, PushToTalk, VoiceOrb, type OrbState } from './voice';
 export { Mark, Wordmark } from './wordmark';
+export { DeviceShot } from './device';

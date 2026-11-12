@@ -135,16 +135,16 @@ const nb: LandingCopy = {
     packing: {
       title: 'Pakking',
       steps: [
-        { title: 'Skann ordren.', text: 'Pakkeren ser varene, antall og hylleplass.', shot: shot('nb', 'pack-order', 'Ordre 2207 på håndterminalen: en marineblå hettegenser i M og grå ullsokker, med hylleplass.') },
+        { title: 'Skann ordren.', text: 'Pakkeren ser varene og hvor mange av hver.', shot: shot('nb', 'pack-order', 'Ordre 2207 på håndterminalen: en marineblå hettegenser i M og grå ullsokker, null av én pakket av hver.') },
         {
           title: 'Vis esken.',
           text: 'Ett bilde ovenfra. Sjekkpunkt sammenligner det med ordren og merker hver vare.',
-          shot: shot('nb', 'pack-box', 'Bildet av esken ovenfra mens Sjekkpunkt sjekker det mot ordren.'),
+          shot: shot('nb', 'pack-box', 'Bildet av esken ovenfra. Sjekkpunkt har merket begge varene med navn og grønn ramme.'),
         },
         {
           title: 'Rett feilen, eller forsegl.',
           text: 'Feil vare får rød ramme og beskjed om hva som skal byttes. Finnes plagget i flere størrelser, ber appen om et bilde av etiketten, eller pakkeren skanner strekkoden. Grønt betyr forsegl, og bildet lagres som pakkebevis.',
-          shot: shot('nb', 'pack-ok', 'Esken er riktig: grønne rammer rundt begge varene, «Klar til forsegling».'),
+          shot: shot('nb', 'pack-ok', 'Etter forseglingen: «Pakket og forseglet», riktig, bevisfoto lagret.'),
         },
       ],
     },
@@ -176,7 +176,7 @@ const nb: LandingCopy = {
     teamLead: {
       title: 'For teamlederen',
       text: 'Usikre returer kommer som korte saker med bilder, et forslag og en oppsummering på norsk. Godkjenn, endre med en begrunnelse, eller avvis. Oversikten viser hvilke varer som forveksles og hvor mange pakker som ble stoppet. Aldri tall per ansatt.',
-      shot: shot('nb', 'lead-insights', 'Teamlederens oversikt: hvilke varer som forveksles, og hvor mange pakker som ble stoppet.'),
+      shot: shot('nb', 'lead-insights', 'Teamlederens oversikt over forvekslinger siste 7 og 30 dager, per varepar, med hvor mange som ble stoppet ved pakking og funnet i retur (demodata).'),
     },
   },
   try: {
@@ -368,16 +368,16 @@ const en: LandingCopy = {
     packing: {
       title: 'Packing',
       steps: [
-        { title: 'Scan the order.', text: 'The packer sees the items, quantities and shelf locations.', shot: shot('en', 'pack-order', 'Order 2207 on the handheld: a navy hoodie in M and grey wool socks, with shelf locations.') },
+        { title: 'Scan the order.', text: 'The packer sees the items and how many of each.', shot: shot('en', 'pack-order', 'Order 2207 on the handheld: a navy hoodie in M and grey wool socks, none of either packed yet.') },
         {
           title: 'Show the box.',
           text: 'One photo from above. Sjekkpunkt compares it with the order and marks every item.',
-          shot: shot('en', 'pack-box', 'The photo of the box from above while Sjekkpunkt checks it against the order.'),
+          shot: shot('en', 'pack-box', 'The photo of the box from above. Sjekkpunkt has marked both items with their names and a green frame.'),
         },
         {
           title: 'Fix it, or seal it.',
           text: 'A wrong item gets a red frame and a note on what to swap. When a garment comes in several sizes, the app asks for a photo of the label, or the packer scans the barcode. Green means seal, and the photo is kept as packing evidence.',
-          shot: shot('en', 'pack-ok', 'The box is right: green frames around both items, "Ready to seal".'),
+          shot: shot('en', 'pack-ok', 'After sealing: "Packed and sealed", correct, evidence photo saved.'),
         },
       ],
     },
@@ -409,7 +409,7 @@ const en: LandingCopy = {
     teamLead: {
       title: 'For the team lead',
       text: 'Unsure returns arrive as short cases with photos, a proposal and a spoken summary in Norwegian. Approve, change with a reason, or reject. The overview shows which items get mixed up and how many parcels were stopped. Never numbers per employee.',
-      shot: shot('en', 'lead-insights', "The team lead's overview (in Norwegian): which items get mixed up, and how many parcels were stopped."),
+      shot: shot('en', 'lead-insights', "The team lead's overview of mix-ups in the last 7 and 30 days, per pair of items, with how many were stopped at packing and found at returns (in Norwegian, demo data)."),
     },
   },
   try: {

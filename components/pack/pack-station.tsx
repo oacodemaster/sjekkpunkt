@@ -156,6 +156,7 @@ export function PackStationView({
   captureMode,
   onBackToQueue,
   dock,
+  headingLevel = 1,
 }: {
   station: PackStation;
   lang: Lang;
@@ -163,7 +164,11 @@ export function PackStationView({
   captureMode: 'camera' | 'fixture';
   onBackToQueue?: () => void;
   dock?: ReactNode;
+  /** 1 at the station; lower when the station is embedded in a page that has its own h1 (the landing page demo). */
+  headingLevel?: 1 | 2 | 3;
 }) {
+  const Title = `h${headingLevel}` as 'h1' | 'h2' | 'h3';
+  const Sub = `h${headingLevel + 1}` as 'h2' | 'h3' | 'h4';
   const { view, decision, inputs, needLabel, sealed, checked, latestPhoto, camera, scanner, busy, actions } = station;
   const pm = productMap(view.products);
   const minConf = withDefaults(view.settings).packConfidenceMin;
@@ -264,9 +269,9 @@ export function PackStationView({
         )}
 
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h1 className="type-title m-0">
+          <Title className="type-title m-0">
             {t('order', lang)} <span className="sp-mono">#{view.order.id}</span>
-          </h1>
+          </Title>
           {inputs.retakes > 0 && !sealed && (
             <StatusChip icon="camera" data-testid="retakes">
               {t('retakes', lang)}: <span className="sp-mono">{inputs.retakes}</span>
@@ -291,7 +296,7 @@ export function PackStationView({
             <span className="sp-done__icon sp-done__icon--ok" aria-hidden>
               <Icon name="ok" />
             </span>
-            <h2 className="type-title m-0">{t('sealed', lang)}</h2>
+            <Sub className="type-title m-0">{t('sealed', lang)}</Sub>
             <p className="type-body m-0">
               {view.committed!.status === 'MANUAL_CONFIRM' ? t('manualChosen', lang) : view.committed!.method === 'barcode' ? t('barcode', lang) : t('correct', lang)}
               {view.committed!.evidencePhotoId && <> · {t('evidenceSaved', lang)}</>}

@@ -160,7 +160,7 @@ signed-in user who opens `/` still goes to their station, as today.
 - Ingress: Pakkeren og returmedarbeideren bruker den håndterminalen de har. Teamlederen ser sammenhengen.
 
 **Pakking**
-1. **Skann ordren.** Pakkeren ser varene, antall og hylleplass.
+1. **Skann ordren.** Pakkeren ser varene og hvor mange av hver.
 2. **Vis esken.** Ett bilde ovenfra. Sjekkpunkt sammenligner det med ordren og merker hver vare.
 3. **Rett feilen, eller forsegl.** Feil vare får rød ramme og beskjed om hva som skal byttes. Finnes plagget i flere
    størrelser, ber appen om et bilde av etiketten, eller pakkeren skanner strekkoden. Grønt betyr forsegl, og bildet
@@ -327,7 +327,7 @@ signed-in user who opens `/` still goes to their station, as today.
 - Lead: Packers and returns staff use the handhelds they already have. The team lead sees how it all connects.
 
 **Packing**
-1. **Scan the order.** The packer sees the items, quantities and shelf locations.
+1. **Scan the order.** The packer sees the items and how many of each.
 2. **Show the box.** One photo from above. Sjekkpunkt compares it with the order and marks every item.
 3. **Fix it, or seal it.** A wrong item gets a red frame and a note on what to swap. When a garment comes in several
    sizes, the app asks for a photo of the label, or the packer scans the barcode. Green means seal, and the photo is
