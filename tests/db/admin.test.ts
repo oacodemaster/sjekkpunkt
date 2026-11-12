@@ -178,7 +178,8 @@ describe('record_retention_run', () => {
       const r = await call(q, 'record_retention_run', { warehouse_id: WH, deleted_ids: [p.id], failed: 0, trigger: 'cron' });
       expect(r).toEqual({ deleted: 1, failed: 0 });
       expect(await q(`select storage_path from photos where id = $1`, [p.id])).toEqual([{ storage_path: null }]);
-      const [a] = await q(`select station, actor_user, summary_nb from audit_events where type = 'RETENTION_RUN'`);
+      // The newest run: the live database also holds the nightly cron's own runs.
+      const [a] = await q(`select station, actor_user, summary_nb from audit_events where type = 'RETENTION_RUN' order by at desc limit 1`);
       expect(a).toEqual({ station: 'system', actor_user: null, summary_nb: 'Sletting: 1 utløpte bilder slettet' });
     });
   });
