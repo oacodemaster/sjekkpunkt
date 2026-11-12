@@ -21,7 +21,8 @@ export function Wordmark({ surface, size = 40, nameSize = 30, href = '/', classN
   );
   const cls = `sp-wordmark ${surface === 'dark' ? 'text-ink-on-dark' : 'text-ink'} ${className}`;
   return href ? (
-    <Link href={href} className={cls}>
+    // Named on the link itself: where the name is hidden (a narrow header), the mark alone stays a named link.
+    <Link href={href} className={cls} aria-label="Sjekkpunkt">
       {inner}
     </Link>
   ) : (

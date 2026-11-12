@@ -5,10 +5,13 @@ import { Golos_Text, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
 // The design system's faces, self-hosted by next/font at build time (no request to Google, so no
-// new CSP origin). Every subset the six station languages need: Latin Extended for pl, ro, lt
-// and Cyrillic for uk. The variables are the ones app/tokens.css puts first in each family.
-const golos = Golos_Text({ variable: '--font-golos-text', subsets: ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext'], display: 'swap' });
-const jetbrainsMono = JetBrains_Mono({ variable: '--font-jetbrains-mono', subsets: ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext'], display: 'swap' });
+// new CSP origin). The CSS carries every subset Google has (Latin Extended for pl, ro, lt,
+// Cyrillic for uk), each behind its unicode-range, so a browser downloads only what a page shows.
+// `subsets` picks only what is preloaded: Latin, which every page needs (nb and en). Preloading
+// all four subsets of both families cost eight files on every first visit (docs/decisions.md).
+// The variables are the ones app/tokens.css puts first in each family.
+const golos = Golos_Text({ variable: '--font-golos-text', subsets: ['latin'], display: 'swap' });
+const jetbrainsMono = JetBrains_Mono({ variable: '--font-jetbrains-mono', subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Sjekkpunkt',

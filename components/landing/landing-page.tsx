@@ -219,7 +219,7 @@ export async function LandingPage({ lang }: { lang: LandingLang }) {
               {c.watch.h2}
             </h2>
             <p className="lp-intro">{c.watch.lead}</p>
-            <video className="lp-video" controls preload="none" playsInline poster="/video/sjekkpunkt-poster.jpg" width={1920} height={1080} aria-label={c.watch.videoLabel} data-testid="watch-video">
+            <video className="lp-video" controls preload="none" playsInline poster="/video/sjekkpunkt-poster.webp" width={1920} height={1080} aria-label={c.watch.videoLabel} data-testid="watch-video">
               <source src="/video/sjekkpunkt.mp4" type="video/mp4" />
             </video>
           </div>
