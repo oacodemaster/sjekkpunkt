@@ -7,6 +7,7 @@ import { GUIDE, type GuideStep } from '@/lib/guide/content';
 import { requestLang } from '@/lib/i18n/server';
 import { LANG_NAMES, LANGS } from '@/lib/i18n/strings';
 import { imageOf } from '@/lib/play/catalog';
+import { scriptedDemoOn } from '@/lib/demo/flags';
 
 export const metadata: Metadata = {
   title: 'Slik virker det · Sjekkpunkt',
@@ -63,7 +64,7 @@ function Points({ items }: { items: readonly string[] }) {
 export default async function GuidePage({ searchParams }: PageProps<'/guide'>) {
   const lang = await requestLang(undefined, (await searchParams).lang);
   const g = GUIDE[lang === 'nb' ? 'nb' : 'en'];
-  const demo = process.env.NEXT_PUBLIC_DEMO_ENABLED === 'true';
+  const demo = scriptedDemoOn();
   const toc = [
     ['packing', g.packing.title],
     ['returns', g.returns.title],

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ADMIN_ROLES, fail, guard, sqlError } from '@/lib/api/http';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { syncGradingGuide } from '@/lib/voice/kb';
+import { paidDemoOn } from '@/lib/demo/flags';
 
 // Demo reset (addendum section 6): admin only, and only where DEMO_ENABLED=true. Runs the seed
 // (app.reset_to_seed, generated from lib/demo/seed.ts) through admin_demo_reset, which writes the
@@ -17,7 +18,7 @@ const CHUNK = 100;
 export async function POST(req: Request) {
   const g = await guard(req, ADMIN_ROLES, Body);
   if (!g.ok) return g.res;
-  if (process.env.DEMO_ENABLED !== 'true') return fail('demo_disabled', 404);
+  if (!paidDemoOn()) return fail('demo_disabled', 404);
 
   const db = createAdminClient();
   const { data, error } = await db.rpc('admin_demo_reset', { p: { warehouse_id: g.user.warehouseId, user_id: g.user.userId } });

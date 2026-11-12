@@ -4,6 +4,7 @@ import { getCurrentUser, HOME } from '@/lib/auth/dal';
 import { QUICK_ROLES } from '@/lib/auth/demo-users';
 import { LoginForm } from './login-form';
 import { QuickSignIn } from './quick-sign-in';
+import { paidDemoOn } from '@/lib/demo/flags';
 
 export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   const user = await getCurrentUser();
@@ -12,7 +13,7 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   const nextPath = typeof next === 'string' ? next : undefined;
   // One-tap role buttons for the demo, for each role whose password the server has; the email
   // form stays for admin and real accounts.
-  const roles = process.env.DEMO_ENABLED === 'true' ? QUICK_ROLES.filter((r) => !!process.env[`SEED_PASSWORD_${r.toUpperCase()}`]) : [];
+  const roles = paidDemoOn() ? QUICK_ROLES.filter((r) => !!process.env[`SEED_PASSWORD_${r.toUpperCase()}`]) : [];
   const quick = roles.length > 0;
 
   return (

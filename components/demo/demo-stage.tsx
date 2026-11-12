@@ -118,7 +118,7 @@ function Captions({
  * 1 2 3 jump to a scene, D director bar, C captions EN/NB, M mute. On a phone the same run is
  * driven by the bar at the bottom, and the stage flips between the handheld and Holio.
  */
-export function DemoStage() {
+export function DemoStage({ stationLang }: { stationLang?: Lang } = {}) {
   const store = useMemo(() => createDemoStore(), []);
   const state = useSyncExternalStore<DemoState>(store.subscribe, store.getState, store.getState);
   const station = useReturnStation(state.view, store.port, store.now);
@@ -132,7 +132,9 @@ export function DemoStage() {
   const [stationKind, setStationKind] = useState<'pack' | 'return'>('pack');
 
   const [step, setStep] = useState(-1);
-  const [lang, setLang] = useState<Lang>('nb');
+  const [scriptLang, setLang] = useState<Lang>('nb');
+  /** ?lang= holds the stations in one language; otherwise the script switches it (PACK-02, RET-02). */
+  const lang = stationLang ?? scriptLang;
   const [captionLang, setCaptionLang] = useState<'en' | 'nb'>('en');
   const [director, setDirector] = useState(false);
   const [muted, setMuted] = useState(false);

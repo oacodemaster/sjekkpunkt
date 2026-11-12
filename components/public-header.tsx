@@ -3,6 +3,7 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { Wordmark } from '@/components/ui';
 import type { Lang } from '@/lib/engine/types';
 import { t } from '@/lib/i18n/strings';
+import { scriptedDemoOn } from '@/lib/demo/flags';
 
 /** Top bar of the public pages (the guide and the practice demo): mark, two links, language. */
 export function PublicHeader({
@@ -16,7 +17,7 @@ export function PublicHeader({
   current?: 'guide' | 'play';
   onLangChange?: (l: Lang) => void;
 }) {
-  const demo = process.env.NEXT_PUBLIC_DEMO_ENABLED === 'true';
+  const demo = scriptedDemoOn();
   return (
     <header className="sp-pub-header">
       <div className="sp-pub-header__in">

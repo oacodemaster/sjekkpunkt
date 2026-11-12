@@ -8,6 +8,7 @@ import { requireRole } from '@/lib/auth/dal';
 import { ENGINE_VERSION } from '@/lib/engine/constants';
 import { spendStatus } from '@/lib/limits/server';
 import { createClient } from '@/lib/supabase/server';
+import { paidDemoOn } from '@/lib/demo/flags';
 
 const when = (iso: string) => new Date(iso).toLocaleString('nb-NO', { timeZone: 'Europe/Oslo', dateStyle: 'short', timeStyle: 'short' });
 const nok = (ore: number) => (ore / 100).toLocaleString('nb-NO', { maximumFractionDigits: 2 });
@@ -78,7 +79,7 @@ export default async function AdminPage() {
             Grove estimater per kall, ikke en faktura. Når grensen er nådd slår stasjonene av bildeanalyse eller stemme til midnatt og viser det til de ansatte. Grensene endres under Innstillinger. Ingen tall per ansatt.
           </p>
         </Card>
-        {process.env.DEMO_ENABLED === 'true' && (
+        {paidDemoOn() && (
           <Card title="Demo">
             <p className="text-[15px]">
               Setter alt tilbake til startdata før en demo: ordre 2207 og 2311, retur 1043, historikken bak innsikt og forvekslinger. Saker, beslutninger, bilder, varsler, logg og

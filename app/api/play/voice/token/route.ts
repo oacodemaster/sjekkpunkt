@@ -5,6 +5,7 @@ import { clientIp, limitPlayVoice, limitResponse } from '@/lib/limits/server';
 import { COST_ORE } from '@/lib/limits/policy';
 import { PLAY_KEYTERMS } from '@/lib/play/keyterms';
 import { agentIdFor, mintConversationToken } from '@/lib/voice/server';
+import { paidDemoOn } from '@/lib/demo/flags';
 
 /**
  * Conversation token for the practice demo (/play), which has no login. It talks to the packing
@@ -16,7 +17,7 @@ import { agentIdFor, mintConversationToken } from '@/lib/voice/server';
  * - per visitor (hashed IP) and total rate limits, then the daily ElevenLabs cap (fails closed).
  */
 export async function POST(req: NextRequest) {
-  if (process.env.DEMO_ENABLED !== 'true') return fail('not_found', 404);
+  if (!paidDemoOn()) return fail('not_found', 404);
   if (!sameOrigin(req)) return fail('forbidden', 403);
 
   const agentId = agentIdFor('pack');

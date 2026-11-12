@@ -9,7 +9,7 @@ import { next, openDemo, runScript } from './demo-run';
 test.use({ viewport: { width: 1440, height: 900 }, isMobile: false, hasTouch: false, deviceScaleFactor: 1 });
 
 test('scenes 1, 2 and 3 run end to end with the director keys, back, scene jumps and reset', async ({ page }) => {
-  test.skip(process.env.NEXT_PUBLIC_DEMO_ENABLED !== 'true', 'demo disabled');
+  test.skip(process.env.NEXT_PUBLIC_SCRIPTED_DEMO === 'false', 'scripted demo off');
   await openDemo(page, 'projector');
   await runScript(page, 'projector');
   const record = page.getByTestId('return-record');
@@ -40,7 +40,7 @@ test('scenes 1, 2 and 3 run end to end with the director keys, back, scene jumps
 });
 
 test('the director bar shows progress, the scene and the next line', async ({ page }) => {
-  test.skip(process.env.NEXT_PUBLIC_DEMO_ENABLED !== 'true', 'demo disabled');
+  test.skip(process.env.NEXT_PUBLIC_SCRIPTED_DEMO === 'false', 'scripted demo off');
   await openDemo(page, 'projector');
   const bar = page.getByTestId('director');
   await expect(bar).toContainText(`0/${DEMO_SCRIPT.length}`);

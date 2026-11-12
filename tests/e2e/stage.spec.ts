@@ -10,7 +10,8 @@ import { openDemo, runScript } from './demo-run';
 // scripted demo runs end to end on the projector and on a phone. Against a deployment the live
 // return uses real vision (a few calls), like returns.spec.ts with E2E_RESET_DB=1.
 
-const demoOn = process.env.NEXT_PUBLIC_DEMO_ENABLED === 'true';
+// The reset from /admin is a DEMO_ENABLED piece (lib/demo/flags.ts); the scripted run is not.
+const demoOn = process.env.DEMO_ENABLED === 'true';
 const projector = { viewport: { width: 1440, height: 900 }, isMobile: false, hasTouch: false, deviceScaleFactor: 1 };
 
 async function resetFromAdmin(browser: Browser) {

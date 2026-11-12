@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import { clientIp, limitQuickSignIn } from '@/lib/limits/server';
 import { DEVICE_COOKIE, HOME, type AppRole } from './dal';
 import { QUICK_DEVICE, QUICK_ROLES, SEED_USERS } from './demo-users';
+import { paidDemoOn } from '@/lib/demo/flags';
 
 export interface SignInState {
   error?: string;
@@ -67,7 +68,7 @@ const QuickSignIn = z.object({ role: z.enum(QUICK_ROLES), next: z.string().optio
  * (Origin against Host); on top of that it is rate limited per visitor and in total.
  */
 export async function quickSignIn(_prev: SignInState, formData: FormData): Promise<SignInState> {
-  if (process.env.DEMO_ENABLED !== 'true') return { error: 'quickOff' };
+  if (!paidDemoOn()) return { error: 'quickOff' };
   const parsed = QuickSignIn.safeParse({ role: formData.get('role'), next: formData.get('next') || undefined });
   if (!parsed.success) return { error: 'quickOff' };
   const { role } = parsed.data;
